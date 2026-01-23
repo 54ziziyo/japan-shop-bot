@@ -1,5 +1,6 @@
 // server/api/webhook.post.ts
 import { Client, WebhookEvent, FlexMessage, FlexBubble, FlexComponent } from '@line/bot-sdk'
+import { createClient } from '@supabase/supabase-js'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
@@ -20,6 +21,10 @@ export default defineEventHandler(async (event) => {
     channelSecret: config.line.channelSecret,
   })
 
+  // 🔑 初始化 Supabase 客戶端
+  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseKey)
+  // const supabase = createClient('https://nvjdoyvfqirutumsvbmy.supabase.co', 'sb_publishable_YuroylBYd91dLKYhSF-yMA_plP7C-wx')
+
   const body = await readRawBody(event)
   if (!body) return 'No Body'
   const bodyJson = JSON.parse(body)
@@ -27,9 +32,71 @@ export default defineEventHandler(async (event) => {
 
   await Promise.all(
     events.map(async (webhookEvent) => {
+      const userId = webhookEvent.source.userId
+
+      // --- 1. 處理 Postback (點擊加入購物車按鈕) ---
+      if (webhookEvent.type === 'postback' && userId) {
+        const data = new URLSearchParams(webhookEvent.postback.data)
+        const action = data.get('action')
+
+        if (action === 'buy') {
+          const itemTitle = data.get('item') || '未知商品'
+          const itemColor = data.get('color') || 'F'
+          const itemSize = data.get('size') || 'F'
+          const itemPrice = data.get('price') || '¥0'
+          const itemImg = data.get('img') || ''
+
+          console.log(`🛒 嘗試寫入資料庫: ${itemTitle}`)
+
+          // 🔍 先檢查是否已存在相同的商品（避免重複）
+          const { data: existingItems } = await supabase
+            .from('cart_items')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('product_title', itemTitle)
+            .eq('color', itemColor)
+            .eq('size', itemSize)
+            .limit(1)
+
+          if (existingItems && existingItems.length > 0) {
+            // 已存在，直接回覆
+            await client.replyMessage(webhookEvent.replyToken, {
+              type: 'text',
+              text: `ℹ️ 此商品已在購物車中！\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看。`
+            })
+          } else {
+            // 不存在，新增
+            const { error } = await supabase
+              .from('cart_items')
+              .insert({
+                user_id: userId,
+                product_title: itemTitle,
+                color: itemColor,
+                size: itemSize,
+                price: itemPrice,
+                image_url: itemImg
+              })
+
+            if (error) {
+              console.error('❌ Supabase 錯誤:', error.message)
+              await client.replyMessage(webhookEvent.replyToken, {
+                type: 'text',
+                text: `抱歉，加入失敗。原因：${error.message}`
+              })
+            } else {
+              await client.replyMessage(webhookEvent.replyToken, {
+                type: 'text',
+                text: `✅ 已成功加入購物車！\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`
+              })
+            }
+          }
+        }
+        return
+      }
+
+      // --- 2. 處理文字訊息 (原有邏輯) ---
       if (webhookEvent.type !== 'message' || webhookEvent.message.type !== 'text') return
       const userText = webhookEvent.message.text.trim()
-      const userId = webhookEvent.source.userId
       
       // 🔍 查 ID
       if (userText === '查ID') {
@@ -134,7 +201,7 @@ export default defineEventHandler(async (event) => {
               type: 'box', layout: 'vertical', justifyContent: 'center', alignItems: 'center', height: '40px', margin: 'md', borderWidth: '1px', borderColor: '#000000', cornerRadius: '4px', backgroundColor: '#ffffff', 
               action: {
                 type: 'postback', label: size,
-                data: `action=buy&item=${safeTitle}&color=${v.color}&size=${size}`,
+                data: `action=buy&item=${encodeURIComponent(productData!.title)}&color=${encodeURIComponent(v.color)}&size=${encodeURIComponent(size)}&price=${encodeURIComponent(v.price)}&img=${encodeURIComponent(v.image)}`,
                 displayText: `我要加入購物車：\n${productData!.title}\n顏色：${v.color}\n尺寸：${size}`
               },
               contents: [ { type: 'text', text: size + ' | 加入購物車', color: '#000000', align: 'center', weight: 'bold', size: 'sm' } ]
