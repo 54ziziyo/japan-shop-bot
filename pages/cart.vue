@@ -154,14 +154,16 @@
 </template>
 
 <script setup>
-import liff from '@line/liff';
-import { createClient } from '@supabase/supabase-js';
+// ⚠️ 靜態 import 已全部移除：@supabase/supabase-js 與 @line/liff 都含有瀏覽器專用程式碼
+// 若在頂層靜態 import，Nuxt SSR 會在 server 端解析它們導致 useNuxtApp() 崩潰
+// 解法：全部改為 onMounted 內動態 import，確保只在瀏覽器執行
 
 const config = useRuntimeConfig();
 const items = ref([]);
 const loading = ref(true);
 const userId = ref(null);
 let supabase = null;
+let liff = null;
 
 // 自動加總邏輯
 const totalAmount = computed(() => {
@@ -172,7 +174,8 @@ const totalAmount = computed(() => {
   }, 0);
 });
 
-const initSupabase = () => {
+const initSupabase = async () => {
+  const { createClient } = await import('@supabase/supabase-js');
   supabase = createClient(config.public.supabaseUrl, config.public.supabaseKey);
 };
 
@@ -206,9 +209,15 @@ const handleCheckout = async () => {
 const closeLiff = () => liff.closeWindow();
 
 onMounted(async () => {
-  initSupabase();
+  // ✅ 動態 import：確保只在瀏覽器執行，不會在 SSR 階段被解析
+  const [liffModule] = await Promise.all([
+    import('@line/liff'),
+    initSupabase(),
+  ]);
+  liff = liffModule.default;
+
   try {
-    await liff.init({ liffId: process.env.LIFF_ID });
+    await liff.init({ liffId: config.public.liffId });
     if (!liff.isLoggedIn()) {
       liff.login();
     } else {

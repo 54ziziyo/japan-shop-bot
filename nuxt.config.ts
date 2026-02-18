@@ -1,6 +1,9 @@
 // nuxt.config.ts
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // 此專案以前端互動 + server/api 為主，關閉 SSR 可避開 Nuxt 4 payload 初始化錯誤
+  ssr: false,
+
   // 設定相容性日期
   compatibilityDate: '2025-07-15',
 
@@ -17,24 +20,23 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 🔒 僅限伺服器端使用 (Webhook 會用到)
     line: {
-      channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-      channelSecret: process.env.CHANNEL_SECRET,
+      channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+      channelSecret: process.env.LINE_CHANNEL_SECRET,
     },
-    
+
     // 🌍 公開區塊 (前端 pages/cart.vue 與伺服器端皆可讀取)
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
-    }
+      liffId: process.env.LIFF_ID,
+    },
   },
 
   // Vite 相關設定 (處理 ngrok 開放外部連接)
   vite: {
     server: {
-      allowedHosts: [
-        'semiskilled-summarily-aleena.ngrok-free.dev'
-      ]
-    }
+      allowedHosts: ['semiskilled-summarily-aleena.ngrok-free.dev'],
+    },
   },
 
   // PostCSS 配置用於 Tailwind CSS
@@ -47,4 +49,4 @@ export default defineNuxtConfig({
 
   // 如果你有使用 Tailwind CSS，記得在這裡確認模組 (選填)
   // modules: ['@nuxtjs/tailwindcss']
-})
+});

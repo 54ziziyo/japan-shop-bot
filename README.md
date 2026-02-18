@@ -72,4 +72,15 @@ yarn preview
 bun run preview
 ```
 
+# Expose the local server to the internet using ngrok:
+
+```bash
+
+# Install ngrok if you haven't already
+npm install -g ngrok
+
+# Start your local server (make sure it's running on port 3000)
+ngrok http 3000
+```
+
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
