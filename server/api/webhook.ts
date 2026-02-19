@@ -45,7 +45,7 @@ const ensureLineImageUrl = (url?: string) => {
 export default defineEventHandler(async (event) => {
   console.log('🔥🔥🔥 Webhook 收到請求！🔥🔥🔥');
 
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig(event);
   const client = new Client({
     channelAccessToken: config.line.channelAccessToken,
     channelSecret: config.line.channelSecret,
@@ -245,7 +245,15 @@ export default defineEventHandler(async (event) => {
         return;
       }
 
-      if (!userText.startsWith('https://www.uniqlo.com/jp')) return;
+      const allowedSites = [
+        'uniqlo.com',
+        'gu-global.com',
+        '56-design.com',
+        'hyod-products.com',
+      ];
+      const isAllowed = allowedSites.some((site) => userText.includes(site));
+
+      if (!isAllowed) return; // 只有清單內的網站才會動
 
       // 🛑 簡單網址快篩
       let isProductUrl = true;
