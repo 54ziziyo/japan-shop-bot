@@ -18,17 +18,16 @@ export default defineNuxtConfig({
 
   // 環境變數與全域設定
   runtimeConfig: {
-    // 🔒 僅限伺服器端使用 (Webhook 會用到)
+    // ✅ 這裡直接對應 Vercel 上的 Key 名稱
     line: {
-      channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-      channelSecret: process.env.LINE_CHANNEL_SECRET,
+      channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
+      channelSecret: process.env.LINE_CHANNEL_SECRET || '',
     },
 
-    // 🌍 公開區塊 (前端 pages/cart.vue 與伺服器端皆可讀取)
     public: {
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseKey: process.env.SUPABASE_KEY,
-      liffId: process.env.LIFF_ID,
+      supabaseUrl: process.env.SUPABASE_URL || '',
+      supabaseKey: process.env.SUPABASE_KEY || '',
+      liffId: process.env.LIFF_ID || '',
     },
   },
 
