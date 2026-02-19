@@ -20,7 +20,7 @@
           >
             Total Items
           </p>
-          <p class="font-black text-xl leading-none">{{ items.length }}</p>
+          <p class="font-black text-xl leading-none">{{ totalQty }}</p>
         </div>
       </nav>
 
@@ -66,9 +66,31 @@
                 {{ item.color }} <span class="mx-1 text-gray-200">|</span>
                 {{ item.size }}
               </p>
-              <p class="font-black text-lg tracking-tighter">
-                {{ item.price }}
-              </p>
+              <div class="flex items-center justify-between">
+                <p class="font-black text-lg tracking-tighter">
+                  {{ item.price }}
+                </p>
+                <!-- 數量控制 -->
+                <div class="flex items-center gap-0 select-none">
+                  <button
+                    @click="decreaseQty(item)"
+                    class="w-7 h-7 flex items-center justify-center rounded-l-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
+                  >
+                    −
+                  </button>
+                  <span
+                    class="w-8 h-7 flex items-center justify-center border-t border-b border-gray-200 bg-white text-xs font-black"
+                  >
+                    {{ item.quantity || 1 }}
+                  </span>
+                  <button
+                    @click="increaseQty(item)"
+                    class="w-7 h-7 flex items-center justify-center rounded-r-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
 
             <button
@@ -168,10 +190,14 @@ let liff = null;
 // 自動加總邏輯
 const totalAmount = computed(() => {
   return items.value.reduce((sum, item) => {
-    // 移除 ¥ 與逗號
     const priceValue = parseInt(item.price.replace(/[^\d]/g, '')) || 0;
-    return sum + priceValue;
+    const qty = item.quantity || 1;
+    return sum + priceValue * qty;
   }, 0);
+});
+
+const totalQty = computed(() => {
+  return items.value.reduce((sum, item) => sum + (item.quantity || 1), 0);
 });
 
 const initSupabase = async () => {
@@ -191,13 +217,37 @@ const fetchCart = async () => {
 };
 
 const removeItem = async (id) => {
-  if (!confirm('Confirm removal?')) return;
+  if (!confirm('確定要刪除這項商品嗎？')) return;
   const { error } = await supabase.from('cart_items').delete().eq('id', id);
   if (!error) items.value = items.value.filter((item) => item.id !== id);
 };
 
+const increaseQty = async (item) => {
+  const newQty = (item.quantity || 1) + 1;
+  const { error } = await supabase
+    .from('cart_items')
+    .update({ quantity: newQty })
+    .eq('id', item.id);
+  if (!error) item.quantity = newQty;
+};
+
+const decreaseQty = async (item) => {
+  const current = item.quantity || 1;
+  if (current <= 1) {
+    // 數量已是 1，問是否要刪除
+    await removeItem(item.id);
+    return;
+  }
+  const newQty = current - 1;
+  const { error } = await supabase
+    .from('cart_items')
+    .update({ quantity: newQty })
+    .eq('id', item.id);
+  if (!error) item.quantity = newQty;
+};
+
 const handleCheckout = async () => {
-  const message = `🙋‍♂️ 我已挑選完畢！\n目前共有 ${items.value.length} 件商品，預估總額 ¥${totalAmount.value.toLocaleString()}。\n請幫我確認庫存與報價。`;
+  const message = `🙋‍♂️ 我已挑選完畢！\n目前共有 ${totalQty.value} 件商品，預估總額 ¥${totalAmount.value.toLocaleString()}。\n請幫我確認庫存與報價。`;
   try {
     await liff.sendMessages([{ type: 'text', text: message }]);
     liff.closeWindow();

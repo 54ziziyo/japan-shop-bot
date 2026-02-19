@@ -1,0 +1,407 @@
+// server/api/webhook.post.ts
+import {
+  Client,
+  WebhookEvent,
+  Message,
+  FlexMessage,
+  FlexBubble,
+  FlexComponent,
+} from '@line/bot-sdk';
+import { createClient } from '@supabase/supabase-js';
+
+// 🔒 暫時停用：hyod / 56design / 通用爬蟲
+// import axios from 'axios';
+// import * as cheerio from 'cheerio';
+// import { scrapeGeneric } from '../utils/scrapeGeneric';
+// import { scrapeHyod } from '../utils/scrapeHyod';
+// import { scrapeShopify } from '../utils/scrapeShopify';
+// import { checkProductRestriction } from '../utils/productFilterRules';
+
+import { scrapeUniqlo } from '../utils/scrapeUniqlo';
+
+// 🔑 老闆的 User ID
+const ADMIN_USER_ID = 'Ud2d92728dfaf5241e62b1cb167e6973a';
+
+const ensureLineImageUrl = (url?: string) => {
+  if (!url) return 'https://placehold.co/600x600.png?text=No+Image';
+  let normalized = url.trim();
+  if (normalized.startsWith('//')) normalized = `https:${normalized}`;
+  return normalized;
+};
+
+export default defineEventHandler(async (event) => {
+  console.log('🔥🔥🔥 Webhook 收到請求！🔥🔥🔥');
+
+  const config = useRuntimeConfig(event);
+  console.log(
+    'Token Check:',
+    config.line.channelAccessToken ? 'Exists' : 'Missing',
+  );
+
+  const client = new Client({
+    channelAccessToken: config.line.channelAccessToken,
+    channelSecret: config.line.channelSecret,
+  });
+
+  // 🔑 初始化 Supabase 客戶端
+  const supabase = createClient(
+    config.public.supabaseUrl,
+    config.public.supabaseKey,
+  );
+  // const supabase = createClient('https://nvjdoyvfqirutumsvbmy.supabase.co', 'sb_publishable_YuroylBYd91dLKYhSF-yMA_plP7C-wx')
+
+  const body = await readRawBody(event);
+  if (!body) return 'No Body';
+  const bodyJson = JSON.parse(body);
+  const events: WebhookEvent[] = bodyJson.events || [];
+
+  await Promise.all(
+    events.map(async (webhookEvent) => {
+      const userId = webhookEvent.source.userId;
+
+      if (webhookEvent.deliveryContext?.isRedelivery) {
+        console.warn('⚠️ 跳過 redelivery 事件，避免重複推播');
+        return;
+      }
+
+      let replyTokenUsed = false;
+
+      const isInvalidReplyTokenError = (error: any) => {
+        const errorDetail =
+          error?.originalError?.response?.data || error?.response?.data || {};
+        const topLevelMessage =
+          typeof errorDetail?.message === 'string'
+            ? errorDetail.message.toLowerCase()
+            : '';
+        const nestedDetailMessages = Array.isArray(errorDetail?.details)
+          ? errorDetail.details
+              .map((detail: any) =>
+                typeof detail?.message === 'string'
+                  ? detail.message.toLowerCase()
+                  : '',
+              )
+              .join(' ')
+          : '';
+
+        return (
+          topLevelMessage.includes('invalid reply token') ||
+          nestedDetailMessages.includes('invalid reply token')
+        );
+      };
+
+      const sendPushOnly = async (message: Message | Message[]) => {
+        if (!userId) {
+          throw new Error('無法推播：缺少 userId');
+        }
+        await client.pushMessage(userId, message);
+      };
+
+      const sendReplyOrPush = async (message: Message | Message[]) => {
+        const replyToken =
+          'replyToken' in webhookEvent ? webhookEvent.replyToken : undefined;
+        const canReply = !replyTokenUsed && !!replyToken;
+
+        if (canReply) {
+          try {
+            await client.replyMessage(replyToken, message);
+            replyTokenUsed = true;
+            return;
+          } catch (replyErr: any) {
+            if (!isInvalidReplyTokenError(replyErr)) {
+              throw replyErr;
+            }
+            replyTokenUsed = true;
+            console.warn('⚠️ replyToken 無效，改用 pushMessage 發送');
+          }
+        }
+
+        await sendPushOnly(message);
+      };
+
+      const sendReplyOnlyIfPossible = async (message: Message | Message[]) => {
+        const replyToken =
+          'replyToken' in webhookEvent ? webhookEvent.replyToken : undefined;
+        const canReply = !replyTokenUsed && !!replyToken;
+
+        if (!canReply) return;
+
+        try {
+          await client.replyMessage(replyToken, message);
+          replyTokenUsed = true;
+        } catch (replyErr: any) {
+          if (isInvalidReplyTokenError(replyErr)) {
+            replyTokenUsed = true;
+            console.warn('⚠️ URL ACK replyToken 無效，略過 ACK');
+            return;
+          }
+          throw replyErr;
+        }
+      };
+
+      // --- 1. 處理 Postback (點擊加入購物車按鈕) ---
+      if (webhookEvent.type === 'postback' && userId) {
+        const data = new URLSearchParams(webhookEvent.postback.data);
+        const action = data.get('action');
+
+        if (action === 'buy') {
+          const itemTitle = data.get('t') || data.get('item') || '未知商品';
+          const itemColor = data.get('c') || data.get('color') || 'F';
+          const itemSize = data.get('s') || data.get('size') || 'F';
+          const itemPrice = data.get('p') || data.get('price') || '¥0';
+          const itemImg = data.get('i') || data.get('img') || '';
+
+          console.log(`🛒 嘗試寫入資料庫: ${itemTitle}`);
+
+          const { error } = await supabase.from('cart_items').insert({
+            user_id: userId,
+            product_title: itemTitle,
+            color: itemColor,
+            size: itemSize,
+            price: itemPrice,
+            image_url: itemImg,
+          });
+
+          if (error) {
+            console.error('❌ Supabase 錯誤:', error.message);
+            await sendReplyOrPush({
+              type: 'text',
+              text: `抱歉，加入失敗。原因：${error.message}`,
+            });
+          } else {
+            await sendReplyOrPush({
+              type: 'text',
+              text: `✅ 已成功加入購物車！\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
+            });
+          }
+        }
+
+        // --- 無庫存按鈕提醒 ---
+        if (action === 'soldout') {
+          const itemSize = data.get('s') || '';
+          await sendReplyOrPush({
+            type: 'text',
+            text: `❌ 抱歉，尺寸 ${itemSize} 目前無庫存，暫時無法下單唷！\n\n建議稍後再查看，或選擇其他有庫存的尺寸 🙏`,
+          });
+        }
+        return;
+      }
+
+      // --- 2. 處理文字訊息 (原有邏輯) ---
+      if (
+        webhookEvent.type !== 'message' ||
+        webhookEvent.message.type !== 'text'
+      )
+        return;
+      const userText = webhookEvent.message.text.trim();
+
+      // 🔍 查 ID
+      if (userText === '查ID') {
+        await sendReplyOrPush({
+          type: 'text',
+          text: `您的 User ID 是：\n${userId}`,
+        });
+        return;
+      }
+
+      // 🚨 攔截「專人客服」
+      if (userText.startsWith('🙋‍♂️')) {
+        await sendReplyOrPush({
+          type: 'text',
+          text: '收到您的詢問！👩‍💻\n專員正在確認日本庫存與今日匯率，請稍候，我們會盡快以人工回覆您！',
+        });
+        let userName = '未知客戶';
+        if (userId) {
+          try {
+            const profile = await client.getProfile(userId);
+            userName = profile.displayName;
+          } catch (e) {}
+        }
+        if (ADMIN_USER_ID) {
+          try {
+            await client.pushMessage(ADMIN_USER_ID, {
+              type: 'text',
+              text: `🔔 新的報價請求！\n------------------\n👤 客人：${userName}\n\n📝 內容：\n${userText}`,
+            });
+          } catch (err) {}
+        }
+        return;
+      }
+
+      // 📌 目前僅支援 Uniqlo / GU
+      const isUniqlo =
+        userText.includes('uniqlo.com') || userText.includes('gu-global.com');
+      if (!isUniqlo) return;
+
+      await sendReplyOnlyIfPossible({
+        type: 'text',
+        text: '收到網址，正在讀取商品資料，完成後會再傳結果給你 👀',
+      });
+
+      try {
+        console.log(`🕷️ 收到網址：${userText}`);
+        const productData = await scrapeUniqlo(userText);
+        if (!productData) throw new Error('無法識別的網站資料');
+
+        console.log(`✅ 抓取成功：${productData.title}`);
+
+        // 🎨 製作卡片 (輕盈透明版)
+        const bubbles = productData.variants.map((v: any) => {
+          const safeImageUrl = ensureLineImageUrl(v.image);
+          const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
+            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}`;
+            const themeColor = s.isStock ? '#ffffff' : '#888888';
+
+            return {
+              type: 'box',
+              layout: 'vertical',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '32px',
+              margin: 'sm',
+              cornerRadius: 'sm',
+              borderWidth: '1px',
+              borderColor: s.isStock ? themeColor : '#00000000',
+              backgroundColor: s.isStock ? '#00000000' : '#3f3f3f8e',
+              action: s.isStock
+                ? { type: 'postback', label: s.name, data: compactData }
+                : {
+                    type: 'postback',
+                    label: s.name,
+                    data: `action=soldout&s=${encodeURIComponent(s.name)}`,
+                  },
+              contents: [
+                {
+                  type: 'text',
+                  text: s.isStock ? `加入購物車 | ${s.name}` : `${s.name} 完售`,
+                  color: themeColor,
+                  align: 'center',
+                  weight: 'bold',
+                  size: 'xxs',
+                },
+              ],
+            };
+          });
+
+          return {
+            type: 'bubble',
+            size: 'mega',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: '0px',
+              contents: [
+                {
+                  type: 'image',
+                  url: safeImageUrl,
+                  size: 'full',
+                  aspectRatio: '3:4',
+                  aspectMode: 'cover',
+                },
+                // 💡 3. 調整遮罩：將底色調淺 (#00000066)
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  position: 'absolute',
+                  offsetBottom: '0px',
+                  offsetStart: '0px',
+                  offsetEnd: '0px',
+                  backgroundColor: '#00000066', // 40% 透明黑，比之前的更通透
+                  paddingAll: 'lg',
+                  contents: [
+                    {
+                      type: 'text',
+                      text: productData.title,
+                      weight: 'bold',
+                      size: 'md',
+                      color: '#ffffff',
+                      wrap: true,
+                    },
+                    {
+                      type: 'text',
+                      text: `${v.color} ${v.price}`,
+                      size: 'xs',
+                      color: '#dddddd',
+                      margin: 'xs',
+                    },
+                    {
+                      type: 'box',
+                      layout: 'vertical',
+                      margin: 'md',
+                      contents: sizeButtons.slice(0, 7),
+                    },
+                  ],
+                },
+              ],
+            },
+            // 💡 4. Footer 和諧化：背景改用稍微透一點的深灰
+            footer: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: '0px',
+              backgroundColor: '#111111ee',
+              contents: [
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '40px',
+                  action: { type: 'uri', label: '查看詳情', uri: userText },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '查看官網詳情',
+                      color: '#ffffff',
+                      weight: 'regular',
+                      size: 'xs',
+                      align: 'center',
+                    },
+                  ],
+                },
+              ],
+            },
+          };
+        }) as FlexBubble[];
+
+        const flexMessage: FlexMessage = {
+          type: 'flex',
+          altText: `推薦商品：${productData.title}`,
+          contents: { type: 'carousel', contents: bubbles },
+        };
+
+        await sendPushOnly(flexMessage);
+        console.log('✅ 訊息發送成功！');
+      } catch (err: any) {
+        const lineErrorDetail =
+          err?.originalError?.response?.data || err?.response?.data || null;
+        console.error('❌ 失敗:', err.message);
+        if (lineErrorDetail) {
+          console.error(
+            '📌 LINE API 錯誤細節:',
+            JSON.stringify(lineErrorDetail),
+          );
+        }
+
+        try {
+          await sendPushOnly({
+            type: 'text',
+            text: '抱歉，讀取網頁發生錯誤 > <',
+          });
+        } catch (replyErr: any) {
+          const replyErrorDetail =
+            replyErr?.originalError?.response?.data ||
+            replyErr?.response?.data ||
+            null;
+          console.error('❌ 錯誤回覆也失敗:', replyErr?.message || replyErr);
+          if (replyErrorDetail) {
+            console.error(
+              '📌 LINE API 回覆錯誤細節:',
+              JSON.stringify(replyErrorDetail),
+            );
+          }
+        }
+      }
+    }),
+  );
+  return 'OK';
+});
