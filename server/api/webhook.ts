@@ -46,6 +46,10 @@ export default defineEventHandler(async (event) => {
   console.log('🔥🔥🔥 Webhook 收到請求！🔥🔥🔥');
 
   const config = useRuntimeConfig(event);
+  console.log(
+    'Token Check:',
+    config.line.channelAccessToken ? 'Exists' : 'Missing',
+  );
   const client = new Client({
     channelAccessToken: config.line.channelAccessToken,
     channelSecret: config.line.channelSecret,
