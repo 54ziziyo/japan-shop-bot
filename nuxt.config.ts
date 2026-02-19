@@ -20,14 +20,14 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // ✅ 這裡直接對應 Vercel 上的 Key 名稱
     line: {
-      channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
-      channelSecret: process.env.LINE_CHANNEL_SECRET || '',
+      channelAccessToken: '',
+      channelSecret: '',
     },
 
     public: {
-      supabaseUrl: process.env.SUPABASE_URL || '',
-      supabaseKey: process.env.SUPABASE_KEY || '',
-      liffId: process.env.LIFF_ID || '',
+      supabaseUrl: '',
+      supabaseKey: '',
+      liffId: '',
     },
   },
 
