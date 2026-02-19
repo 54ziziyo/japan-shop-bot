@@ -2,6 +2,7 @@
 import {
   Client,
   WebhookEvent,
+  Message,
   FlexMessage,
   FlexBubble,
   FlexComponent,
@@ -66,6 +67,85 @@ export default defineEventHandler(async (event) => {
     events.map(async (webhookEvent) => {
       const userId = webhookEvent.source.userId;
 
+      if (webhookEvent.deliveryContext?.isRedelivery) {
+        console.warn('⚠️ 跳過 redelivery 事件，避免重複推播');
+        return;
+      }
+
+      let replyTokenUsed = false;
+
+      const isInvalidReplyTokenError = (error: any) => {
+        const errorDetail =
+          error?.originalError?.response?.data || error?.response?.data || {};
+        const topLevelMessage =
+          typeof errorDetail?.message === 'string'
+            ? errorDetail.message.toLowerCase()
+            : '';
+        const nestedDetailMessages = Array.isArray(errorDetail?.details)
+          ? errorDetail.details
+              .map((detail: any) =>
+                typeof detail?.message === 'string'
+                  ? detail.message.toLowerCase()
+                  : '',
+              )
+              .join(' ')
+          : '';
+
+        return (
+          topLevelMessage.includes('invalid reply token') ||
+          nestedDetailMessages.includes('invalid reply token')
+        );
+      };
+
+      const sendPushOnly = async (message: Message | Message[]) => {
+        if (!userId) {
+          throw new Error('無法推播：缺少 userId');
+        }
+        await client.pushMessage(userId, message);
+      };
+
+      const sendReplyOrPush = async (message: Message | Message[]) => {
+        const replyToken =
+          'replyToken' in webhookEvent ? webhookEvent.replyToken : undefined;
+        const canReply = !replyTokenUsed && !!replyToken;
+
+        if (canReply) {
+          try {
+            await client.replyMessage(replyToken, message);
+            replyTokenUsed = true;
+            return;
+          } catch (replyErr: any) {
+            if (!isInvalidReplyTokenError(replyErr)) {
+              throw replyErr;
+            }
+            replyTokenUsed = true;
+            console.warn('⚠️ replyToken 無效，改用 pushMessage 發送');
+          }
+        }
+
+        await sendPushOnly(message);
+      };
+
+      const sendReplyOnlyIfPossible = async (message: Message | Message[]) => {
+        const replyToken =
+          'replyToken' in webhookEvent ? webhookEvent.replyToken : undefined;
+        const canReply = !replyTokenUsed && !!replyToken;
+
+        if (!canReply) return;
+
+        try {
+          await client.replyMessage(replyToken, message);
+          replyTokenUsed = true;
+        } catch (replyErr: any) {
+          if (isInvalidReplyTokenError(replyErr)) {
+            replyTokenUsed = true;
+            console.warn('⚠️ URL ACK replyToken 無效，略過 ACK');
+            return;
+          }
+          throw replyErr;
+        }
+      };
+
       // --- 1. 處理 Postback (點擊加入購物車按鈕) ---
       if (webhookEvent.type === 'postback' && userId) {
         const data = new URLSearchParams(webhookEvent.postback.data);
@@ -92,7 +172,7 @@ export default defineEventHandler(async (event) => {
 
           if (existingItems && existingItems.length > 0) {
             // 已存在，直接回覆
-            await client.replyMessage(webhookEvent.replyToken, {
+            await sendReplyOrPush({
               type: 'text',
               text: `ℹ️ 此商品已在購物車中！\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看。`,
             });
@@ -109,12 +189,12 @@ export default defineEventHandler(async (event) => {
 
             if (error) {
               console.error('❌ Supabase 錯誤:', error.message);
-              await client.replyMessage(webhookEvent.replyToken, {
+              await sendReplyOrPush({
                 type: 'text',
                 text: `抱歉，加入失敗。原因：${error.message}`,
               });
             } else {
-              await client.replyMessage(webhookEvent.replyToken, {
+              await sendReplyOrPush({
                 type: 'text',
                 text: `✅ 已成功加入購物車！\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
               });
@@ -134,7 +214,7 @@ export default defineEventHandler(async (event) => {
 
       // 🔍 查 ID
       if (userText === '查ID') {
-        await client.replyMessage(webhookEvent.replyToken, {
+        await sendReplyOrPush({
           type: 'text',
           text: `您的 User ID 是：\n${userId}`,
         });
@@ -143,7 +223,7 @@ export default defineEventHandler(async (event) => {
 
       // 🚨 攔截「專人客服」
       if (userText.startsWith('🙋‍♂️')) {
-        await client.replyMessage(webhookEvent.replyToken, {
+        await sendReplyOrPush({
           type: 'text',
           text: '收到您的詢問！👩‍💻\n專員正在確認日本庫存與今日匯率，請稍候，我們會盡快以人工回覆您！',
         });
@@ -165,7 +245,7 @@ export default defineEventHandler(async (event) => {
         return;
       }
 
-      if (!userText.startsWith('http')) return;
+      if (!userText.startsWith('https://www.uniqlo.com/jp')) return;
 
       // 🛑 簡單網址快篩
       let isProductUrl = true;
@@ -183,12 +263,17 @@ export default defineEventHandler(async (event) => {
         isProductUrl = false;
 
       if (!isProductUrl) {
-        await client.replyMessage(webhookEvent.replyToken, {
+        await sendReplyOrPush({
           type: 'text',
           text: '💡 這是「分類頁」或「首頁」喔！請貼單一商品的網址～',
         });
         return;
       }
+
+      await sendReplyOnlyIfPossible({
+        type: 'text',
+        text: '收到網址，正在讀取商品資料，完成後會再傳結果給你 👀',
+      });
 
       try {
         console.log(`🕷️ 收到網址：${userText}`);
@@ -482,35 +567,34 @@ export default defineEventHandler(async (event) => {
                   ],
                 },
                 { type: 'separator', margin: 'xxl', color: '#f0f0f0' },
-
-                {
-                  type: 'box',
-                  layout: 'vertical',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '40px',
-                  margin: 'xl',
-                  borderWidth: '1px',
-                  cornerRadius: '4px',
-                  backgroundColor: '#3b3b3b',
-                  action: {
-                    type: 'message',
-                    label: '專人客服',
-                    text: is56DesignHelmet
-                      ? `此商品請務必點擊下方「專人報價回覆」，感謝你的配合。\n\n(我要詢問：${productData!.title})`
-                      : `🙋‍♂️ 您好！我想詢問這款商品的專人報價：\n\n商品：${productData!.title}\n顏色：${v.color}\n尺寸：(請填寫)\n\n請協助確認庫存與含稅報價，謝謝！`,
-                  },
-                  contents: [
-                    {
-                      type: 'text',
-                      text: '專人報價回覆',
-                      color: '#ffffff',
-                      align: 'center',
-                      weight: 'bold',
-                      size: 'sm',
-                    },
-                  ],
-                },
+                // {
+                //   type: 'box',
+                //   layout: 'vertical',
+                //   justifyContent: 'center',
+                //   alignItems: 'center',
+                //   height: '40px',
+                //   margin: 'xl',
+                //   borderWidth: '1px',
+                //   cornerRadius: '4px',
+                //   backgroundColor: '#3b3b3b',
+                //   action: {
+                //     type: 'message',
+                //     label: '專人客服',
+                //     text: is56DesignHelmet
+                //       ? `此商品請務必點擊下方「專人報價回覆」，感謝你的配合。\n\n(我要詢問：${productData!.title})`
+                //       : `🙋‍♂️ 您好！我想詢問這款商品的專人報價：\n\n商品：${productData!.title}\n顏色：${v.color}\n尺寸：(請填寫)\n\n請協助確認庫存與含稅報價，謝謝！`,
+                //   },
+                //   contents: [
+                //     {
+                //       type: 'text',
+                //       text: '專人報價回覆',
+                //       color: '#ffffff',
+                //       align: 'center',
+                //       weight: 'bold',
+                //       size: 'sm',
+                //     },
+                //   ],
+                // },
                 {
                   type: 'box',
                   layout: 'vertical',
@@ -544,7 +628,7 @@ export default defineEventHandler(async (event) => {
           contents: { type: 'carousel', contents: bubbles },
         };
 
-        await client.replyMessage(webhookEvent.replyToken, flexMessage);
+        await sendPushOnly(flexMessage);
         console.log('✅ 訊息發送成功！');
       } catch (err: any) {
         const lineErrorDetail =
@@ -558,7 +642,7 @@ export default defineEventHandler(async (event) => {
         }
 
         try {
-          await client.replyMessage(webhookEvent.replyToken, {
+          await sendPushOnly({
             type: 'text',
             text: '抱歉，讀取網頁發生錯誤 > <',
           });
