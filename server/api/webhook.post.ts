@@ -9,7 +9,7 @@ import {
 } from '@line/bot-sdk';
 import { createClient } from '@supabase/supabase-js';
 
-// 🔒 暫時停用：hyod / 56design / 通用爬蟲
+// 🔒 誤刪！ 暫時停用：hyod / 56design / 通用爬蟲
 // import axios from 'axios';
 // import * as cheerio from 'cheerio';
 // import { scrapeGeneric } from '../utils/scrapeGeneric';
@@ -144,33 +144,72 @@ export default defineEventHandler(async (event) => {
         const action = data.get('action');
 
         if (action === 'buy') {
-          const itemTitle = data.get('t') || data.get('item') || '未知商品';
-          const itemColor = data.get('c') || data.get('color') || 'F';
-          const itemSize = data.get('s') || data.get('size') || 'F';
-          const itemPrice = data.get('p') || data.get('price') || '¥0';
-          const itemImg = data.get('i') || data.get('img') || '';
+          const itemTitle = data.get('t') || '未知商品';
+          const itemColor = data.get('c') || 'F';
+          const itemSize = data.get('s') || 'F';
+          const itemPrice = data.get('p') || '¥0';
 
-          console.log(`🛒 嘗試寫入資料庫: ${itemTitle}`);
+          // 💡 還原圖片網址
+          const pid = data.get('pid') || '';
+          const cc = data.get('cc') || '';
+          const itemImg = pid
+            ? `https://image.uniqlo.com/UQ/ST3/jp/imagesgoods/${pid.substring(0, 6)}/item/jpgoods_${cc}_${pid}_3x4.jpg?width=400`
+            : '';
 
-          const { error } = await supabase.from('cart_items').insert({
-            user_id: userId,
-            product_title: itemTitle,
-            color: itemColor,
-            size: itemSize,
-            price: itemPrice,
-            image_url: itemImg,
-          });
+          console.log(
+            `🛒 檢查購物車是否存在: ${itemTitle} | ${itemColor} | ${itemSize}`,
+          );
 
-          if (error) {
-            console.error('❌ Supabase 錯誤:', error.message);
+          // 💡 1. 先查詢資料庫中是否已有「同一人、同商品、同色、同尺寸」的項目
+          const { data: existingItem, error: fetchError } = await supabase
+            .from('cart_items')
+            .select('id, quantity')
+            .match({
+              user_id: userId,
+              product_title: itemTitle,
+              color: itemColor,
+              size: itemSize,
+            })
+            .maybeSingle();
+
+          let cartError = null;
+
+          if (existingItem) {
+            // ✅ 已存在：數量 + 1
+            const { error: updateError } = await supabase
+              .from('cart_items')
+              .update({ quantity: (existingItem.quantity || 1) + 1 })
+              .eq('id', existingItem.id);
+            cartError = updateError;
+          } else {
+            // ✅ 不存在：新增一筆
+            const { error: insertError } = await supabase
+              .from('cart_items')
+              .insert({
+                user_id: userId,
+                product_title: itemTitle,
+                color: itemColor,
+                size: itemSize,
+                price: itemPrice,
+                image_url: itemImg,
+                quantity: 1,
+              });
+            cartError = insertError;
+          }
+
+          if (cartError) {
+            console.error('❌ Supabase 錯誤:', cartError.message);
             await sendReplyOrPush({
               type: 'text',
-              text: `抱歉，加入失敗。原因：${error.message}`,
+              text: `抱歉，加入失敗。原因：${cartError.message}`,
             });
           } else {
+            const qtyText = existingItem
+              ? `（已累計 ${(existingItem.quantity || 1) + 1} 件）`
+              : '';
             await sendReplyOrPush({
               type: 'text',
-              text: `✅ 已成功加入購物車！\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
+              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
             });
           }
         }
@@ -248,7 +287,16 @@ export default defineEventHandler(async (event) => {
         const bubbles = productData.variants.map((v: any) => {
           const safeImageUrl = ensureLineImageUrl(v.image);
           const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
-            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}`;
+            // 💡 1. 提取 URL 參數中的 colorDisplayCode (例如 08)
+            const colorCode = v.image.match(/jpgoods_(\d+)_/)?.[1] || '00';
+
+            // 💡 2. 提取商品 ID (例如 479662001)
+            const pid = v.image.match(/(\d{9})/)?.[1] || '';
+
+            // 💡 3. 只傳送必要的代號，不傳長網址
+            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&pid=${pid}&cc=${colorCode}`;
+
+            // 💡 4. 根據庫存狀態調整按鈕樣式和行為
             const themeColor = s.isStock ? '#ffffff' : '#888888';
 
             return {

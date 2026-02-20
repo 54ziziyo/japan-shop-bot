@@ -207,6 +207,15 @@ const initSupabase = async () => {
 
 const fetchCart = async () => {
   if (!userId.value) return;
+
+  // 🧹 自動清除 6 小時前的購物車項目
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  await supabase
+    .from('cart_items')
+    .delete()
+    .eq('user_id', userId.value)
+    .lt('created_at', sixHoursAgo);
+
   const { data, error } = await supabase
     .from('cart_items')
     .select('*')
@@ -216,34 +225,72 @@ const fetchCart = async () => {
   if (!error) items.value = data;
 };
 
+// 🗑️ 刪除商品
 const removeItem = async (id) => {
+  // 💡 確保 id 有傳進來
+  if (!id) {
+    console.error('❌ 錯誤：找不到商品 ID');
+    return;
+  }
+
   if (!confirm('確定要刪除這項商品嗎？')) return;
-  const { error } = await supabase.from('cart_items').delete().eq('id', id);
-  if (!error) items.value = items.value.filter((item) => item.id !== id);
+
+  // 💡 關鍵修正：確保解構出真正的 error 物件
+  const { error: deleteError } = await supabase
+    .from('cart_items')
+    .delete()
+    .eq('id', id);
+
+  if (!deleteError) {
+    // ✅ 成功：更新前端畫面
+    items.value = items.value.filter((item) => item.id !== id);
+  } else {
+    // ❌ 失敗：印出真正的原因，不要只顯示「檢查網路」
+    console.error('Supabase 刪除失敗原因:', deleteError.message);
+    alert(`刪除失敗：${deleteError.message}`);
+  }
 };
 
+// ➕ 增加數量
 const increaseQty = async (item) => {
-  const newQty = (item.quantity || 1) + 1;
+  const oldQty = item.quantity || 1;
+  const newQty = oldQty + 1;
+
+  // 💡 先改 UI，讓客人感覺很快
+  item.quantity = newQty;
+
   const { error } = await supabase
     .from('cart_items')
     .update({ quantity: newQty })
-    .eq('id', item.id);
-  if (!error) item.quantity = newQty;
+    .eq('id', item.id); // 💡 確保這裡的 id 是資料庫的 primary key
+
+  if (error) {
+    console.error('Update error:', error);
+    item.quantity = oldQty; // 失敗時回滾
+    alert(`同步失敗：${error.message}`);
+  }
 };
 
+// ➖ 減少數量
 const decreaseQty = async (item) => {
-  const current = item.quantity || 1;
-  if (current <= 1) {
-    // 數量已是 1，問是否要刪除
+  const oldQty = item.quantity || 1;
+  if (oldQty <= 1) {
     await removeItem(item.id);
     return;
   }
-  const newQty = current - 1;
+
+  const newQty = oldQty - 1;
+  item.quantity = newQty;
+
   const { error } = await supabase
     .from('cart_items')
     .update({ quantity: newQty })
     .eq('id', item.id);
-  if (!error) item.quantity = newQty;
+
+  if (error) {
+    item.quantity = oldQty;
+    alert('同步失敗');
+  }
 };
 
 const handleCheckout = async () => {
