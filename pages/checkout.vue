@@ -3,7 +3,7 @@
     <div class="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans antialiased">
       <!-- Navigation -->
       <nav
-        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md px-6 py-8 flex items-end justify-between"
+        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex items-end justify-between"
       >
         <div>
           <div class="flex items-center gap-2 mb-2">
@@ -28,11 +28,11 @@
             <p
               class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none"
             >
-              Order Confirmation
+              填寫表單
             </p>
           </div>
           <h1 class="text-3xl font-black italic tracking-tighter leading-none">
-            CHECKOUT
+            訂單確認
           </h1>
         </div>
       </nav>
@@ -113,10 +113,10 @@
 
           <!-- Items section header -->
           <p
-            class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase mb-4"
+            class="text-[10px] font-black tracking-[0.3em] text-right text-gray-400 uppercase mb-2"
           >
-            Items ({{ validItems.length
-            }}{{ soldOutCount > 0 ? ` · ${soldOutCount} sold out` : '' }})
+            總共 {{ validItems.length
+            }}{{ soldOutCount > 0 ? ` · ${soldOutCount} 已售完` : '' }} 個商品
           </p>
 
           <!-- Item cards -->
@@ -219,29 +219,26 @@
                 <p
                   class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"
                 >
-                  Subtotal
+                  總共 {{ validItems.length }} 個商品
                 </p>
                 <p
-                  class="text-[9px] text-gray-300 font-bold uppercase tracking-tighter italic"
+                  class="text-[12px] text-gray-800 font-bold uppercase tracking-tighter"
                 >
-                  Estimated JPY Total
+                  總額
                 </p>
               </div>
               <p
                 class="text-2xl font-black tracking-tighter italic leading-none"
               >
-                ¥ {{ subtotal.toLocaleString() }}
+                ＄ {{ subtotal.toLocaleString() }} 元
               </p>
             </div>
 
             <!-- ── Customer Info Form ── -->
+            <p class="text-xl font-black text-gray-800 italic mb-4">
+              ▍收件資訊
+            </p>
             <div class="space-y-6">
-              <p
-                class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase"
-              >
-                Customer Info
-              </p>
-
               <!-- LINE 名稱 (唯讀) -->
               <div>
                 <label
@@ -259,7 +256,7 @@
               <div>
                 <label
                   class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5"
-                  >收件人真實姓名</label
+                  >收件人</label
                 >
                 <input
                   v-model="form.name"
@@ -287,13 +284,13 @@
               <div>
                 <label
                   class="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5"
-                  >台灣收件地址(請務必完整)</label
+                  >台灣收件地址</label
                 >
                 <input
                   v-model="form.address"
                   type="text"
                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all"
-                  placeholder="請輸入完整地址"
+                  placeholder="請務必輸入正確的地址，避免包裹無法送達"
                 />
               </div>
 
@@ -320,7 +317,7 @@
                     />
                     <div>
                       <p class="text-sm font-bold leading-tight">銀行轉帳</p>
-                      <p class="text-[10px] text-gray-400 mt-0.5">
+                      <p class="text-[10px] text-gray-600 mt-0.5">
                         直接轉帳至指定帳戶
                       </p>
                     </div>
@@ -341,8 +338,16 @@
                     />
                     <div>
                       <p class="text-sm font-bold leading-tight">綠界付款</p>
-                      <p class="text-[10px] text-gray-400 mt-0.5">
-                        信用卡（加收 2.23% 手續費）
+                      <p class="text-[10px] text-gray-600 mt-0.5">
+                        信用卡（加收 2.75% 手續費），<span
+                          class="text-gray-800 font-bold"
+                        >
+                          最終金額為 $
+                          {{
+                            Math.round(subtotal * 1.0275).toLocaleString()
+                          }}
+                          元</span
+                        >
                       </p>
                     </div>
                   </label>
@@ -374,16 +379,17 @@
               </div>
 
               <!-- 綠界手續費提示 -->
-              <div
+              <!-- <div
                 v-if="form.paymentMethod === 'ecpay'"
                 class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
               >
                 <p
                   class="text-[10px] text-amber-700 font-semibold leading-relaxed"
                 >
-                  💡 選擇綠界付款將加收 2.23% 手續費，最終金額以報價回覆為準。
+                  💡 選擇綠界付款將加收 2.75% 手續費，最終金額為 $
+                  {{ Math.round(subtotal * 1.0275) }} 元
                 </p>
-              </div>
+              </div> -->
 
               <!-- 期間限定提示：顯示最近截止時間 -->
               <div
@@ -396,12 +402,12 @@
                   ⏰ 部分商品為期間限定特價。系統每日採購時間約為台灣
                   22:00，若超過特價截止時間，最終報價將以採購當下價格為準。
                 </p>
-                <p
+                <!-- <p
                   v-if="earliestPromoDeadline"
                   class="text-[10px] text-orange-700 font-black mt-1"
                 >
                   最近截止：{{ earliestPromoDeadline }}
-                </p>
+                </p> -->
               </div>
             </div>
           </template>
@@ -421,7 +427,7 @@
             :disabled="submitting"
             class="w-full bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
           >
-            {{ submitting ? 'Submitting...' : 'Submit Order' }}
+            {{ submitting ? 'Loading...' : '下一步' }}
           </button>
         </div>
       </footer>
