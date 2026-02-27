@@ -2,13 +2,13 @@
   <ClientOnly>
     <div class="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans antialiased">
       <nav
-        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md px-6 py-8 flex justify-between items-end"
+        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex justify-between items-end"
       >
         <div>
           <p
             class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none mb-2"
           >
-            Selected Items
+            日貨購物車
           </p>
           <h1 class="text-3xl font-black italic tracking-tighter leading-none">
             ROML CART
@@ -18,13 +18,13 @@
           <p
             class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 text-gray-400"
           >
-            Total Items
+            總共數量
           </p>
           <p class="font-black text-xl leading-none">{{ totalQty }}</p>
         </div>
       </nav>
 
-      <div class="max-w-md mx-auto px-6 pb-80">
+      <div class="max-w-md mx-auto px-6 pb-60">
         <!-- 🕒 自動清空提示 -->
         <div
           v-if="!loading && items.length > 0"
@@ -155,26 +155,26 @@
         class="fixed bottom-0 left-0 right-0 z-40 px-6 pb-10 pt-4"
       >
         <div
-          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl px-8 py-8 rounded-[32px] shadow-[0_-15px_40px_rgba(0,0,0,0.03)] border border-white/50"
+          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl p-6 rounded-[32px] shadow-xl border border-white/50"
         >
-          <div class="flex justify-between items-end mb-8">
+          <div class="flex justify-between items-end mb-6">
             <div>
               <p
-                class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none"
+                class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 leading-none"
               >
-                Subtotal
+                商品總額：
               </p>
               <p
-                class="text-[9px] text-gray-300 font-bold uppercase tracking-tighter italic"
+                class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic"
               >
-                Estimated JPY Total
+                ※ 此價格不包含國內外運費
               </p>
             </div>
             <div class="text-right">
               <p
                 class="text-3xl font-black tracking-tighter italic leading-none"
               >
-                ¥ {{ totalAmount.toLocaleString() }}
+                $ {{ totalAmount.toLocaleString() }}
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@
             :disabled="syncing"
             class="w-full bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
           >
-            {{ syncing ? 'Syncing...' : 'Request Formal Quote' }}
+            {{ syncing ? 'Loading...' : '前往下單' }}
           </button>
         </div>
       </footer>
