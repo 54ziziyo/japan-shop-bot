@@ -252,6 +252,22 @@
                 </div>
               </div>
 
+              <!-- 🍯 Honeypot：對人類隱藏，機器人會自動填寫 -->
+              <div
+                class="absolute opacity-0 -z-10 h-0 overflow-hidden"
+                aria-hidden="true"
+                tabindex="-1"
+              >
+                <label for="_website">Leave this empty</label>
+                <input
+                  id="_website"
+                  v-model="form.website"
+                  type="text"
+                  autocomplete="off"
+                  tabindex="-1"
+                />
+              </div>
+
               <!-- 收件人真實姓名 -->
               <div>
                 <label
@@ -261,9 +277,20 @@
                 <input
                   v-model="form.name"
                   type="text"
-                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all"
+                  :class="[
+                    'w-full border rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-1 transition-all',
+                    errors.name
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                      : 'border-gray-200 focus:border-black focus:ring-black/5',
+                  ]"
                   placeholder="請輸入您的真實姓名"
                 />
+                <p
+                  v-if="errors.name"
+                  class="text-[9px] text-red-500 font-semibold mt-1"
+                >
+                  {{ errors.name }}
+                </p>
               </div>
 
               <!-- 手機號碼 -->
@@ -275,9 +302,22 @@
                 <input
                   v-model="form.phone"
                   type="tel"
-                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all"
+                  inputmode="numeric"
+                  maxlength="10"
+                  :class="[
+                    'w-full border rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-1 transition-all',
+                    errors.phone
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                      : 'border-gray-200 focus:border-black focus:ring-black/5',
+                  ]"
                   placeholder="0912345678"
                 />
+                <p
+                  v-if="errors.phone"
+                  class="text-[9px] text-red-500 font-semibold mt-1"
+                >
+                  {{ errors.phone }}
+                </p>
               </div>
 
               <!-- 地址 -->
@@ -289,9 +329,23 @@
                 <input
                   v-model="form.address"
                   type="text"
-                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all"
-                  placeholder="請務必輸入正確的地址，避免包裹無法送達"
+                  :class="[
+                    'w-full border rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-1 transition-all',
+                    errors.address
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                      : 'border-gray-200 focus:border-black focus:ring-black/5',
+                  ]"
+                  placeholder="例：台北市大安區忠孝東路四段123號5樓"
                 />
+                <p
+                  v-if="errors.address"
+                  class="text-[9px] text-red-500 font-semibold mt-1"
+                >
+                  {{ errors.address }}
+                </p>
+                <p v-else class="text-[9px] text-gray-400 mt-1">
+                  地址需包含「縣/市」「區」「鄉」「鎮」等
+                </p>
               </div>
 
               <!-- 支付方式 -->
@@ -343,9 +397,7 @@
                           class="text-gray-800 font-bold"
                         >
                           最終金額為 $
-                          {{
-                            Math.round(subtotal * 1.0275).toLocaleString()
-                          }}
+                          {{ Math.round(subtotal * 1.0275).toLocaleString() }}
                           元</span
                         >
                       </p>
@@ -370,10 +422,21 @@
                   maxlength="5"
                   inputmode="numeric"
                   pattern="[0-9]*"
-                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black/5 transition-all"
+                  :class="[
+                    'w-full border rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-1 transition-all',
+                    errors.accountLast5
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                      : 'border-gray-200 focus:border-black focus:ring-black/5',
+                  ]"
                   placeholder="請輸入帳號末五碼"
                 />
-                <p class="text-[9px] text-gray-400">
+                <p
+                  v-if="errors.accountLast5"
+                  class="text-[9px] text-red-500 font-semibold mt-1"
+                >
+                  {{ errors.accountLast5 }}
+                </p>
+                <p v-else class="text-[9px] text-gray-400">
                   請於轉帳後輸入帳號末五碼，方便我們核對入帳。
                 </p>
               </div>
@@ -417,7 +480,7 @@
       <!-- Fixed submit button -->
       <footer
         v-if="!pageLoading && !orderSubmitted && validItems.length > 0"
-        class="fixed bottom-0 left-0 right-0 z-40 px-6 pb-10 pt-4"
+        class="fixed bottom-0 left-0 right-0 z-40 px-6 py-4"
       >
         <div
           class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl px-8 py-6 rounded-[32px] shadow-[0_-15px_40px_rgba(0,0,0,0.03)] border border-white/50"
@@ -425,7 +488,7 @@
           <button
             @click="submitOrder"
             :disabled="submitting"
-            class="w-full bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
+            class="w-full bg-black text-white py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
           >
             {{ submitting ? 'Loading...' : '下一步' }}
           </button>
@@ -455,7 +518,84 @@ const form = ref({
   address: '',
   paymentMethod: 'bank_transfer',
   accountLast5: '',
+  website: '', // 🍯 honeypot — 正常用戶不會看到也不會填
 });
+
+// 即時欄位驗證錯誤訊息
+const errors = ref({
+  name: '',
+  phone: '',
+  address: '',
+  accountLast5: '',
+});
+
+// 台灣的縣市清單（用於地址驗證）
+const TW_REGIONS = [
+  '台北市',
+  '臺北市',
+  '新北市',
+  '桃園市',
+  '台中市',
+  '臺中市',
+  '台南市',
+  '臺南市',
+  '高雄市',
+  '基隆市',
+  '新竹市',
+  '新竹縣',
+  '苗栗縣',
+  '彰化縣',
+  '南投縣',
+  '雲林縣',
+  '嘉義市',
+  '嘉義縣',
+  '屏東縣',
+  '宜蘭縣',
+  '花蓮縣',
+  '台東縣',
+  '臺東縣',
+  '澎湖縣',
+  '金門縣',
+  '連江縣',
+];
+
+// ── Watchers：即時清除已修正的欄位錯誤 ──
+
+watch(
+  () => form.value.name,
+  (val) => {
+    if (errors.value.name && val.trim().length >= 2) errors.value.name = '';
+  },
+);
+
+watch(
+  () => form.value.phone,
+  (val) => {
+    if (errors.value.phone && /^09\d{8}$/.test(val.trim()))
+      errors.value.phone = '';
+  },
+);
+
+watch(
+  () => form.value.address,
+  (val) => {
+    if (
+      errors.value.address &&
+      TW_REGIONS.some((r) => val.trim().includes(r)) &&
+      val.trim().length >= 8
+    ) {
+      errors.value.address = '';
+    }
+  },
+);
+
+watch(
+  () => form.value.accountLast5,
+  (val) => {
+    if (errors.value.accountLast5 && /^\d{5}$/.test(val.trim()))
+      errors.value.accountLast5 = '';
+  },
+);
 
 // ── Helpers ──
 
@@ -569,33 +709,63 @@ const closeLiff = () => {
 };
 
 const validateForm = () => {
+  // 🍯 Honeypot 偵測：正常用戶不會填寫隱藏欄位
+  if (form.value.website) {
+    // 假裝成功，但不實際送出（避免讓 bot 知道被偵測）
+    console.warn('🍯 Honeypot triggered');
+    orderSubmitted.value = true;
+    return false;
+  }
+
+  // 重置錯誤訊息
+  errors.value = { name: '', phone: '', address: '', accountLast5: '' };
+  let valid = true;
+
+  // 收件人姓名
   if (!form.value.name.trim()) {
-    alert('請輸入收件人真實姓名');
-    return false;
+    errors.value.name = '請輸入收件人真實姓名';
+    valid = false;
+  } else if (form.value.name.trim().length < 2) {
+    errors.value.name = '姓名至少 2 個字';
+    valid = false;
   }
-  if (!form.value.phone.trim()) {
-    alert('請輸入手機號碼');
-    return false;
+
+  // 手機號碼：台灣手機 09 開頭 10 位數字
+  const phoneClean = form.value.phone.trim();
+  if (!phoneClean) {
+    errors.value.phone = '請輸入手機號碼';
+    valid = false;
+  } else if (!/^09\d{8}$/.test(phoneClean)) {
+    errors.value.phone = '請輸入正確的台灣手機號碼（09開頭，共10碼）';
+    valid = false;
   }
-  if (!form.value.address.trim()) {
-    alert('請輸入收件地址');
-    return false;
+
+  // 地址：必須包含台灣的縣/市
+  const addr = form.value.address.trim();
+  if (!addr) {
+    errors.value.address = '請輸入收件地址';
+    valid = false;
+  } else if (!TW_REGIONS.some((r) => addr.includes(r))) {
+    errors.value.address = '地址需包含「縣/市」「區」「鄉」「鎮」等';
+    valid = false;
+  } else if (addr.length < 8) {
+    errors.value.address = '地址過短，請輸入完整地址';
+    valid = false;
   }
-  if (
-    form.value.paymentMethod === 'bank_transfer' &&
-    !form.value.accountLast5.trim()
-  ) {
-    alert('請輸入轉帳帳號末五碼');
-    return false;
+
+  // 帳號末五碼（銀行轉帳時必填）
+  if (form.value.paymentMethod === 'bank_transfer') {
+    const last5 = form.value.accountLast5.trim();
+    if (!last5) {
+      errors.value.accountLast5 = '請輸入轉帳帳號末五碼';
+      valid = false;
+    } else if (!/^\d{5}$/.test(last5)) {
+      errors.value.accountLast5 = '帳號末五碼必須為 5 位數字';
+      valid = false;
+    }
   }
-  if (
-    form.value.paymentMethod === 'bank_transfer' &&
-    !/^\d{5}$/.test(form.value.accountLast5.trim())
-  ) {
-    alert('帳號末五碼必須為 5 位數字');
-    return false;
-  }
-  return true;
+
+  return valid;
 };
 
 const submitOrder = async () => {
@@ -630,6 +800,7 @@ const submitOrder = async () => {
             : null,
         items: orderItems,
         totalJpy: subtotal.value,
+        website: form.value.website, // 🍯 honeypot（server-side 也會檢查）
       }),
     });
 

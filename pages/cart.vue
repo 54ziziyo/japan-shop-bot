@@ -152,12 +152,12 @@
 
       <footer
         v-if="items.length > 0"
-        class="fixed bottom-0 left-0 right-0 z-40 px-6 pb-10 pt-4"
+        class="fixed bottom-0 left-0 right-0 z-40 px-6 py-4"
       >
         <div
           class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl p-6 rounded-[32px] shadow-xl border border-white/50"
         >
-          <div class="flex justify-between items-end mb-6">
+          <div class="flex justify-between items-end mb-4">
             <div>
               <p
                 class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 leading-none"
@@ -182,7 +182,7 @@
           <button
             @click="handleCheckout"
             :disabled="syncing"
-            class="w-full bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
+            class="w-full bg-black text-white py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
           >
             {{ syncing ? 'Loading...' : '前往下單' }}
           </button>

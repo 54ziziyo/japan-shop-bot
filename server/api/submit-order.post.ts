@@ -19,7 +19,13 @@ export default defineEventHandler(async (event) => {
     accountLast5,
     items,
     totalJpy,
+    website, // 🍯 honeypot field
   } = body || {};
+
+  // 🍯 Honeypot 偵測：如果隱藏欄位有資料，靜默拒絕（僽裝 200）
+  if (website) {
+    return { ok: true, orderId: 'blocked' };
+  }
 
   // 驗證必填欄位
   if (
@@ -31,6 +37,11 @@ export default defineEventHandler(async (event) => {
     !items?.length
   ) {
     throw createError({ statusCode: 400, statusMessage: '缺少必要欄位' });
+  }
+
+  // 手機號碼格式檢查（server-side 雙重驗證）
+  if (!/^09\d{8}$/.test(phone)) {
+    throw createError({ statusCode: 400, statusMessage: '手機號碼格式不正確' });
   }
 
   const supabase = createClient(
@@ -73,7 +84,7 @@ export default defineEventHandler(async (event) => {
   const paymentLabel =
     paymentMethod === 'bank_transfer'
       ? '銀行轉帳'
-      : '綠界付款（+2.23% 手續費）';
+      : '綠界付款（+2.75% 手續費）';
 
   const itemLines = items
     .map(
