@@ -150,10 +150,13 @@ export default defineEventHandler(async (event) => {
           const itemPrice = data.get('p') || '¥0';
           const productCode = data.get('code') || '';
           const itemCategory = data.get('cat') || '';
+          const pg = data.get('pg') || '00';
 
           // 💡 還原圖片網址：直接用實際圖片路徑（從 API 取得的真實 URL）
           const imgPath = data.get('img') || '';
           const itemImg = imgPath ? `https://image.uniqlo.com/${imgPath}` : '';
+          const productUrl = `https://www.uniqlo.com/jp/ja/products/${productCode}/${pg}`;
+          const promoEnd = data.get('pd') || null; // 期間限定截止 unix timestamp
 
           console.log(
             `🛒 檢查購物車是否存在: ${itemTitle} | ${itemColor} | ${itemSize}`,
@@ -174,10 +177,14 @@ export default defineEventHandler(async (event) => {
           let cartError = null;
 
           if (existingItem) {
-            // ✅ 已存在：數量 + 1
+            // ✅ 已存在：數量 + 1（同時回填 product_url 給舊資料）
             const { error: updateError } = await supabase
               .from('cart_items')
-              .update({ quantity: (existingItem.quantity || 1) + 1 })
+              .update({
+                quantity: (existingItem.quantity || 1) + 1,
+                product_url: productUrl,
+                ...(promoEnd ? { promo_end: promoEnd } : {}),
+              })
               .eq('id', existingItem.id);
             cartError = updateError;
           } else {
@@ -193,6 +200,8 @@ export default defineEventHandler(async (event) => {
                 size: itemSize,
                 price: itemPrice,
                 image_url: itemImg,
+                product_url: productUrl,
+                promo_end: promoEnd,
                 quantity: 1,
               });
             cartError = insertError;
@@ -210,9 +219,24 @@ export default defineEventHandler(async (event) => {
               : '';
             const codeText = productCode ? `\n代號：${productCode}` : '';
             const isPromo = data.get('pm') === '1';
-            const promoWarning = isPromo
-              ? '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。'
-              : '';
+            let promoWarning = '';
+            if (isPromo) {
+              const pdTs = data.get('pd');
+              if (pdTs) {
+                // 計算台灣截止時間：UTC + 8hr 再扣 1hr 預留日本下單緩衝 = UTC + 7hr
+                const utcMs = Number(pdTs) * 1000;
+                const twDate = new Date(utcMs + 7 * 60 * 60 * 1000);
+                const twMonth = twDate.getUTCMonth() + 1;
+                const twDay = twDate.getUTCDate();
+                const twHour = twDate.getUTCHours();
+                const twMin = twDate.getUTCMinutes();
+                const twTimeStr = `${twMonth}/${twDay} ${String(twHour).padStart(2, '0')}:${String(twMin).padStart(2, '0')}`;
+                promoWarning = `\n\n⏰ 此商品為期間限定特價，台灣截止時間為 ${twTimeStr}。\n系統每日採購時間約為 22:00，請盡早提交訂單以確保特價。如遇價格變動或庫存完售，將另行通知。`;
+              } else {
+                promoWarning =
+                  '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。';
+              }
+            }
             await sendReplyOrPush({
               type: 'text',
               text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
@@ -311,7 +335,7 @@ export default defineEventHandler(async (event) => {
 
           const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
             // 💡 直接傳實際圖片路徑，不再用 cc/gid 重組
-            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}${productData.isLimitedOffer ? '&pm=1' : ''}`;
+            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
 
             // 💡 4. 根據庫存狀態調整按鈕樣式和行為
             const themeColor = s.isStock ? '#ffffff' : '#888888';

@@ -42,9 +42,13 @@ export const scrapeUniqlo = async (url: string) => {
       (f: any) => f.code === 'limitedOffer',
     );
     const isLimitedOffer = !!limitedOfferFlag;
+    const promoEndTs: number | null =
+      limitedOfferFlag?.effectiveTime?.end || null;
     if (isLimitedOffer) {
       const endDate = limitedOfferFlag.nameWording?.substitutions?.date || '?';
-      console.log(`🏷️ 期間限定價格！¥${baseVal}（${endDate} まで）`);
+      console.log(
+        `🏷️ 期間限定價格！¥${baseVal}（${endDate} まで / ts=${promoEndTs}）`,
+      );
     } else if (priceFlags.some((f: any) => f.code === 'discount')) {
       console.log(`💸 永久値下げ：¥${baseVal}`);
     }
@@ -167,9 +171,11 @@ export const scrapeUniqlo = async (url: string) => {
     return {
       title,
       rawCode,
+      priceGroup,
       category,
       goodsId,
       isLimitedOffer,
+      promoEndTs,
       variants: variants.slice(0, 10),
     };
   } catch (err: any) {

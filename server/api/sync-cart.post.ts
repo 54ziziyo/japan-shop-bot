@@ -16,6 +16,7 @@ interface SyncResult {
   currentPrice: string;
   inStock: boolean;
   isPromo: boolean;
+  promoEndTs: number | null;
   priceChanged: boolean;
   stockChanged: boolean;
 }
@@ -90,6 +91,7 @@ export default defineEventHandler(async (event) => {
           currentPrice: item.price,
           inStock: false,
           isPromo: false,
+          promoEndTs: null,
           priceChanged: false,
           stockChanged: true,
         });
@@ -144,7 +146,11 @@ export default defineEventHandler(async (event) => {
 
       const priceFlags: any[] =
         pgResult.representative?.flags?.priceFlags || [];
-      const isPromo = priceFlags.some((f: any) => f.code === 'limitedOffer');
+      const limitedFlag = priceFlags.find(
+        (f: any) => f.code === 'limitedOffer',
+      );
+      const isPromo = !!limitedFlag;
+      const promoEndTs: number | null = limitedFlag?.effectiveTime?.end || null;
 
       const priceChanged = currentPrice !== item.price;
 
@@ -155,6 +161,7 @@ export default defineEventHandler(async (event) => {
         currentPrice,
         inStock,
         isPromo,
+        promoEndTs,
         priceChanged,
         stockChanged: !inStock,
       });
