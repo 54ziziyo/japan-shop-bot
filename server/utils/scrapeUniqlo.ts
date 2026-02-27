@@ -2,10 +2,11 @@ import axios from 'axios';
 
 export const scrapeUniqlo = async (url: string) => {
   try {
-    // 1. 從網址提取商品代碼 (例如 E480302-000)
-    const match = url.match(/products\/(E\d+-\d+)/);
+    // 1. 從網址提取商品代碼 (例如 E480302-000) 和 price group (例如 00、01)
+    const match = url.match(/products\/(E\d+-\d+)(?:\/(\d+))?/);
     if (!match) throw new Error('無法從網址提取商品編號');
     const rawCode = match[1];
+    const priceGroup = match[2] || '00';
 
     const headers = {
       'User-Agent':
@@ -16,7 +17,7 @@ export const scrapeUniqlo = async (url: string) => {
     const BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
 
     // 2. 同時呼叫「商品詳情 API」和「商品搜尋 API（含庫存篩選）」
-    const detailUrl = `${BASE}/products/${rawCode}/price-groups/00/details?httpFailure=true`;
+    const detailUrl = `${BASE}/products/${rawCode}/price-groups/${priceGroup}/details?httpFailure=true`;
     const stockUrl = `${BASE}/products?productIds=${rawCode}&offset=0&limit=1&httpFailure=true`;
 
     const [detailRes, stockRes] = await Promise.all([
@@ -31,8 +32,22 @@ export const scrapeUniqlo = async (url: string) => {
 
     // 3. 基本資訊
     const title = result.name || 'UNIQLO 商品';
-    const priceVal = result.prices?.base?.value;
-    const price = priceVal ? `¥${priceVal}` : '請洽官網';
+    const baseVal = result.prices?.base?.value;
+    const price = baseVal ? `¥${baseVal}` : '請洽官網';
+
+    // 3.1 偵測「期間限定價格」vs「永久値下げ」
+    //     真正可靠的來源是 representative.flags.priceFlags
+    const priceFlags: any[] = result.representative?.flags?.priceFlags || [];
+    const limitedOfferFlag = priceFlags.find(
+      (f: any) => f.code === 'limitedOffer',
+    );
+    const isLimitedOffer = !!limitedOfferFlag;
+    if (isLimitedOffer) {
+      const endDate = limitedOfferFlag.nameWording?.substitutions?.date || '?';
+      console.log(`🏷️ 期間限定價格！¥${baseVal}（${endDate} まで）`);
+    } else if (priceFlags.some((f: any) => f.code === 'discount')) {
+      console.log(`💸 永久値下げ：¥${baseVal}`);
+    }
 
     // 3.5 分類資訊（用於運費計算）
     const breadcrumbs = result.breadcrumbs || {};
@@ -154,6 +169,7 @@ export const scrapeUniqlo = async (url: string) => {
       rawCode,
       category,
       goodsId,
+      isLimitedOffer,
       variants: variants.slice(0, 10),
     };
   } catch (err: any) {

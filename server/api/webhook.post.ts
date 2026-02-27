@@ -209,9 +209,13 @@ export default defineEventHandler(async (event) => {
               ? `（已累計 ${(existingItem.quantity || 1) + 1} 件）`
               : '';
             const codeText = productCode ? `\n代號：${productCode}` : '';
+            const isPromo = data.get('pm') === '1';
+            const promoWarning = isPromo
+              ? '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。'
+              : '';
             await sendReplyOrPush({
               type: 'text',
-              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
+              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
             });
           }
         }
@@ -307,7 +311,7 @@ export default defineEventHandler(async (event) => {
 
           const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
             // 💡 直接傳實際圖片路徑，不再用 cc/gid 重組
-            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}`;
+            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}${productData.isLimitedOffer ? '&pm=1' : ''}`;
 
             // 💡 4. 根據庫存狀態調整按鈕樣式和行為
             const themeColor = s.isStock ? '#ffffff' : '#888888';

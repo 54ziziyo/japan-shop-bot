@@ -25,6 +25,35 @@
       </nav>
 
       <div class="max-w-md mx-auto px-6 pb-48">
+        <!-- 🕒 自動清空提示 -->
+        <div
+          v-if="!loading && items.length > 0"
+          class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
+        >
+          <p class="text-[10px] text-amber-700 font-semibold leading-relaxed">
+            🕒 為確保價格與日本官網同步，購物車將於每 6
+            小時自動清空。請抓緊時間完成報價請求喔！
+          </p>
+        </div>
+
+        <!-- 🔄 同步結果通知 -->
+        <div
+          v-if="syncNotice"
+          class="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 mb-4"
+        >
+          <p
+            class="text-[10px] text-blue-700 font-semibold leading-relaxed whitespace-pre-line"
+          >
+            {{ syncNotice }}
+          </p>
+          <button
+            @click="syncNotice = ''"
+            class="mt-2 text-[9px] font-bold text-blue-400 uppercase tracking-wider"
+          >
+            Got it
+          </button>
+        </div>
+
         <div
           v-if="loading"
           class="flex flex-col items-center justify-center py-32"
@@ -171,9 +200,10 @@
 
           <button
             @click="handleCheckout"
-            class="w-full bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all"
+            :disabled="syncing"
+            class="w-full bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
           >
-            Request Formal Quote
+            {{ syncing ? 'Syncing...' : 'Request Formal Quote' }}
           </button>
         </div>
       </footer>
@@ -189,6 +219,8 @@
 const config = useRuntimeConfig();
 const items = ref([]);
 const loading = ref(true);
+const syncing = ref(false);
+const syncNotice = ref('');
 const userId = ref(null);
 let supabase = null;
 let liff = null;
@@ -299,13 +331,110 @@ const decreaseQty = async (item) => {
   }
 };
 
-const handleCheckout = async () => {
-  const message = `🙋‍♂️ 我已挑選完畢！\n目前共有 ${totalQty.value} 件商品，預估總額 ¥${totalAmount.value.toLocaleString()}。\n請幫我確認庫存與報價。`;
+// 💡 共用發送結帳訊息的邏輯：先試 liff.sendMessages，失敗則走 server push
+const sendCheckoutMessage = async (message) => {
+  // 方法 1：liff.sendMessages（客人身份發送，體驗最好）
   try {
     await liff.sendMessages([{ type: 'text', text: message }]);
     liff.closeWindow();
+    return;
+  } catch (liffErr) {
+    console.warn('liff.sendMessages 失敗，改用 server push:', liffErr);
+  }
+
+  // 方法 2：server push（由 bot 發送，永遠可用）
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId.value, message }),
+    });
+    if (!res.ok) throw new Error('Server checkout failed');
+    // 成功：顯示提示後關閉
+    alert('✅ 報價請求已送出！我們會盡快回覆您。');
+    liff.closeWindow();
+  } catch (serverErr) {
+    console.error('Server checkout 也失敗:', serverErr);
+    alert('送出失敗，請回到 LINE 對話框手動傳送報價請求。');
+  }
+};
+
+const handleCheckout = async () => {
+  // 🔄 結帳前先同步檢查所有商品的價格與庫存
+  syncing.value = true;
+  syncNotice.value = '';
+
+  try {
+    const checkItems = items.value.map((item) => ({
+      product_code: item.product_code,
+      color: item.color,
+      size: item.size,
+      price: item.price,
+    }));
+
+    const res = await fetch('/api/sync-cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: checkItems }),
+    });
+    const data = await res.json();
+
+    if (data.hasChanges) {
+      // 有變動：更新購物車 + 顯示通知
+      const changes = [];
+      for (const r of data.results) {
+        const cartItem = items.value.find(
+          (i) =>
+            i.product_code === r.product_code &&
+            i.color === r.color &&
+            i.size === r.size,
+        );
+        if (!cartItem) continue;
+
+        if (r.stockChanged) {
+          changes.push(
+            `❌ ${cartItem.product_title}（${r.color} / ${r.size}）：已完售`,
+          );
+          // 從購物車移除已完售的商品
+          await supabase.from('cart_items').delete().eq('id', cartItem.id);
+          items.value = items.value.filter((i) => i.id !== cartItem.id);
+        } else if (r.priceChanged) {
+          changes.push(
+            `💰 ${cartItem.product_title}（${r.color} / ${r.size}）：${cartItem.price} → ${r.currentPrice}`,
+          );
+          // 更新價格
+          cartItem.price = r.currentPrice;
+          await supabase
+            .from('cart_items')
+            .update({ price: r.currentPrice })
+            .eq('id', cartItem.id);
+        }
+      }
+
+      if (changes.length > 0) {
+        syncNotice.value = `🔄 商品資訊已同步更新：\n${changes.join('\n')}\n\n⚠️ 請注意：特價商品時效性強，若採購時已恢復原價，最終以採購當下為準。`;
+        syncing.value = false;
+        // 不自動送出，讓客人檢視變動後再按一次
+        return;
+      }
+    }
+
+    // 沒有變動（或變動已處理完、購物車還有商品）→ 送出報價請求
+    if (items.value.length === 0) {
+      syncNotice.value = '😢 所有商品皆已完售，無法送出報價請求。';
+      syncing.value = false;
+      return;
+    }
+
+    const message = `🙋‍♂️ 我已挑選完畢！\n目前共有 ${totalQty.value} 件商品，預估總額 ¥${totalAmount.value.toLocaleString()}。\n請幫我確認庫存與報價。`;
+    await sendCheckoutMessage(message);
   } catch (err) {
-    alert('Please checkout within LINE.');
+    console.error('Sync error:', err);
+    // 同步失敗時仍允許送出（避免阻擋客人）
+    const message = `🙋‍♂️ 我已挑選完畢！\n目前共有 ${totalQty.value} 件商品，預估總額 ¥${totalAmount.value.toLocaleString()}。\n請幫我確認庫存與報價。`;
+    await sendCheckoutMessage(message);
+  } finally {
+    syncing.value = false;
   }
 };
 
