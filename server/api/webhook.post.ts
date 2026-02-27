@@ -148,13 +148,12 @@ export default defineEventHandler(async (event) => {
           const itemColor = data.get('c') || 'F';
           const itemSize = data.get('s') || 'F';
           const itemPrice = data.get('p') || '¥0';
+          const productCode = data.get('code') || '';
+          const itemCategory = data.get('cat') || '';
 
-          // 💡 還原圖片網址
-          const pid = data.get('pid') || '';
-          const cc = data.get('cc') || '';
-          const itemImg = pid
-            ? `https://image.uniqlo.com/UQ/ST3/jp/imagesgoods/${pid.substring(0, 6)}/item/jpgoods_${cc}_${pid}_3x4.jpg?width=400`
-            : '';
+          // 💡 還原圖片網址：直接用實際圖片路徑（從 API 取得的真實 URL）
+          const imgPath = data.get('img') || '';
+          const itemImg = imgPath ? `https://image.uniqlo.com/${imgPath}` : '';
 
           console.log(
             `🛒 檢查購物車是否存在: ${itemTitle} | ${itemColor} | ${itemSize}`,
@@ -188,6 +187,8 @@ export default defineEventHandler(async (event) => {
               .insert({
                 user_id: userId,
                 product_title: itemTitle,
+                product_code: productCode,
+                category: itemCategory,
                 color: itemColor,
                 size: itemSize,
                 price: itemPrice,
@@ -207,9 +208,10 @@ export default defineEventHandler(async (event) => {
             const qtyText = existingItem
               ? `（已累計 ${(existingItem.quantity || 1) + 1} 件）`
               : '';
+            const codeText = productCode ? `\n代號：${productCode}` : '';
             await sendReplyOrPush({
               type: 'text',
-              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
+              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。`,
             });
           }
         }
@@ -271,10 +273,21 @@ export default defineEventHandler(async (event) => {
         userText.includes('uniqlo.com') || userText.includes('gu-global.com');
       if (!isUniqlo) return;
 
-      await sendReplyOnlyIfPossible({
-        type: 'text',
-        text: '收到網址，正在讀取商品資料，完成後會再傳結果給你 👀',
-      });
+      // 💡 用 LINE Loading Animation（免費、不計訊息額度）取代 ACK 文字訊息
+      if (userId) {
+        try {
+          await fetch('https://api.line.me/v2/bot/chat/loading', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${config.line.channelAccessToken}`,
+            },
+            body: JSON.stringify({ chatId: userId, loadingSeconds: 30 }),
+          });
+        } catch (loadErr) {
+          console.warn('⚠️ Loading animation 失敗，不影響主流程');
+        }
+      }
 
       try {
         console.log(`🕷️ 收到網址：${userText}`);
@@ -286,15 +299,15 @@ export default defineEventHandler(async (event) => {
         // 🎨 製作卡片 (輕盈透明版)
         const bubbles = productData.variants.map((v: any) => {
           const safeImageUrl = ensureLineImageUrl(v.image);
+
+          // 💡 將實際圖片 URL 去掉共同前綴 + query string，縮減 postback data 大小
+          const imgPath = (v.image || '')
+            .replace(/^https?:\/\/image\.uniqlo\.com\//, '')
+            .split('?')[0];
+
           const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
-            // 💡 1. 提取 URL 參數中的 colorDisplayCode (例如 08)
-            const colorCode = v.image.match(/jpgoods_(\d+)_/)?.[1] || '00';
-
-            // 💡 2. 提取商品 ID (例如 479662001)
-            const pid = v.image.match(/(\d{9})/)?.[1] || '';
-
-            // 💡 3. 只傳送必要的代號，不傳長網址
-            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&pid=${pid}&cc=${colorCode}`;
+            // 💡 直接傳實際圖片路徑，不再用 cc/gid 重組
+            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}`;
 
             // 💡 4. 根據庫存狀態調整按鈕樣式和行為
             const themeColor = s.isStock ? '#ffffff' : '#888888';
@@ -417,7 +430,7 @@ export default defineEventHandler(async (event) => {
           contents: { type: 'carousel', contents: bubbles },
         };
 
-        await sendPushOnly(flexMessage);
+        await sendReplyOrPush(flexMessage);
         console.log('✅ 訊息發送成功！');
       } catch (err: any) {
         const lineErrorDetail =
@@ -431,7 +444,7 @@ export default defineEventHandler(async (event) => {
         }
 
         try {
-          await sendPushOnly({
+          await sendReplyOrPush({
             type: 'text',
             text: '抱歉，讀取網頁發生錯誤 > <',
           });

@@ -34,6 +34,10 @@ export const scrapeUniqlo = async (url: string) => {
     const priceVal = result.prices?.base?.value;
     const price = priceVal ? `¥${priceVal}` : '請洽官網';
 
+    // 3.5 分類資訊（用於運費計算）
+    const breadcrumbs = result.breadcrumbs || {};
+    const category = breadcrumbs?.class?.name || 'unknown'; // e.g. 'tops', 'bottoms', 'outerwear'
+
     // 4. 從 products search API 取得「全部顏色聯集」的有庫存尺寸
     const stockItem = stockRes.data?.result?.items?.[0];
     const inStockSizeCodes = new Set<string>();
@@ -131,8 +135,27 @@ export const scrapeUniqlo = async (url: string) => {
       };
     });
 
-    console.log(`✅ Uniqlo API 取得 ${variants.length} 個顏色`);
-    return { title, variants: variants.slice(0, 10) };
+    // 9. 從實際圖片 URL 提取 goodsId（e.g. "484278" 或 "479662001"）
+    let goodsId = '';
+    for (const [, img] of Object.entries(mainImages)) {
+      const gidMatch = (img as any)?.image?.match(/imagesgoods\/(\d+)\//);
+      if (gidMatch) {
+        goodsId = gidMatch[1];
+        break;
+      }
+    }
+    console.log(`🆔 goodsId: ${goodsId}`);
+
+    console.log(
+      `✅ Uniqlo API 取得 ${variants.length} 個顏色 | 分類: ${category}`,
+    );
+    return {
+      title,
+      rawCode,
+      category,
+      goodsId,
+      variants: variants.slice(0, 10),
+    };
   } catch (err: any) {
     console.error('❌ Uniqlo API 抓取失敗:', err.message);
     return null;

@@ -56,10 +56,16 @@
 
             <div class="flex-1 min-w-0">
               <h2
-                class="font-bold text-sm uppercase tracking-tight truncate leading-tight mb-1"
+                class="font-bold text-sm uppercase tracking-tight truncate leading-tight mb-0.5"
               >
                 {{ item.product_title }}
               </h2>
+              <p
+                v-if="item.product_code"
+                class="text-[9px] font-mono text-gray-300 tracking-wide mb-1"
+              >
+                {{ item.product_code }}
+              </p>
               <p
                 class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2"
               >
