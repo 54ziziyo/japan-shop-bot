@@ -19,6 +19,11 @@ export default defineEventHandler(async (event) => {
     accountLast5,
     items,
     totalJpy,
+    subtotalTwd,
+    shippingTwd,
+    shippingMethod,
+    serviceFeeTwd,
+    grandTotalTwd,
     website, // 🍯 honeypot field
   } = body || {};
 
@@ -86,10 +91,14 @@ export default defineEventHandler(async (event) => {
       ? '銀行轉帳'
       : '綠界付款（+2.75% 手續費）';
 
+  const gt = grandTotalTwd || subtotalTwd || 0;
+  const ecpayTotal = Math.round(gt * 1.0275);
+  const finalAmount = paymentMethod === 'ecpay' ? ecpayTotal : gt;
+
   const itemLines = items
     .map(
       (item: any, i: number) =>
-        `${i + 1}. ${item.product_title}\n   ${item.color} / ${item.size} ×${item.quantity} ${item.price}`,
+        `${i + 1}. ${item.product_title}\n   ${item.color} / ${item.size} ×${item.quantity}  NT$${(item.priceTwd || 0).toLocaleString()}`,
     )
     .join('\n');
 
@@ -100,13 +109,30 @@ export default defineEventHandler(async (event) => {
     '我們會盡快確認庫存與報價，請留意 LINE 訊息通知。',
     '',
     '📋 訂單摘要',
-    `商品 ${items.length} 件 | 預估總額 ¥${totalJpy.toLocaleString()}`,
+    `商品 ${items.length} 件`,
+    `商品小計：NT$${(subtotalTwd || 0).toLocaleString()}`,
+    `國際運費（${shippingMethod || 'ePacket'}）：NT$${(shippingTwd || 0).toLocaleString()}`,
+    `代購服務費：NT$${serviceFeeTwd || 50}`,
+    `━━━━━━━━`,
+    `訂單總計：NT$${gt.toLocaleString()}`,
+    paymentMethod === 'ecpay'
+      ? `含綠界手續費：NT$${ecpayTotal.toLocaleString()}`
+      : '',
     `付款方式：${paymentLabel}`,
     '',
     '如有任何疑問，請隨時向我們詢問 🙏',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   // 🔔 管理員詳細通知
+  const adminItemLines = items
+    .map(
+      (item: any, i: number) =>
+        `${i + 1}. ${item.product_title}\n   ${item.color} / ${item.size} ×${item.quantity}  NT$${(item.priceTwd || 0).toLocaleString()} (${item.price})`,
+    )
+    .join('\n');
+
   const adminMsg = [
     '🔔 新訂單通知！',
     '━━━━━━━━━━━━━━━━━',
@@ -120,9 +146,18 @@ export default defineEventHandler(async (event) => {
       : '',
     '',
     '📦 商品明細：',
-    itemLines,
+    adminItemLines,
     '',
-    `💰 預估總額：¥${totalJpy.toLocaleString()}`,
+    '💰 費用明細：',
+    `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(totalJpy || 0).toLocaleString()}）`,
+    `  國際運費：NT$${(shippingTwd || 0).toLocaleString()}（${shippingMethod || 'ePacket'}）`,
+    `  服務費：NT$${serviceFeeTwd || 50}`,
+    `  ─────────`,
+    `  總計：NT$${gt.toLocaleString()}`,
+    paymentMethod === 'ecpay'
+      ? `  含綠界手續費：NT$${ecpayTotal.toLocaleString()}`
+      : '',
+    '',
     `🆔 訂單 ID：${order.id}`,
   ]
     .filter(Boolean)

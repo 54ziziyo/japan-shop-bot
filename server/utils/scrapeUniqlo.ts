@@ -54,8 +54,11 @@ export const scrapeUniqlo = async (url: string) => {
     }
 
     // 3.5 分類資訊（用於運費計算）
+    // 儲存格式: "class|category"（e.g. "tops|t shirts", "outerwear|coats"）
     const breadcrumbs = result.breadcrumbs || {};
-    const category = breadcrumbs?.class?.name || 'unknown'; // e.g. 'tops', 'bottoms', 'outerwear'
+    const className = breadcrumbs?.class?.name || 'unknown';
+    const categoryName = breadcrumbs?.category?.name || '';
+    const category = categoryName ? `${className}|${categoryName}` : className;
 
     // 4. 從 products search API 取得「全部顏色聯集」的有庫存尺寸
     const stockItem = stockRes.data?.result?.items?.[0];

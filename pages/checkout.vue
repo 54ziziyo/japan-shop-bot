@@ -115,8 +115,8 @@
           <p
             class="text-[10px] font-black tracking-[0.3em] text-right text-gray-400 uppercase mb-2"
           >
-            總共 {{ validItems.length
-            }}{{ soldOutCount > 0 ? ` · ${soldOutCount} 已售完` : '' }} 個商品
+            總共 {{ validItems.reduce((s, i) => s + (i.quantity || 1), 0)
+            }}{{ soldOutCount > 0 ? ` · ${soldOutCount} 已售完` : '' }} 件商品
           </p>
 
           <!-- Item cards -->
@@ -134,7 +134,7 @@
               "
             >
               <div
-                class="w-auto h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100"
+                class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100"
               >
                 <img
                   :src="
@@ -171,13 +171,17 @@
                 </div>
                 <div v-else>
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-black text-base tracking-tighter">{{
-                      item.displayPrice
-                    }}</span>
+                    <span class="font-black text-base tracking-tighter"
+                      >NT${{
+                        jpyToTwd(parseJpy(item.displayPrice)).toLocaleString()
+                      }}</span
+                    >
                     <template v-if="item.priceChanged">
-                      <span class="text-[9px] text-gray-400 line-through">{{
-                        item.oldPrice
-                      }}</span>
+                      <span class="text-[9px] text-gray-400 line-through"
+                        >NT${{
+                          jpyToTwd(parseJpy(item.oldPrice)).toLocaleString()
+                        }}</span
+                      >
                       <span
                         class="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full"
                       >
@@ -211,29 +215,6 @@
 
           <!-- Subtotal & Form -->
           <template v-if="validItems.length > 0">
-            <!-- Subtotal -->
-            <div
-              class="flex justify-between items-end mb-10 pt-4 border-t border-gray-200"
-            >
-              <div>
-                <p
-                  class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"
-                >
-                  總共 {{ validItems.length }} 個商品
-                </p>
-                <p
-                  class="text-[12px] text-gray-800 font-bold uppercase tracking-tighter"
-                >
-                  總額
-                </p>
-              </div>
-              <p
-                class="text-2xl font-black tracking-tighter italic leading-none"
-              >
-                ＄ {{ subtotal.toLocaleString() }} 元
-              </p>
-            </div>
-
             <!-- ── Customer Info Form ── -->
             <p class="text-xl font-black text-gray-800 italic mb-4">
               ▍收件資訊
@@ -396,9 +377,10 @@
                         信用卡（加收 2.75% 手續費），<span
                           class="text-gray-800 font-bold"
                         >
-                          最終金額為 $
-                          {{ Math.round(subtotal * 1.0275).toLocaleString() }}
-                          元</span
+                          最終金額為 NT$
+                          {{
+                            Math.round(grandTotal * 1.0275).toLocaleString()
+                          }}</span
                         >
                       </p>
                     </div>
@@ -471,6 +453,58 @@
                 >
                   最近截止：{{ earliestPromoDeadline }}
                 </p> -->
+              </div>
+            </div>
+            <!-- 💰 費用明細 -->
+            <div class="pt-4 border-t border-gray-200 mb-8">
+              <p
+                class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 leading-none"
+              >
+                費用明細
+              </p>
+              <div class="space-y-2.5">
+                <!-- 商品小計 -->
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-gray-500 font-medium"
+                    >商品小計（{{
+                      validItems.reduce((s, i) => s + (i.quantity || 1), 0)
+                    }}
+                    件）</span
+                  >
+                  <span class="text-sm font-bold"
+                    >NT${{ subtotalTwd.toLocaleString() }}</span
+                  >
+                </div>
+                <!-- 運費 -->
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-gray-500 font-medium">
+                    運費
+                    <span class="text-[9px] text-gray-400 ml-1"
+                      >{{ shippingInfo.method }} ·
+                      {{ totalWeight.toLocaleString() }}g</span
+                    >
+                  </span>
+                  <span class="text-sm font-bold"
+                    >NT${{ shippingInfo.costTwd.toLocaleString() }}</span
+                  >
+                </div>
+                <!-- 服務費 -->
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-gray-500 font-medium"
+                    >代購服務費</span
+                  >
+                  <span class="text-sm font-bold">NT$50</span>
+                </div>
+                <!-- 分隔線 + 總計 -->
+                <div
+                  class="flex justify-between items-end pt-3 mt-1 border-t border-gray-100"
+                >
+                  <span class="text-sm font-black">訂單總計</span>
+                  <span
+                    class="text-2xl font-black tracking-tighter italic leading-none"
+                    >NT${{ grandTotal.toLocaleString() }}</span
+                  >
+                </div>
               </div>
             </div>
           </template>
@@ -669,12 +703,36 @@ const earliestPromoDeadline = computed(() => {
   return formatTaiwanDeadline(earliest);
 });
 
-const subtotal = computed(() => {
+// JPY 小計（用於 DB 存儲）
+const subtotalJpy = computed(() => {
   return validItems.value.reduce((sum, item) => {
-    const price =
-      parseInt((item.displayPrice || '').replace(/[^\d]/g, '')) || 0;
+    const price = parseJpy(item.displayPrice || '');
     return sum + price * (item.quantity || 1);
   }, 0);
+});
+
+// TWD 商品小計
+const subtotalTwd = computed(() => {
+  return validItems.value.reduce((sum, item) => {
+    const jpy = parseJpy(item.displayPrice || '');
+    return sum + jpyToTwd(jpy) * (item.quantity || 1);
+  }, 0);
+});
+
+// 預估總重量（公克）
+const totalWeight = computed(() => {
+  return validItems.value.reduce((sum, item) => {
+    const weight = getCategoryWeight(item.category || '');
+    return sum + weight * (item.quantity || 1);
+  }, 0);
+});
+
+// 運費資訊
+const shippingInfo = computed(() => getShippingTwd(totalWeight.value));
+
+// 訂單總計（商品 + 運費 + 服務費）
+const grandTotal = computed(() => {
+  return subtotalTwd.value + shippingInfo.value.costTwd + SERVICE_FEE_TWD;
 });
 
 const syncBanner = computed(() => {
@@ -687,7 +745,7 @@ const syncBanner = computed(() => {
       );
     } else if (item.priceChanged) {
       changes.push(
-        `💰 ${item.product_title}（${item.color} / ${item.size}）：${item.oldPrice} → ${item.displayPrice}`,
+        `💰 ${item.product_title}（${item.color} / ${item.size}）：NT$${jpyToTwd(parseJpy(item.oldPrice)).toLocaleString()} → NT$${jpyToTwd(parseJpy(item.displayPrice)).toLocaleString()}`,
       );
     }
   }
@@ -779,6 +837,7 @@ const submitOrder = async () => {
       color: item.color,
       size: item.size,
       price: item.displayPrice,
+      priceTwd: jpyToTwd(parseJpy(item.displayPrice)),
       quantity: item.quantity || 1,
       image_url: item.image_url || '',
       product_url: item.product_url || '',
@@ -799,7 +858,12 @@ const submitOrder = async () => {
             ? form.value.accountLast5.trim()
             : null,
         items: orderItems,
-        totalJpy: subtotal.value,
+        totalJpy: subtotalJpy.value,
+        subtotalTwd: subtotalTwd.value,
+        shippingTwd: shippingInfo.value.costTwd,
+        shippingMethod: shippingInfo.value.method,
+        serviceFeeTwd: SERVICE_FEE_TWD,
+        grandTotalTwd: grandTotal.value,
         website: form.value.website, // 🍯 honeypot（server-side 也會檢查）
       }),
     });

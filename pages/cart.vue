@@ -84,7 +84,7 @@
               </p>
               <div class="flex items-center justify-between">
                 <p class="font-black text-lg tracking-tighter">
-                  {{ item.price }}
+                  NT${{ jpyToTwd(parseJpy(item.price)).toLocaleString() }}
                 </p>
                 <!-- 數量控制 -->
                 <div class="flex items-center gap-0 select-none">
@@ -139,13 +139,13 @@
           <p
             class="text-[11px] font-bold text-gray-300 uppercase tracking-[0.3em] mb-6 italic"
           >
-            Collection is empty
+            你的購物車空蕩蕩，快去逛逛吧！
           </p>
           <button
             @click="closeLiff"
             class="text-[10px] font-black border-b-[3px] border-black pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
           >
-            Return to Shop
+            回到官方帳號
           </button>
         </div>
       </div>
@@ -167,14 +167,14 @@
               <p
                 class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic"
               >
-                ※ 此價格不包含國內外運費
+                ※ 此價格不包含國際運費與服務費
               </p>
             </div>
             <div class="text-right">
               <p
                 class="text-3xl font-black tracking-tighter italic leading-none"
               >
-                $ {{ totalAmount.toLocaleString() }}
+                NT$ {{ totalAmount.toLocaleString() }}
               </p>
             </div>
           </div>
@@ -205,12 +205,13 @@ const userId = ref(null);
 let supabase = null;
 let liff = null;
 
-// 自動加總邏輯
+// 自動加總邏輯（台幣）
 const totalAmount = computed(() => {
   return items.value.reduce((sum, item) => {
-    const priceValue = parseInt(item.price.replace(/[^\d]/g, '')) || 0;
+    const jpy = parseJpy(item.price);
+    const twd = jpyToTwd(jpy);
     const qty = item.quantity || 1;
-    return sum + priceValue * qty;
+    return sum + twd * qty;
   }, 0);
 });
 
