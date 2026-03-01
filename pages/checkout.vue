@@ -28,7 +28,7 @@
             <p
               class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none"
             >
-              填寫表單
+              返回購物車
             </p>
           </div>
           <h1 class="text-3xl font-black italic tracking-tighter leading-none">
@@ -215,11 +215,79 @@
 
           <!-- Subtotal & Form -->
           <template v-if="validItems.length > 0">
+            <!-- 💰 費用明細 -->
+            <div class="py-4 border-t border-gray-200">
+              <p
+                class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 leading-none"
+              >
+                費用明細
+              </p>
+              <div class="space-y-2.5">
+                <!-- 商品小計 -->
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-gray-500 font-medium"
+                    >商品小計（{{
+                      validItems.reduce((s, i) => s + (i.quantity || 1), 0)
+                    }}
+                    件）</span
+                  >
+                  <span class="text-sm font-bold"
+                    >NT${{ subtotalTwd.toLocaleString() }}</span
+                  >
+                </div>
+                <!-- 運費 -->
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-gray-500 font-medium">
+                    運費
+                    <span class="text-[9px] text-gray-400 ml-1"
+                      >{{ shippingInfo.method }} ·
+                      {{ totalWeight.toLocaleString() }}g</span
+                    >
+                  </span>
+                  <span class="text-sm font-bold"
+                    >NT${{ shippingInfo.costTwd.toLocaleString() }}</span
+                  >
+                </div>
+                <!-- 服務費 -->
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-gray-500 font-medium"
+                    >代購服務費</span
+                  >
+                  <span class="text-sm font-bold"
+                    >NT${{ displayServiceFee.toLocaleString() }}</span
+                  >
+                </div>
+                <!-- 銀行轉帳折扣 -->
+                <div
+                  v-if="form.paymentMethod === 'bank_transfer'"
+                  class="flex justify-between items-center text-green-600"
+                >
+                  <span class="text-[11px] font-semibold"
+                    >轉帳優惠折扣（-3%）</span
+                  >
+                  <span class="text-sm font-bold"
+                    >-NT${{ cardSurcharge.toLocaleString() }}</span
+                  >
+                </div>
+                <!-- 分隔線 + 總計 -->
+                <div
+                  class="flex justify-between items-end pt-3 mt-1 border-t border-gray-100"
+                >
+                  <span class="text-sm font-black">訂單總計</span>
+                  <span
+                    class="text-2xl font-black tracking-tighter italic leading-none"
+                    >NT${{ displayTotal.toLocaleString() }}</span
+                  >
+                </div>
+              </div>
+            </div>
             <!-- ── Customer Info Form ── -->
-            <p class="text-xl font-black text-gray-800 italic mb-4">
+            <p
+              class="text-xl font-black text-gray-800 border-t border-gray-200 italic pt-8 mb-4"
+            >
               ▍收件資訊
             </p>
-            <div class="space-y-6">
+            <div class="space-y-4">
               <!-- LINE 名稱 (唯讀) -->
               <div>
                 <label
@@ -339,27 +407,6 @@
                   <label
                     class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
                     :class="
-                      form.paymentMethod === 'bank_transfer'
-                        ? 'border-black bg-black/[0.02]'
-                        : 'border-gray-200 bg-white'
-                    "
-                  >
-                    <input
-                      type="radio"
-                      v-model="form.paymentMethod"
-                      value="bank_transfer"
-                      class="mt-0.5 accent-black"
-                    />
-                    <div>
-                      <p class="text-sm font-bold leading-tight">銀行轉帳</p>
-                      <p class="text-[10px] text-gray-600 mt-0.5">
-                        直接轉帳至指定帳戶
-                      </p>
-                    </div>
-                  </label>
-                  <label
-                    class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
-                    :class="
                       form.paymentMethod === 'ecpay'
                         ? 'border-black bg-black/[0.02]'
                         : 'border-gray-200 bg-white'
@@ -374,12 +421,31 @@
                     <div>
                       <p class="text-sm font-bold leading-tight">綠界付款</p>
                       <p class="text-[10px] text-gray-600 mt-0.5">
-                        信用卡（加收 2.75% 手續費），<span
-                          class="text-gray-800 font-bold"
-                        >
-                          最終金額為 NT$
-                          {{
-                            Math.round(grandTotal * 1.0275).toLocaleString()
+                        Visa / Mastercard 信用卡付款
+                      </p>
+                    </div>
+                  </label>
+                  <label
+                    class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
+                    :class="
+                      form.paymentMethod === 'bank_transfer'
+                        ? 'border-black bg-black/[0.02]'
+                        : 'border-gray-200 bg-white'
+                    "
+                  >
+                    <input
+                      type="radio"
+                      v-model="form.paymentMethod"
+                      value="bank_transfer"
+                      class="mt-0.5 accent-black"
+                    />
+                    <div>
+                      <p class="text-sm font-bold leading-tight">銀行轉帳</p>
+                      <p class="text-[10px] text-gray-600 mt-0.5">
+                        直接轉帳至指定帳戶，<span
+                          class="text-green-600 font-bold"
+                          >享 3% 優惠，省 NT${{
+                            cardSurcharge.toLocaleString()
                           }}</span
                         >
                       </p>
@@ -387,7 +453,6 @@
                   </label>
                 </div>
               </div>
-
               <!-- 銀行轉帳：帳號末五碼 -->
               <div
                 v-if="form.paymentMethod === 'bank_transfer'"
@@ -455,58 +520,6 @@
                 </p> -->
               </div>
             </div>
-            <!-- 💰 費用明細 -->
-            <div class="pt-4 border-t border-gray-200 mb-8">
-              <p
-                class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 leading-none"
-              >
-                費用明細
-              </p>
-              <div class="space-y-2.5">
-                <!-- 商品小計 -->
-                <div class="flex justify-between items-center">
-                  <span class="text-[11px] text-gray-500 font-medium"
-                    >商品小計（{{
-                      validItems.reduce((s, i) => s + (i.quantity || 1), 0)
-                    }}
-                    件）</span
-                  >
-                  <span class="text-sm font-bold"
-                    >NT${{ subtotalTwd.toLocaleString() }}</span
-                  >
-                </div>
-                <!-- 運費 -->
-                <div class="flex justify-between items-center">
-                  <span class="text-[11px] text-gray-500 font-medium">
-                    運費
-                    <span class="text-[9px] text-gray-400 ml-1"
-                      >{{ shippingInfo.method }} ·
-                      {{ totalWeight.toLocaleString() }}g</span
-                    >
-                  </span>
-                  <span class="text-sm font-bold"
-                    >NT${{ shippingInfo.costTwd.toLocaleString() }}</span
-                  >
-                </div>
-                <!-- 服務費 -->
-                <div class="flex justify-between items-center">
-                  <span class="text-[11px] text-gray-500 font-medium"
-                    >代購服務費</span
-                  >
-                  <span class="text-sm font-bold">NT$50</span>
-                </div>
-                <!-- 分隔線 + 總計 -->
-                <div
-                  class="flex justify-between items-end pt-3 mt-1 border-t border-gray-100"
-                >
-                  <span class="text-sm font-black">訂單總計</span>
-                  <span
-                    class="text-2xl font-black tracking-tighter italic leading-none"
-                    >NT${{ grandTotal.toLocaleString() }}</span
-                  >
-                </div>
-              </div>
-            </div>
           </template>
         </template>
       </div>
@@ -517,8 +530,20 @@
         class="fixed bottom-0 left-0 right-0 z-40 px-6 py-4"
       >
         <div
-          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl px-8 py-6 rounded-[32px] shadow-[0_-15px_40px_rgba(0,0,0,0.03)] border border-white/50"
+          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl p-8 rounded-[32px] shadow-xl border border-white/50"
         >
+          <div class="flex justify-between items-top mb-4">
+            <div
+              class="text-[10px] font-bold text-gray-500 uppercase tracking-wider"
+            >
+              Total (TWD)
+            </div>
+            <div
+              class="text-2xl font-black tracking-tighter italic leading-none"
+            >
+              NT${{ displayTotal.toLocaleString() }}
+            </div>
+          </div>
           <button
             @click="submitOrder"
             :disabled="submitting"
@@ -550,7 +575,7 @@ const form = ref({
   name: '',
   phone: '',
   address: '',
-  paymentMethod: 'bank_transfer',
+  paymentMethod: 'ecpay', // 預設選擇綠界付款
   accountLast5: '',
   website: '', // 🍯 honeypot — 正常用戶不會看到也不會填
 });
@@ -730,10 +755,30 @@ const totalWeight = computed(() => {
 // 運費資訊
 const shippingInfo = computed(() => getShippingTwd(totalWeight.value));
 
-// 訂單總計（商品 + 運費 + 服務費）
+// 訂單總計（商品 + 運費 + NT$50 服務費）
 const grandTotal = computed(() => {
   return subtotalTwd.value + shippingInfo.value.costTwd + SERVICE_FEE_TWD;
 });
+
+// 3% 金流手續費（對信用卡額外收取，以「代購服務費」名義呈現）
+const cardSurcharge = computed(() => Math.round(grandTotal.value * 0.03));
+
+// 標準定價 = grandTotal + 3%（信用卡付這個）
+const priceWithFee = computed(() => grandTotal.value + cardSurcharge.value);
+
+// 根據付款方式動態顯示服務費金額
+const displayServiceFee = computed(() =>
+  form.value.paymentMethod === 'bank_transfer'
+    ? SERVICE_FEE_TWD
+    : SERVICE_FEE_TWD + cardSurcharge.value,
+);
+
+// 實際應付金額（銀行轉帳享折扣，信用卡付含3%的標準價）
+const displayTotal = computed(() =>
+  form.value.paymentMethod === 'bank_transfer'
+    ? grandTotal.value
+    : priceWithFee.value,
+);
 
 const syncBanner = computed(() => {
   if (!syncResults.value.length) return '';
@@ -862,8 +907,8 @@ const submitOrder = async () => {
         subtotalTwd: subtotalTwd.value,
         shippingTwd: shippingInfo.value.costTwd,
         shippingMethod: shippingInfo.value.method,
-        serviceFeeTwd: SERVICE_FEE_TWD,
-        grandTotalTwd: grandTotal.value,
+        serviceFeeTwd: displayServiceFee.value,
+        grandTotalTwd: displayTotal.value,
         website: form.value.website, // 🍯 honeypot（server-side 也會檢查）
       }),
     });

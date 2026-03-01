@@ -22,7 +22,7 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
   tops: {
     't shirts': 300, // T恤、Cut & Sew（短袖薄棉）
     'ut graphic tees': 300, // UT 聯名印花 T恤
-    'sweatshirts and hoodies': 800, // 衛衣、連帽衫
+    'sweatshirts and hoodies': 750, // 衛衣、連帽衫
     'tank tops': 200, // 背心、吊帶
     'polo shirts': 350, // Polo 衫
     _default: 400, // 其他上衣
@@ -59,11 +59,11 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
   // ── 外套 (outerwear) ──
   outerwear: {
     blouson: 900, // 夾克、風衣
-    coats: 1500, // 大衣、長版外套
+    coats: 1300, // 大衣、長版外套
     down: 800, // 一般羽絨外套
-    'ultra light down': 400, // 特級極輕羽絨
+    'ultra light down': 350, // 特級極輕羽絨
     fleece: 600, // 搖粒絨外套
-    jackets: 900, // 西裝外套、夾克
+    jackets: 800, // 西裝外套、夾克
     parkas: 1000, // 連帽風衣
     _default: 900,
   },
@@ -71,7 +71,7 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
   // ── 褲子 (bottoms) ──
   bottoms: {
     jeans: 800, // 牛仔褲
-    pants: 600, // 一般長褲
+    pants: 500, // 一般長褲
     'wide pants': 700, // 寬褲
     shorts: 400, // 短褲
     'leggings pants': 400, // 內搭褲

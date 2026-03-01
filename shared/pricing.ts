@@ -6,8 +6,10 @@
 /** 預設日本賣出匯率 */
 export const JPY_SELL_RATE = 0.205;
 
+/** 匯率加碼（0.205 + 0.03 = 0.235） */
+export const RATE_MARKUP = 0.03;
 /** 匯率加碼（0.205 + 0.035 = 0.24） */
-export const RATE_MARKUP = 0.035;
+// export const RATE_MARKUP = 0.035;
 
 // ── 工具函式 ──
 
@@ -53,7 +55,8 @@ export function jpyToTwd(jpyPrice: number): number {
   if (jpyPrice <= 0) return 0;
   const rate = JPY_SELL_RATE + RATE_MARKUP; // 0.24
   const base = jpyPrice * rate;
-  const service = jpyPrice * getServiceRate(jpyPrice);
+  const service = 0;
+  // const service = jpyPrice * getServiceRate(jpyPrice);
   return Math.round(base + service);
 }
 

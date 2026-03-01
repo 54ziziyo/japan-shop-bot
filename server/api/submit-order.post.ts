@@ -87,13 +87,13 @@ export default defineEventHandler(async (event) => {
 
   // 3. 組裝 LINE 訊息
   const paymentLabel =
-    paymentMethod === 'bank_transfer'
-      ? '銀行轉帳'
-      : '綠界付款（+2.75% 手續費）';
+    paymentMethod === 'bank_transfer' ? '銀行轉帳' : '綠界付款';
 
   const gt = grandTotalTwd || subtotalTwd || 0;
-  const ecpayTotal = Math.round(gt * 1.0275);
-  const finalAmount = paymentMethod === 'ecpay' ? ecpayTotal : gt;
+  const totalQty = items.reduce(
+    (s: number, i: any) => s + (i.quantity || 1),
+    0,
+  );
 
   const itemLines = items
     .map(
@@ -106,19 +106,21 @@ export default defineEventHandler(async (event) => {
   const customerMsg = [
     '✅ 訂單已成功提交！',
     '',
-    '我們會盡快確認庫存與報價，請留意 LINE 訊息通知。',
+    `姓名： ${customerName}  📱 ${phone}`,
+    `地址： ${address}`,
+    `━━━━━━━━`,
     '',
     '📋 訂單摘要',
-    `商品 ${items.length} 件`,
+    `商品 ${totalQty} 件`,
     `商品小計：NT$${(subtotalTwd || 0).toLocaleString()}`,
     `國際運費（${shippingMethod || 'ePacket'}）：NT$${(shippingTwd || 0).toLocaleString()}`,
     `代購服務費：NT$${serviceFeeTwd || 50}`,
     `━━━━━━━━`,
     `訂單總計：NT$${gt.toLocaleString()}`,
-    paymentMethod === 'ecpay'
-      ? `含綠界手續費：NT$${ecpayTotal.toLocaleString()}`
-      : '',
     `付款方式：${paymentLabel}`,
+    paymentMethod === 'bank_transfer' && accountLast5
+      ? `🔢 轉帳帳號末五碼：${accountLast5}`
+      : '',
     '',
     '如有任何疑問，請隨時向我們詢問 🙏',
   ]
@@ -154,9 +156,6 @@ export default defineEventHandler(async (event) => {
     `  服務費：NT$${serviceFeeTwd || 50}`,
     `  ─────────`,
     `  總計：NT$${gt.toLocaleString()}`,
-    paymentMethod === 'ecpay'
-      ? `  含綠界手續費：NT$${ecpayTotal.toLocaleString()}`
-      : '',
     '',
     `🆔 訂單 ID：${order.id}`,
   ]

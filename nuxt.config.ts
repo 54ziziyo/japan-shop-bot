@@ -28,6 +28,7 @@ export default defineNuxtConfig({
       supabaseUrl: '',
       supabaseKey: '',
       liffId: '',
+      liffIdOrders: '',
     },
   },
 
