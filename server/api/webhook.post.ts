@@ -344,7 +344,7 @@ export default defineEventHandler(async (event) => {
               cornerRadius: 'sm',
               borderWidth: '1px',
               borderColor: s.isStock ? themeColor : '#00000000',
-              backgroundColor: s.isStock ? '#00000000' : '#3f3f3f8e',
+              backgroundColor: s.isStock ? '#00000000' : '#3d4e4ab3',
               action: s.isStock
                 ? { type: 'postback', label: s.name, data: compactData }
                 : {
@@ -380,7 +380,7 @@ export default defineEventHandler(async (event) => {
                   aspectRatio: '3:4',
                   aspectMode: 'cover',
                 },
-                // 💡 3. 調整遮罩：將底色調淺 (#00000066)
+                // 💡 3. 調整遮罩：將底色調淺
                 {
                   type: 'box',
                   layout: 'vertical',
@@ -388,7 +388,7 @@ export default defineEventHandler(async (event) => {
                   offsetBottom: '0px',
                   offsetStart: '0px',
                   offsetEnd: '0px',
-                  backgroundColor: '#00000066', // 40% 透明黑，比之前的更通透
+                  backgroundColor: '#3d4e4aa1', // 遮罩背景
                   paddingAll: 'lg',
                   contents: [
                     {
@@ -421,7 +421,7 @@ export default defineEventHandler(async (event) => {
               type: 'box',
               layout: 'vertical',
               paddingAll: '0px',
-              backgroundColor: '#111111ee',
+              backgroundColor: '#3d4e4a',
               contents: [
                 {
                   type: 'box',
@@ -435,7 +435,7 @@ export default defineEventHandler(async (event) => {
                       type: 'text',
                       text: '查看官網詳情',
                       color: '#ffffff',
-                      weight: 'regular',
+                      weight: 'bold',
                       size: 'xs',
                       align: 'center',
                     },
