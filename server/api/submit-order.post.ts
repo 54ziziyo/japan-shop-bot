@@ -4,6 +4,9 @@ import { Client } from '@line/bot-sdk';
 import { createClient } from '@supabase/supabase-js';
 
 const ADMIN_USER_ID = 'Ud2d92728dfaf5241e62b1cb167e6973a';
+const BANK_NAME = '玉山銀行';
+const BANK_CODE = '808';
+const BANK_ACCOUNT = '0624940150560';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -72,6 +75,7 @@ export default defineEventHandler(async (event) => {
       account_last5: accountLast5 || null,
       items,
       total_jpy: totalJpy,
+      grand_total_twd: grandTotalTwd || null,
       status: 'pending',
     })
     .select('id')
@@ -81,6 +85,17 @@ export default defineEventHandler(async (event) => {
     console.error('❌ 訂單儲存失敗:', orderError.message);
     throw createError({ statusCode: 500, statusMessage: '訂單儲存失敗' });
   }
+
+  // 生成可讀訂單編號：RM + YYMMDDHHmm + UUID 末 4 碼
+  const now = new Date();
+  const datePart =
+    now.getFullYear().toString().slice(-2) +
+    (now.getMonth() + 1).toString().padStart(2, '0') +
+    now.getDate().toString().padStart(2, '0') +
+    now.getHours().toString().padStart(2, '0') +
+    now.getMinutes().toString().padStart(2, '0');
+  // const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  const orderNo = `RM${datePart}${order.id.slice(-4).toUpperCase()}`;
 
   // 2. 清空購物車
   await supabase.from('cart_items').delete().eq('user_id', userId);
@@ -105,24 +120,26 @@ export default defineEventHandler(async (event) => {
   // 👤 客戶確認訊息
   const customerMsg = [
     '✅ 訂單已成功提交！',
+    `訂單編號：${orderNo}`,
     '',
-    `姓名： ${customerName}  📱 ${phone}`,
-    `地址： ${address}`,
-    `━━━━━━━━`,
-    '',
-    '📋 訂單摘要',
+    `姓名：${customerName} 手機：${phone}`,
+    `收件地址：${address}`,
+    '\n📋 訂單摘要',
     `商品 ${totalQty} 件`,
-    `商品小計：NT$${(subtotalTwd || 0).toLocaleString()}`,
-    `國際運費（${shippingMethod || 'ePacket'}）：NT$${(shippingTwd || 0).toLocaleString()}`,
-    `代購服務費：NT$${serviceFeeTwd || 50}`,
-    `━━━━━━━━`,
-    `訂單總計：NT$${gt.toLocaleString()}`,
-    `付款方式：${paymentLabel}`,
+    // `商品小計：NT$${(subtotalTwd || 0).toLocaleString()}`,
+    // `國際運費（${shippingMethod || 'ePacket'}）：NT$${(shippingTwd || 0).toLocaleString()}`,
+    // `代購服務費：NT$${serviceFeeTwd || 50}`,
+    // '━━━━━━━━',
+    `訂單總計（含稅）：NT$${gt.toLocaleString()}`,
+    `\n付款方式：${paymentLabel}`,
     paymentMethod === 'bank_transfer' && accountLast5
       ? `🔢 轉帳帳號末五碼：${accountLast5}`
       : '',
+    paymentMethod === 'bank_transfer'
+      ? `\n🏦 匯款資訊：${BANK_NAME}${BANK_CODE}，帳號 ${BANK_ACCOUNT}\n請於三天內完成轉帳 NT$${gt.toLocaleString()}，逾期將自動取消訂單。`
+      : '',
     '',
-    '如有任何疑問，請隨時向我們詢問 🙏',
+    '\n如有任何疑問，請隨時向我們詢問 🙏',
   ]
     .filter(Boolean)
     .join('\n');
@@ -151,13 +168,14 @@ export default defineEventHandler(async (event) => {
     adminItemLines,
     '',
     '💰 費用明細：',
-    `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(totalJpy || 0).toLocaleString()}）`,
+    `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(grandTotalTwd || 0).toLocaleString()}）`,
     `  國際運費：NT$${(shippingTwd || 0).toLocaleString()}（${shippingMethod || 'ePacket'}）`,
     `  服務費：NT$${serviceFeeTwd || 50}`,
     `  ─────────`,
     `  總計：NT$${gt.toLocaleString()}`,
     '',
-    `🆔 訂單 ID：${order.id}`,
+    `🆔 訂單編號：${orderNo}`,
+    `🔑 UUID：${order.id}`,
   ]
     .filter(Boolean)
     .join('\n');
@@ -180,5 +198,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return { ok: true, orderId: order.id };
+  return { ok: true, orderId: order.id, orderNo };
 });
