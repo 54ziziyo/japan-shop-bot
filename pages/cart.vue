@@ -25,7 +25,6 @@
       </nav>
 
       <div class="max-w-md mx-auto px-6 pb-60">
-        <!-- 🕒 自動清空提示 -->
         <div
           v-if="!loading && items.length > 0"
           class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
@@ -43,9 +42,9 @@
             class="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin mb-4"
           ></div>
           <p
-            class="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase"
+            class="text-[10px] font-bold text-center tracking-[0.2em] text-gray-400 uppercase"
           >
-            Synchronizing
+            稍等購物車抓資料唷！<br />跑跑跑，向前跑~
           </p>
         </div>
 
@@ -167,7 +166,7 @@
               <p
                 class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic"
               >
-                ※ 此價格不包含國際運費與服務費
+                ※ 不包含運費與其他費用
               </p>
             </div>
             <div class="text-right">
@@ -355,7 +354,7 @@ onMounted(async () => {
   liff = liffModule.default;
 
   try {
-    await liff.init({ liffId: config.public.liffId });
+    await liff.init({ liffId: config.public.liffIdCart });
     if (!liff.isLoggedIn()) {
       liff.login();
     } else {

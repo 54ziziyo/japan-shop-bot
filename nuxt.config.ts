@@ -10,12 +10,6 @@ export default defineNuxtConfig({
   // 啟用開發者工具
   devtools: { enabled: true },
 
-  // 路由規則設定
-  routeRules: {
-    // 💡 關鍵：強制關閉購物車頁面的伺服器端渲染 (SSR)，徹底避開 renderer$1 報錯
-    '/cart': { ssr: false },
-  },
-
   // 環境變數與全域設定
   runtimeConfig: {
     // ✅ 這裡直接對應 Vercel 上的 Key 名稱
@@ -27,7 +21,7 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: '',
       supabaseKey: '',
-      liffId: '',
+      liffIdCart: '',
       liffIdOrders: '',
     },
   },
