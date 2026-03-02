@@ -292,7 +292,7 @@ export function getShippingTwd(totalWeightGrams: number): {
 // ── 服務費 ──
 
 /** 固定代購服務費（台幣） */
-export const SERVICE_FEE_TWD = 50;
+export const SERVICE_FEE_TWD = 0;
 
 // ── 完整報價 ──
 

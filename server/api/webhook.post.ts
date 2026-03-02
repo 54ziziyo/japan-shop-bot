@@ -111,26 +111,6 @@ export default defineEventHandler(async (event) => {
         await sendPushOnly(message);
       };
 
-      const sendReplyOnlyIfPossible = async (message: Message | Message[]) => {
-        const replyToken =
-          'replyToken' in webhookEvent ? webhookEvent.replyToken : undefined;
-        const canReply = !replyTokenUsed && !!replyToken;
-
-        if (!canReply) return;
-
-        try {
-          await client.replyMessage(replyToken, message);
-          replyTokenUsed = true;
-        } catch (replyErr: any) {
-          if (isInvalidReplyTokenError(replyErr)) {
-            replyTokenUsed = true;
-            console.warn('⚠️ URL ACK replyToken 無效，略過 ACK');
-            return;
-          }
-          throw replyErr;
-        }
-      };
-
       // --- 1. 處理 Postback (點擊加入購物車按鈕) ---
       if (webhookEvent.type === 'postback' && userId) {
         const data = new URLSearchParams(webhookEvent.postback.data);
@@ -388,7 +368,7 @@ export default defineEventHandler(async (event) => {
                   offsetBottom: '0px',
                   offsetStart: '0px',
                   offsetEnd: '0px',
-                  backgroundColor: '#3d4e4aa1', // 遮罩背景
+                  backgroundColor: '#3d4e4ab8', // 遮罩背景
                   paddingAll: 'lg',
                   contents: [
                     {
@@ -401,7 +381,15 @@ export default defineEventHandler(async (event) => {
                     },
                     {
                       type: 'text',
-                      text: `${v.color}  ${formatTwd(jpyToTwd(parseJpy(v.price)))}`,
+                      text: `${formatTwd(jpyToTwd(parseJpy(v.price)))}`,
+                      size: 'md',
+                      weight: 'bold',
+                      color: '#ffffff',
+                      margin: 'md',
+                    },
+                    {
+                      type: 'text',
+                      text: `顏色：${v.color} ¥${parseJpy(v.price).toLocaleString()}`,
                       size: 'xs',
                       color: '#dddddd',
                       margin: 'xs',

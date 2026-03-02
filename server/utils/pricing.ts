@@ -6,7 +6,6 @@
 
 export {
   JPY_SELL_RATE,
-  RATE_MARKUP,
   parseJpy,
   jpyToTwd,
   formatTwd,
