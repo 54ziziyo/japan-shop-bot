@@ -7,8 +7,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const secret = getHeader(event, 'x-webhook-secret');
 
+  // 🔍 Debug：排查 secret 比對問題（上線穩定後可移除）
+  const expected = config.sheetsWebhookSecret;
+  console.log(`🔑 收到 secret 長度=${secret?.length ?? 'null'}, 期望長度=${expected?.length ?? 'null'}, 相符=${secret === expected}`);
+
   // 驗證暗號
-  if (secret !== config.sheetsWebhookSecret) {
+  if (secret !== expected) {
     throw createError({ statusCode: 401, statusMessage: '未授權' });
   }
 
