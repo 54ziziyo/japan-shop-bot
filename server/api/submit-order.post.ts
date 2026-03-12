@@ -131,7 +131,7 @@ export default defineEventHandler(async (event) => {
     // `代購服務費：NT$${serviceFeeTwd || 50}`,
     // '━━━━━━━━',
     `訂單總計（含稅）：NT$${gt.toLocaleString()}`,
-    `\n付款方式：${paymentLabel}`,
+    `付款方式：${paymentLabel}`,
     paymentMethod === 'bank_transfer' && accountLast5
       ? `🔢 轉帳帳號末五碼：${accountLast5}`
       : '',

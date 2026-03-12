@@ -23,7 +23,7 @@ const form = ref({
   name: '',
   phone: '',
   address: '',
-  paymentMethod: 'ecpay', // 預設選擇綠界付款
+  paymentMethod: 'bank_transfer', // 預設選擇銀行轉帳
   accountLast5: '',
   website: '', // 🍯 honeypot — 正常用戶不會看到也不會填
 });
@@ -500,7 +500,7 @@ onMounted(async () => {
               返回購物車
             </p>
           </div>
-          <h1 class="text-3xl font-black italic tracking-tighter leading-none">
+          <h1 class="text-3xl font-black tracking-[0.1em] leading-none">
             訂單確認
           </h1>
         </div>
@@ -594,10 +594,10 @@ onMounted(async () => {
           </p>
 
           <button
-            @click="$router.push('/orders')"
-            class="text-[10px] font-black border-b-[3px] border-black pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
+            class="text-xs font-bold text-black-400 hover:text-gray-700 transition-colors underline underline-offset-2 decoration-2"
+            @click="closeLiff()"
           >
-            訂單查詢
+            返回官方帳號
           </button>
         </div>
 
@@ -718,10 +718,10 @@ onMounted(async () => {
           <div v-if="validItems.length === 0" class="text-center py-8">
             <p class="text-gray-400 text-sm mb-4">沒有訂單唷～</p>
             <button
-              @click="push('/cart')"
-              class="text-[10px] font-black border-b-[3px] border-black pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
+              class="text-xs font-bold text-black-400 hover:text-gray-700 transition-colors underline underline-offset-2 decoration-2"
+              @click="closeLiff()"
             >
-              回到購物車
+              返回官方帳號
             </button>
           </div>
 
@@ -925,7 +925,7 @@ onMounted(async () => {
                   >支付方式</label
                 >
                 <div class="space-y-3">
-                  <label
+                  <!-- <label
                     class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
                     :class="
                       form.paymentMethod === 'ecpay'
@@ -945,7 +945,7 @@ onMounted(async () => {
                         Visa / Mastercard 信用卡付款
                       </p>
                     </div>
-                  </label>
+                  </label> -->
                   <label
                     class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
                     :class="
@@ -995,7 +995,7 @@ onMounted(async () => {
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
                       : 'border-gray-200 focus:border-black focus:ring-black/5',
                   ]"
-                  placeholder="請於轉帳後輸入帳號末五碼，方便我們核對入帳。"
+                  placeholder="請輸入帳號末五碼，以便核對入帳"
                 />
                 <p
                   v-if="errors.accountLast5"

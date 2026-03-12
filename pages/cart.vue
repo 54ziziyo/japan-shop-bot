@@ -1,196 +1,3 @@
-<template>
-  <ClientOnly>
-    <div class="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans antialiased">
-      <nav
-        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex justify-between items-end"
-      >
-        <div>
-          <p
-            class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none mb-2"
-          >
-            日貨購物車
-          </p>
-          <h1 class="text-3xl font-black italic tracking-tighter leading-none">
-            ROML CART
-          </h1>
-        </div>
-        <div v-if="!loading" class="text-right">
-          <p
-            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 text-gray-400"
-          >
-            總共數量
-          </p>
-          <p class="font-black text-xl leading-none">{{ totalQty }}</p>
-        </div>
-      </nav>
-
-      <div class="max-w-md mx-auto px-6 pb-60">
-        <div
-          v-if="!loading && items.length > 0"
-          class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
-        >
-          <p class="text-[10px] text-amber-700 font-semibold leading-relaxed">
-            🕒 為確保價格與日本官網同步，購物車將於每 6 小時自動清空。<br />請抓緊時間下單喔！
-          </p>
-        </div>
-
-        <div
-          v-if="loading"
-          class="flex flex-col items-center justify-center py-32"
-        >
-          <div
-            class="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin mb-4"
-          ></div>
-          <p
-            class="text-[10px] font-bold text-center tracking-[0.2em] text-gray-400 uppercase"
-          >
-            稍等購物車抓資料唷！<br />跑跑跑，向前跑~
-          </p>
-        </div>
-
-        <div v-else-if="items.length > 0" class="space-y-8 mt-4">
-          <div
-            v-for="item in items"
-            :key="item.id"
-            class="group relative flex gap-5 items-center"
-          >
-            <div
-              class="w-24 h-24 bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex-shrink-0 border border-gray-100"
-            >
-              <img
-                :src="item.image_url"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <h2
-                class="font-bold text-sm uppercase tracking-tight truncate leading-tight mb-0.5"
-              >
-                {{ item.product_title }}
-              </h2>
-              <p
-                v-if="item.product_code"
-                class="text-[9px] font-mono text-gray-500 tracking-wide mb-1"
-              >
-                {{ item.product_code }}
-              </p>
-              <p
-                class="text-[10px] font-semibold text-gray-800 uppercase tracking-wider mb-2"
-              >
-                {{ item.color }} <span class="mx-1 text-gray-200">|</span>
-                {{ item.size }}
-              </p>
-              <div class="flex items-center justify-between">
-                <p class="font-black text-lg tracking-tighter">
-                  NT${{ jpyToTwd(parseJpy(item.price)).toLocaleString() }}
-                </p>
-                <!-- 數量控制 -->
-                <div class="flex items-center gap-0 select-none">
-                  <button
-                    @click="decreaseQty(item)"
-                    class="w-7 h-7 flex items-center justify-center rounded-l-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
-                  >
-                    −
-                  </button>
-                  <span
-                    class="w-8 h-7 flex items-center justify-center border-t border-b border-gray-200 bg-white text-xs font-black"
-                  >
-                    {{ item.quantity || 1 }}
-                  </span>
-                  <button
-                    @click="increaseQty(item)"
-                    class="w-7 h-7 flex items-center justify-center rounded-r-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <button
-              @click="removeItem(item.id)"
-              class="p-2 text-gray-200 hover:text-red-500 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
-                ></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div
-          v-else
-          class="flex flex-col items-center justify-center py-32 text-center"
-        >
-          <p
-            class="text-[11px] font-bold text-gray-300 uppercase tracking-[0.3em] mb-6 italic"
-          >
-            你的購物車空蕩蕩，快去逛逛吧！
-          </p>
-          <button
-            @click="closeLiff"
-            class="text-[10px] font-black border-b-[3px] border-black pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
-          >
-            回到官方帳號
-          </button>
-        </div>
-      </div>
-
-      <footer
-        v-if="items.length > 0"
-        class="fixed bottom-0 left-0 right-0 z-40 px-6 py-4"
-      >
-        <div
-          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl p-6 rounded-[32px] shadow-xl border border-white/50"
-        >
-          <div class="flex justify-between items-end mb-4">
-            <div>
-              <p
-                class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 leading-none"
-              >
-                商品總額：
-              </p>
-              <p
-                class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic"
-              >
-                ※ 不包含運費與其他費用
-              </p>
-            </div>
-            <div class="text-right">
-              <p
-                class="text-3xl font-black tracking-tighter italic leading-none"
-              >
-                NT$ {{ totalAmount.toLocaleString() }}
-              </p>
-            </div>
-          </div>
-
-          <button
-            @click="handleCheckout"
-            :disabled="syncing"
-            class="w-full bg-black text-white py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
-          >
-            {{ syncing ? 'Loading...' : '前往下單' }}
-          </button>
-        </div>
-      </footer>
-    </div>
-  </ClientOnly>
-</template>
-
 <script setup>
 // ⚠️ 靜態 import 已全部移除：@supabase/supabase-js 與 @line/liff 都含有瀏覽器專用程式碼
 // 若在頂層靜態 import，Nuxt SSR 會在 server 端解析它們導致 useNuxtApp() 崩潰
@@ -368,7 +175,206 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+const handleReload = () => {
+  window.location.reload();
+};
 </script>
+
+<template>
+  <ClientOnly>
+    <div class="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans antialiased">
+      <nav
+        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex items-end justify-between"
+      >
+        <div>
+          <div class="flex items-center gap-2 mb-2 h-6">
+            <p
+              class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none"
+            >
+              🏠 囉姆嚕日貨代購
+            </p>
+          </div>
+          <h1 class="text-3xl font-black tracking-[0.1em] leading-none">
+            購物清單
+          </h1>
+        </div>
+        <div v-if="!loading" class="text-right">
+          <p
+            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 text-gray-400"
+          >
+            總共數量
+          </p>
+          <p class="font-black text-xl leading-none">{{ totalQty }}</p>
+        </div>
+      </nav>
+
+      <div class="max-w-md mx-auto px-6 pb-60">
+        <div
+          v-if="!loading && items.length > 0"
+          class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
+        >
+          <p class="text-[10px] text-amber-700 font-semibold leading-relaxed">
+            🕒 為確保價格與日本官網同步，購物車將於每 6 小時自動清空。<br />請抓緊時間下單喔！
+          </p>
+        </div>
+
+        <div
+          v-if="loading"
+          class="flex flex-col items-center justify-center py-32"
+        >
+          <div
+            class="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin mb-4"
+          ></div>
+          <p
+            class="text-[10px] font-bold text-center tracking-[0.2em] text-gray-400 uppercase"
+          >
+            稍等購物車抓資料唷！<br />跑跑跑，向前跑~
+          </p>
+        </div>
+
+        <div v-else-if="items.length > 0" class="space-y-8 mt-4">
+          <div
+            v-for="item in items"
+            :key="item.id"
+            class="group relative flex gap-5 items-center"
+          >
+            <div
+              class="w-24 h-24 bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex-shrink-0 border border-gray-100"
+            >
+              <img
+                :src="item.image_url"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <h2
+                class="font-bold text-sm uppercase tracking-tight truncate leading-tight mb-0.5"
+              >
+                {{ item.product_title }}
+              </h2>
+              <p
+                v-if="item.product_code"
+                class="text-[9px] font-mono text-gray-500 tracking-wide mb-1"
+              >
+                {{ item.product_code }}
+              </p>
+              <p
+                class="text-[10px] font-semibold text-gray-800 uppercase tracking-wider mb-2"
+              >
+                {{ item.color }} <span class="mx-1 text-gray-200">|</span>
+                {{ item.size }}
+              </p>
+              <div class="flex items-center justify-between">
+                <p class="font-black text-lg tracking-tighter">
+                  NT${{ jpyToTwd(parseJpy(item.price)).toLocaleString() }}
+                </p>
+                <!-- 數量控制 -->
+                <div class="flex items-center gap-0 select-none">
+                  <button
+                    @click="decreaseQty(item)"
+                    class="w-7 h-7 flex items-center justify-center rounded-l-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
+                  >
+                    −
+                  </button>
+                  <span
+                    class="w-8 h-7 flex items-center justify-center border-t border-b border-gray-200 bg-white text-xs font-black"
+                  >
+                    {{ item.quantity || 1 }}
+                  </span>
+                  <button
+                    @click="increaseQty(item)"
+                    class="w-7 h-7 flex items-center justify-center rounded-r-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              @click="removeItem(item.id)"
+              class="p-2 text-gray-200 hover:text-red-500 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-else
+          class="flex flex-col items-center justify-center py-32 text-center"
+        >
+          <p
+            class="text-[11px] font-bold text-gray-300 uppercase tracking-[0.3em] mb-6 italic"
+          >
+            你的購物車空蕩蕩，快去逛逛吧！
+          </p>
+          <button
+            @click="handleReload"
+            class="text-[10px] font-black border-b-[3px] border-black pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
+          >
+            🔄 點擊我重整
+          </button>
+        </div>
+      </div>
+
+      <footer
+        v-if="items.length > 0"
+        class="fixed bottom-0 left-0 right-0 z-40 px-6 py-4"
+      >
+        <div
+          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl p-6 rounded-[32px] shadow-xl border border-white/50"
+        >
+          <div class="flex justify-between items-end mb-4">
+            <div>
+              <p
+                class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 leading-none"
+              >
+                商品總額：
+              </p>
+              <p
+                class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic"
+              >
+                ※ 不包含運費與其他費用
+              </p>
+            </div>
+            <div class="text-right">
+              <p
+                class="text-3xl font-black tracking-tighter italic leading-none"
+              >
+                NT$ {{ totalAmount.toLocaleString() }}
+              </p>
+            </div>
+          </div>
+
+          <button
+            @click="handleCheckout"
+            :disabled="syncing"
+            class="w-full bg-black text-white py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
+          >
+            {{ syncing ? 'Loading...' : '前往下單' }}
+          </button>
+        </div>
+      </footer>
+    </div>
+  </ClientOnly>
+</template>
 
 <style>
 ::-webkit-scrollbar {

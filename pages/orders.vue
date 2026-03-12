@@ -175,13 +175,15 @@ function closeLiff() {
         class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex justify-between items-end"
       >
         <div>
-          <p
-            class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none mb-2"
-          >
-            訂單查詢
-          </p>
+          <div class="flex items-center gap-2 mb-2">
+            <p
+              class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none"
+            >
+              🏠 囉姆嚕日貨代購
+            </p>
+          </div>
           <h1 class="text-3xl font-black italic tracking-tighter leading-none">
-            MY ORDERS
+            訂單查詢
           </h1>
         </div>
         <button
@@ -215,6 +217,12 @@ function closeLiff() {
             尚無進行中的訂單記錄<br />
             已完成的歷史訂單暫不顯示
           </p>
+          <button
+              class="text-xs font-bold text-black-400 hover:text-gray-700 transition-colors underline underline-offset-2 decoration-2"
+              @click="closeLiff()"
+            >
+              返回官方帳號
+            </button>
         </div>
 
         <!-- ── 訂單卡片列表 ── -->
