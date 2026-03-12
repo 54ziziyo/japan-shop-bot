@@ -24,6 +24,11 @@ export default defineNuxtConfig({
       liffIdCart: '',
       liffIdOrders: '',
     },
+
+    googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '',
+    googleSpreadsheetId: process.env.GOOGLE_SPREADSHEET_ID || '',
+    googleSheetName: process.env.GOOGLE_SHEET_NAME || '訂單資訊',
+    sheetsWebhookSecret: process.env.SHEETS_WEBHOOK_SECRET || '',
   },
 
   // Vite 相關設定 (處理 ngrok 開放外部連接)

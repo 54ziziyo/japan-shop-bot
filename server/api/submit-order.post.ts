@@ -2,6 +2,8 @@
 // 提交訂單：儲存至 DB → 清空購物車 → LINE 通知客戶與管理員
 import { Client } from '@line/bot-sdk';
 import { createClient } from '@supabase/supabase-js';
+import { appendOrderRow } from '../utils/googleSheets';
+import nodemailer from 'nodemailer';
 
 const ADMIN_USER_ID = 'Ud2d92728dfaf5241e62b1cb167e6973a';
 const BANK_NAME = '玉山銀行';
@@ -27,15 +29,14 @@ export default defineEventHandler(async (event) => {
     shippingMethod,
     serviceFeeTwd,
     grandTotalTwd,
-    website, // 🍯 honeypot field
+    website,
   } = body || {};
 
-  // 🍯 Honeypot 偵測：如果隱藏欄位有資料，靜默拒絕（僽裝 200）
+  // 🍯 Honeypot
   if (website) {
     return { ok: true, orderId: 'blocked' };
   }
 
-  // 驗證必填欄位
   if (
     !userId ||
     !customerName ||
@@ -47,7 +48,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '缺少必要欄位' });
   }
 
-  // 手機號碼格式檢查（server-side 雙重驗證）
   if (!/^09\d{8}$/.test(phone)) {
     throw createError({ statusCode: 400, statusMessage: '手機號碼格式不正確' });
   }
@@ -56,7 +56,6 @@ export default defineEventHandler(async (event) => {
     config.public.supabaseUrl,
     config.public.supabaseKey,
   );
-
   const lineClient = new Client({
     channelAccessToken: config.line.channelAccessToken,
     channelSecret: config.line.channelSecret,
@@ -86,7 +85,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: '訂單儲存失敗' });
   }
 
-  // 生成可讀訂單編號：RM + YYMMDDHHmm + UUID 末 4 碼
+  // 生成訂單編號
   const now = new Date();
   const datePart =
     now.getFullYear().toString().slice(-2) +
@@ -94,30 +93,51 @@ export default defineEventHandler(async (event) => {
     now.getDate().toString().padStart(2, '0') +
     now.getHours().toString().padStart(2, '0') +
     now.getMinutes().toString().padStart(2, '0');
-  // const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, '');
   const orderNo = `RM${datePart}${order.id.slice(-4).toUpperCase()}`;
 
-  // 2. 清空購物車
+  // 2. 寫入 Google 試算表（失敗不阻斷下單）
+  try {
+    await appendOrderRow(
+      {
+        googleServiceAccountJson: config.googleServiceAccountJson,
+        googleSpreadsheetId: config.googleSpreadsheetId,
+        googleSheetName: config.googleSheetName,
+      },
+      {
+        orderId: order.id,
+        orderNo,
+        createdAt: now.toISOString(),
+        lineName: lineName || '',
+        customerName,
+        phone,
+        address,
+        paymentMethod,
+        accountLast5: accountLast5 || null,
+        items,
+        subtotalTwd: subtotalTwd || 0,
+        shippingTwd: shippingTwd || 0,
+        serviceFeeTwd: serviceFeeTwd || 0,
+        grandTotalTwd: grandTotalTwd || 0,
+        totalJpy: totalJpy || 0,
+      },
+    );
+    console.log('✅ 試算表寫入成功');
+  } catch (err: any) {
+    console.error('❌ 試算表寫入失敗（不影響下單）:', err.message);
+  }
+
+  // 3. 清空購物車
   await supabase.from('cart_items').delete().eq('user_id', userId);
 
-  // 3. 組裝 LINE 訊息
+  // 4. 組裝 LINE 訊息
   const paymentLabel =
     paymentMethod === 'bank_transfer' ? '銀行轉帳' : '綠界付款';
-
   const gt = grandTotalTwd || subtotalTwd || 0;
   const totalQty = items.reduce(
     (s: number, i: any) => s + (i.quantity || 1),
     0,
   );
 
-  const itemLines = items
-    .map(
-      (item: any, i: number) =>
-        `${i + 1}. ${item.product_title}\n   ${item.color} / ${item.size} ×${item.quantity}  NT$${(item.priceTwd || 0).toLocaleString()}`,
-    )
-    .join('\n');
-
-  // 👤 客戶確認訊息
   const customerMsg = [
     '✅ 訂單已成功提交！',
     `訂單編號：${orderNo}`,
@@ -126,10 +146,6 @@ export default defineEventHandler(async (event) => {
     `收件地址：${address}`,
     '\n📋 訂單摘要',
     `商品 ${totalQty} 件`,
-    // `商品小計：NT$${(subtotalTwd || 0).toLocaleString()}`,
-    // `國際運費（${shippingMethod || 'ePacket'}）：NT$${(shippingTwd || 0).toLocaleString()}`,
-    // `代購服務費：NT$${serviceFeeTwd || 50}`,
-    // '━━━━━━━━',
     `訂單總計（含稅）：NT$${gt.toLocaleString()}`,
     `付款方式：${paymentLabel}`,
     paymentMethod === 'bank_transfer' && accountLast5
@@ -144,7 +160,6 @@ export default defineEventHandler(async (event) => {
     .filter(Boolean)
     .join('\n');
 
-  // 🔔 管理員詳細通知
   const adminItemLines = items
     .map(
       (item: any, i: number) =>
@@ -168,7 +183,7 @@ export default defineEventHandler(async (event) => {
     adminItemLines,
     '',
     '💰 費用明細：',
-    `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(grandTotalTwd || 0).toLocaleString()}）`,
+    `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(totalJpy || 0).toLocaleString()}）`,
     `  國際運費：NT$${(shippingTwd || 0).toLocaleString()}（${shippingMethod || 'ePacket'}）`,
     `  服務費：NT$${serviceFeeTwd || 50}`,
     `  ─────────`,
@@ -180,7 +195,7 @@ export default defineEventHandler(async (event) => {
     .filter(Boolean)
     .join('\n');
 
-  // 4. 發送 LINE 通知
+  // 5. 發送 LINE 通知
   try {
     await lineClient.pushMessage(userId, { type: 'text', text: customerMsg });
   } catch (err: any) {
@@ -196,6 +211,29 @@ export default defineEventHandler(async (event) => {
     } catch (err: any) {
       console.error('❌ 管理員通知發送失敗:', err.message);
     }
+  }
+
+  // 6. 發送電子郵件通知公司信箱
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: config.mailUser, // 妳的 Gmail
+        pass: config.mailPass, // 妳的 Google 應用程式密碼
+      },
+    });
+
+    const mailOptions = {
+      from: `"囉姆嚕代購" <${config.mailUser}>`,
+      to: config.adminEmail, // 妳接收訂單的信箱
+      subject: `🔔 新訂單通知：${orderNo} - ${customerName}`,
+      text: adminMsg, // 直接沿用妳寫好的 adminMsg，省時又省力
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ 訂單信件發送成功');
+  } catch (err: any) {
+    console.error('❌ 信件發送失敗:', err.message);
   }
 
   return { ok: true, orderId: order.id, orderNo };

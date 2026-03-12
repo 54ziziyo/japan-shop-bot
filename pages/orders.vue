@@ -19,9 +19,9 @@ let supabaseClient: any = null;
 // ── Status helpers ──
 const STATUS_LABELS: Record<string, string> = {
   pending: '待付款確認中',
-  confirmed: '商品處理中',
-  processing: '商品打包中',
-  packing: '商品已完成',
+  confirmed: '已收款，處理中',
+  processing: '商品採購中',
+  packing: '已出貨',
 };
 
 function statusLabel(status: string) {
@@ -31,7 +31,7 @@ function statusLabel(status: string) {
 function statusEmoji(status: string) {
   const map: Record<string, string> = {
     pending: '⏳',
-    confirmed: '✅',
+    confirmed: '💰',
     processing: '📦',
     packing: '🎌',
   };
@@ -218,11 +218,11 @@ function closeLiff() {
             已完成的歷史訂單暫不顯示
           </p>
           <button
-              class="text-xs font-bold text-black-400 hover:text-gray-700 transition-colors underline underline-offset-2 decoration-2"
-              @click="closeLiff()"
-            >
-              返回官方帳號
-            </button>
+            class="text-xs font-bold text-black-400 hover:text-gray-700 transition-colors underline underline-offset-2 decoration-2"
+            @click="closeLiff()"
+          >
+            返回官方帳號
+          </button>
         </div>
 
         <!-- ── 訂單卡片列表 ── -->
