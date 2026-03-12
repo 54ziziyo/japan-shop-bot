@@ -7,12 +7,8 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const secret = getHeader(event, 'x-webhook-secret');
 
-  // 🔍 Debug：排查 secret 比對問題（上線穩定後可移除）
-  const expected = config.sheetsWebhookSecret;
-  console.log(`🔑 收到 secret 長度=${secret?.length ?? 'null'}, 期望長度=${expected?.length ?? 'null'}, 相符=${secret === expected}`);
-
   // 驗證暗號
-  if (secret !== expected) {
+  if (secret !== config.sheetsWebhookSecret) {
     throw createError({ statusCode: 401, statusMessage: '未授權' });
   }
 
@@ -25,10 +21,8 @@ export default defineEventHandler(async (event) => {
   const ALLOWED_STATUSES = [
     'pending',
     'confirmed',
-    'purchasing',
-    'shipped',
-    'delivered',
-    'cancelled',
+    'processing',
+    'packing',
   ];
   if (!ALLOWED_STATUSES.includes(status)) {
     throw createError({ statusCode: 400, statusMessage: '不合法的狀態值' });
