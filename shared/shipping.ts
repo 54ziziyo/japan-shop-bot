@@ -2,7 +2,12 @@
 // 📦 運費 & 重量計算（唯一來源 — server & client 共用）
 // ============================================================
 // 匯率相關從 #shared/pricing 取得
-import { JPY_SELL_RATE, parseJpy, jpyToTwd } from '#shared/pricing';
+import {
+  JPY_SELL_RATE,
+  parseJpy,
+  jpyToTwd,
+  getRateMarkup,
+} from '#shared/pricing';
 
 // ── 商品重量查表 ──
 
@@ -255,13 +260,17 @@ const INTL_SMALL_PACKET_RATES: [number, number][] = [
  * > 2000g → 國際小包
  * 回傳日圓運費 + 台幣運費（基礎匯率 0.205）
  */
-export function getShippingTwd(totalWeightGrams: number): {
+export function getShippingTwd(
+  totalWeightGrams: number,
+  rate?: number,
+): {
   method: string;
   costJpy: number;
   costTwd: number;
 } {
   if (totalWeightGrams <= 0) return { method: '-', costJpy: 0, costTwd: 0 };
 
+  const baseRate = rate ?? JPY_SELL_RATE;
   let costJpy = 0;
   let method = '';
 
@@ -286,7 +295,7 @@ export function getShippingTwd(totalWeightGrams: number): {
       costJpy = INTL_SMALL_PACKET_RATES[INTL_SMALL_PACKET_RATES.length - 1]![1];
   }
 
-  return { method, costJpy, costTwd: Math.round(costJpy * JPY_SELL_RATE) };
+  return { method, costJpy, costTwd: Math.round(costJpy * baseRate) };
 }
 
 // ── 服務費 ──
@@ -317,7 +326,10 @@ export interface QuoteResult {
 /**
  * 計算完整報價（台幣）
  */
-export function calculateQuote(items: CartItemForQuote[]): QuoteResult {
+export function calculateQuote(
+  items: CartItemForQuote[],
+  rate?: number,
+): QuoteResult {
   let subtotalJpy = 0;
   let subtotalTwd = 0;
   let totalWeight = 0;
@@ -327,7 +339,7 @@ export function calculateQuote(items: CartItemForQuote[]): QuoteResult {
     const priceVal = parseJpy(item.price);
     const qty = item.quantity || 1;
     subtotalJpy += priceVal * qty;
-    subtotalTwd += jpyToTwd(priceVal) * qty;
+    subtotalTwd += jpyToTwd(priceVal, rate) * qty;
 
     const weight = getCategoryWeight(item.category);
     totalWeight += weight * qty;
@@ -336,7 +348,7 @@ export function calculateQuote(items: CartItemForQuote[]): QuoteResult {
     categoryCounts[label] = (categoryCounts[label] || 0) + qty;
   }
 
-  const shipping = getShippingTwd(totalWeight);
+  const shipping = getShippingTwd(totalWeight, rate);
 
   return {
     subtotalTwd,

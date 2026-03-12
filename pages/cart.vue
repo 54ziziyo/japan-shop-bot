@@ -10,12 +10,13 @@ const syncing = ref(false);
 const userId = ref(null);
 let supabase = null;
 let liff = null;
+const { rate: jpyRate, fetchRate } = useExchangeRate(); // 動態匯率
 
 // 自動加總邏輯（台幣）
 const totalAmount = computed(() => {
   return items.value.reduce((sum, item) => {
     const jpy = parseJpy(item.price);
-    const twd = jpyToTwd(jpy);
+    const twd = jpyToTwd(jpy, jpyRate.value);
     const qty = item.quantity || 1;
     return sum + twd * qty;
   }, 0);
@@ -157,6 +158,7 @@ onMounted(async () => {
   const [liffModule] = await Promise.all([
     import('@line/liff'),
     initSupabase(),
+    fetchRate(),
   ]);
   liff = liffModule.default;
 
@@ -249,28 +251,56 @@ const handleReload = () => {
             </div>
 
             <div class="flex-1 min-w-0">
-              <h2
-                class="font-bold text-sm uppercase tracking-tight truncate leading-tight mb-0.5"
-              >
-                {{ item.product_title }}
-              </h2>
+              <div class="flex justify-between items-start mb-0.5">
+                <h2
+                  class="font-bold text-sm uppercase tracking-tight truncate leading-tight"
+                >
+                  {{ item.product_title }}
+                </h2>
+
+                <button
+                  @click="removeItem(item.id)"
+                  class="p-1 -mt-1 -mr-1 text-gray-200 hover:text-red-500 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+
               <p
                 v-if="item.product_code"
                 class="text-[9px] font-mono text-gray-500 tracking-wide mb-1"
               >
                 {{ item.product_code }}
               </p>
+
               <p
                 class="text-[10px] font-semibold text-gray-800 uppercase tracking-wider mb-2"
               >
                 {{ item.color }} <span class="mx-1 text-gray-200">|</span>
                 {{ item.size }}
               </p>
+
               <div class="flex items-center justify-between">
                 <p class="font-black text-lg tracking-tighter">
-                  NT${{ jpyToTwd(parseJpy(item.price)).toLocaleString() }}
+                  NT${{
+                    jpyToTwd(parseJpy(item.price), jpyRate).toLocaleString()
+                  }}
                 </p>
-                <!-- 數量控制 -->
+
                 <div class="flex items-center gap-0 select-none">
                   <button
                     @click="decreaseQty(item)"
@@ -292,27 +322,6 @@ const handleReload = () => {
                 </div>
               </div>
             </div>
-
-            <button
-              @click="removeItem(item.id)"
-              class="p-2 text-gray-200 hover:text-red-500 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
-                ></path>
-              </svg>
-            </button>
           </div>
         </div>
 

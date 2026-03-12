@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import { scrapeUniqlo } from '../utils/scrapeUniqlo';
 import { parseJpy, jpyToTwd, formatTwd } from '#shared/pricing';
+import { getJpyRate } from '../utils/exchangeRate';
 
 // 🔑 老闆的 User ID
 const ADMIN_USER_ID = 'Ud2d92728dfaf5241e62b1cb167e6973a';
@@ -47,6 +48,13 @@ export default defineEventHandler(async (event) => {
   if (!body) return 'No Body';
   const bodyJson = JSON.parse(body);
   const events: WebhookEvent[] = bodyJson.events || [];
+
+  // 💱 取得台銀即時匯率
+  const jpyRate = await getJpyRate({
+    supabaseUrl: config.public.supabaseUrl,
+    supabaseKey: config.public.supabaseKey,
+  });
+  console.log(`💱 Webhook 使用匯率: ${jpyRate}`);
 
   await Promise.all(
     events.map(async (webhookEvent) => {
@@ -210,7 +218,7 @@ export default defineEventHandler(async (event) => {
                   '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。';
               }
             }
-            const twdItemPrice = jpyToTwd(parseJpy(itemPrice));
+            const twdItemPrice = jpyToTwd(parseJpy(itemPrice), jpyRate);
             await sendReplyOrPush({
               type: 'text',
               text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n價格：NT$${twdItemPrice.toLocaleString()}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
@@ -381,7 +389,7 @@ export default defineEventHandler(async (event) => {
                     },
                     {
                       type: 'text',
-                      text: `${formatTwd(jpyToTwd(parseJpy(v.price)))}`,
+                      text: `${formatTwd(jpyToTwd(parseJpy(v.price), jpyRate))}`,
                       size: 'md',
                       weight: 'bold',
                       color: '#ffffff',

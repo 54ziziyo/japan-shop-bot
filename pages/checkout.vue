@@ -14,6 +14,7 @@ const submittedPaymentMethod = ref('');
 const submittedTotal = ref(0);
 let supabase = null;
 let liff = null;
+const { rate: jpyRate, fetchRate } = useExchangeRate();
 
 const BANK_NAME = '玉山銀行';
 const BANK_CODE = '808';
@@ -188,7 +189,7 @@ const subtotalJpy = computed(() => {
 const subtotalTwd = computed(() => {
   return validItems.value.reduce((sum, item) => {
     const jpy = parseJpy(item.displayPrice || '');
-    return sum + jpyToTwd(jpy) * (item.quantity || 1);
+    return sum + jpyToTwd(jpy, jpyRate.value) * (item.quantity || 1);
   }, 0);
 });
 
@@ -201,7 +202,9 @@ const totalWeight = computed(() => {
 });
 
 // 運費資訊
-const shippingInfo = computed(() => getShippingTwd(totalWeight.value));
+const shippingInfo = computed(() =>
+  getShippingTwd(totalWeight.value, jpyRate.value),
+);
 
 // 基礎金額（商品 + 運費 + 基本服務費）
 const baseSubtotal = computed(
@@ -245,7 +248,7 @@ const syncBanner = computed(() => {
       );
     } else if (item.priceChanged) {
       changes.push(
-        `💰 ${item.product_title}（${item.color} / ${item.size}）：NT$${jpyToTwd(parseJpy(item.oldPrice)).toLocaleString()} → NT$${jpyToTwd(parseJpy(item.displayPrice)).toLocaleString()}`,
+        `💰 ${item.product_title}（${item.color} / ${item.size}）：NT$${jpyToTwd(parseJpy(item.oldPrice), jpyRate.value).toLocaleString()} → NT$${jpyToTwd(parseJpy(item.displayPrice), jpyRate.value).toLocaleString()}`,
       );
     }
   }
@@ -338,7 +341,7 @@ const submitOrder = async () => {
       color: item.color,
       size: item.size,
       price: item.displayPrice,
-      priceTwd: jpyToTwd(parseJpy(item.displayPrice)),
+      priceTwd: jpyToTwd(parseJpy(item.displayPrice), jpyRate.value),
       quantity: item.quantity || 1,
       image_url: item.image_url || '',
       product_url: item.product_url || '',
@@ -394,6 +397,7 @@ onMounted(async () => {
   const [liffModule, { createClient }] = await Promise.all([
     import('@line/liff'),
     import('@supabase/supabase-js'),
+    fetchRate(),
   ]);
   liff = liffModule.default;
   supabase = createClient(config.public.supabaseUrl, config.public.supabaseKey);
@@ -687,13 +691,19 @@ onMounted(async () => {
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-black text-base tracking-tighter"
                       >NT${{
-                        jpyToTwd(parseJpy(item.displayPrice)).toLocaleString()
+                        jpyToTwd(
+                          parseJpy(item.displayPrice),
+                          jpyRate.value,
+                        ).toLocaleString()
                       }}</span
                     >
                     <template v-if="item.priceChanged">
                       <span class="text-[9px] text-gray-400 line-through"
                         >NT${{
-                          jpyToTwd(parseJpy(item.oldPrice)).toLocaleString()
+                          jpyToTwd(
+                            parseJpy(item.oldPrice),
+                            jpyRate.value,
+                          ).toLocaleString()
                         }}</span
                       >
                       <span

@@ -26,17 +26,22 @@ export function getRateMarkup(jpyPrice: number): number {
 
 /**
  * 日幣商品價格 → 台幣商品價格
- * 公式: JPY × [階級匯率 + 加碼]
+ * 公式: JPY × [台銀現金賣出匯率 + 階級加碼]
+ * @param jpyPrice 日幣價格
+ * @param rate     台銀現金賣出匯率（可選，預設使用 JPY_SELL_RATE）
  */
-export function jpyToTwd(jpyPrice: number): number {
+export function jpyToTwd(jpyPrice: number, rate?: number): number {
   if (jpyPrice <= 0) return 0;
-  // 取得該區間的加碼值
+  const baseRate = rate ?? JPY_SELL_RATE;
   const markup = getRateMarkup(jpyPrice);
+  const finalRate = baseRate + markup;
+  const result = Math.round(jpyPrice * finalRate);
 
-  // 最終套用的報價匯率 (例如: 0.205 + 0.045 = 0.25) 0.05
-  const finalRate = JPY_SELL_RATE + markup;
+  console.log(
+    `💱 jpyToTwd: ¥${jpyPrice} × (${baseRate} + ${markup}) = ¥${jpyPrice} × ${finalRate.toFixed(4)} = NT$${result}${rate ? '' : ' ⚠️ 使用預設匯率'}`,
+  );
 
-  return Math.round(jpyPrice * finalRate);
+  return result;
 }
 
 /** 格式化台幣顯示 */
