@@ -19,7 +19,7 @@ let supabaseClient: any = null;
 // ── Status helpers ──
 const STATUS_LABELS: Record<string, string> = {
   pending: '待付款確認中',
-  confirmed: '已收款，採購中',
+  confirmed: '採購中',
   processing: '包裝中',
   packing: '已出貨',
 };

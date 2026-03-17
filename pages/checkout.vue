@@ -440,37 +440,55 @@ onMounted(async () => {
       .order('created_at', { ascending: false });
     cartItems.value = data || [];
 
-    // 🔄 讀取同步結果（從 cart 頁帶過來的）
-    const syncRaw = sessionStorage.getItem('checkout_sync');
-    if (syncRaw) {
-      const syncData = JSON.parse(syncRaw);
-      sessionStorage.removeItem('checkout_sync');
-
+    // 🔄 套用 sync 結果（更新顯示價格、標記已售完）
+    const applySyncData = async (syncData) => {
       if (syncData.syncFailed) {
         syncFailed.value = true;
-      } else {
-        syncResults.value = syncData.results || [];
-
-        // 💾 備份舊價格，然後更新 DB 中的價格（保留 in-memory 原始價格供標記用）
-        for (const r of syncResults.value) {
-          if (r.priceChanged && r.inStock) {
-            const item = cartItems.value.find(
-              (i) =>
-                i.product_code === r.product_code &&
-                i.color === r.color &&
-                i.size === r.size,
-            );
-            if (item) {
-              // 保存舊價格供顯示用
-              item.originalPrice = item.price;
-              // 更新 DB（下次載入就是新價格）
-              await supabase
-                .from('cart_items')
-                .update({ price: r.currentPrice })
-                .eq('id', item.id);
-            }
+        return;
+      }
+      syncResults.value = syncData.results || [];
+      for (const r of syncResults.value) {
+        if (r.priceChanged && r.inStock) {
+          const item = cartItems.value.find(
+            (i) =>
+              i.product_code === r.product_code &&
+              i.color === r.color &&
+              i.size === r.size,
+          );
+          if (item) {
+            item.originalPrice = item.price;
+            await supabase
+              .from('cart_items')
+              .update({ price: r.currentPrice })
+              .eq('id', item.id);
           }
         }
+      }
+    };
+
+    // 🔄 優先用 cart.vue 帶過來的 sessionStorage，沒有就自動重新 sync
+    const syncRaw = sessionStorage.getItem('checkout_sync');
+    if (syncRaw) {
+      sessionStorage.removeItem('checkout_sync');
+      await applySyncData(JSON.parse(syncRaw));
+    } else if (cartItems.value.length > 0) {
+      // 直接進入或重整頁面：自動執行一次 sync
+      try {
+        const checkItems = cartItems.value.map((item) => ({
+          product_code: item.product_code,
+          color: item.color,
+          size: item.size,
+          price: item.price,
+        }));
+        const res = await fetch('/api/sync-cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: checkItems }),
+        });
+        const syncData = await res.json();
+        await applySyncData(syncData);
+      } catch {
+        syncFailed.value = true;
       }
     }
   } catch (err) {
@@ -1165,9 +1183,7 @@ onMounted(async () => {
                 class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest"
                 >訂單總計</span
               >
-              <span class="text-[9px] text-[#749D8E] font-bold"
-                >含稅</span
-              >
+              <span class="text-[9px] text-[#749D8E] font-bold">含稅</span>
             </div>
             <div class="text-right">
               <p class="text-3xl font-black tracking-tighter text-[#5A746B]">
