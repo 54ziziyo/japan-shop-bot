@@ -171,10 +171,8 @@ function closeLiff() {
   <ClientOnly>
     <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
       <!-- ── Navbar ── -->
-      <nav
-        class="sticky top-0 z-30 bg-[#F4F9F5]/70 backdrop-blur-xl p-6 flex justify-between items-end border-b border-[#E8F0E9]"
-      >
-        <div>
+      <AppNavbar title="訂單查詢">
+        <template #subtitle>
           <div class="flex items-center gap-2 mb-2">
             <span
               class="px-2 py-0.5 bg-[#749D8E]/10 text-[#749D8E] text-[9px] font-black rounded-full tracking-widest uppercase"
@@ -182,35 +180,20 @@ function closeLiff() {
               ROMURUMU JP
             </span>
           </div>
-          <h1
-            class="text-3xl font-black tracking-tight leading-none text-[#5A746B]"
+        </template>
+        <template #right>
+          <button
+            class="text-[10px] font-black text-[#749D8E] hover:text-[#5A746B] transition-colors uppercase tracking-widest"
+            @click="$router.push('/cart')"
           >
-            訂單查詢
-          </h1>
-        </div>
-        <button
-          class="text-[10px] font-black text-[#749D8E] hover:text-[#5A746B] transition-colors uppercase tracking-widest"
-          @click="$router.push('/cart')"
-        >
-          前往購物車 →
-        </button>
-      </nav>
+            前往購物車 →
+          </button>
+        </template>
+      </AppNavbar>
 
       <div class="max-w-md mx-auto px-6 pb-24">
         <!-- ── 載入中 ── -->
-        <div
-          v-if="loading"
-          class="flex flex-col items-center justify-center py-32"
-        >
-          <div
-            class="w-8 h-8 border-4 border-[#749D8E]/20 border-t-[#749D8E] rounded-full animate-spin mb-4"
-          ></div>
-          <p
-            class="text-[11px] font-bold text-[#A4B8B0] tracking-[0.2em] uppercase text-center"
-          >
-            正在為您準備...
-          </p>
-        </div>
+        <AppLoading v-if="loading" />
 
         <!-- ── 無訂單 ── -->
         <div v-else-if="orders.length === 0" class="text-center py-32">
@@ -430,7 +413,7 @@ function closeLiff() {
             <!-- 訂單總計 -->
             <div
               v-if="order.grand_total_twd"
-              class="px-5 py-3 bg-[#F4F9F5] border-t border-[#E8F0E9] flex justify-between items-center"
+              class="px-5 py-3 bg-[#F4F9F5]/50 border-t border-[#E8F0E9] flex justify-between items-center"
             >
               <p
                 class="text-[10px] text-[#A4B8B0] font-black uppercase tracking-widest"

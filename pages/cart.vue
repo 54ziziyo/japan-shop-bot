@@ -186,10 +186,8 @@ const handleReload = () => {
 <template>
   <ClientOnly>
     <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
-      <nav
-        class="sticky top-0 z-30 bg-[#F4F9F5]/70 backdrop-blur-xl p-6 flex items-end justify-between border-b border-[#E8F0E9]"
-      >
-        <div>
+      <AppNavbar title="購物清單">
+        <template #subtitle>
           <div class="flex items-center gap-2 mb-2 h-6">
             <span
               class="px-2 py-0.5 bg-[#749D8E]/10 text-[#749D8E] text-[9px] font-black rounded-full tracking-widest uppercase"
@@ -197,25 +195,22 @@ const handleReload = () => {
               ROMURUMU JP
             </span>
           </div>
-          <h1
-            class="text-3xl font-black tracking-tight leading-none text-[#5A746B]"
-          >
-            購物清單
-          </h1>
-        </div>
-        <div v-if="!loading" class="text-right">
-          <p
-            class="text-[10px] font-bold text-[#A4B8B0] uppercase tracking-widest mb-1"
-          >
-            Total Qty
-          </p>
-          <div
-            class="inline-flex items-center justify-center bg-[#749D8E] text-white w-8 h-8 rounded-full shadow-lg shadow-[#749D8E]/20 font-black text-sm"
-          >
-            {{ totalQty }}
+        </template>
+        <template #right>
+          <div v-if="!loading" class="text-right">
+            <p
+              class="text-[10px] font-bold text-[#A4B8B0] uppercase tracking-widest mb-1"
+            >
+              Total Qty
+            </p>
+            <div
+              class="inline-flex items-center justify-center bg-[#749D8E] text-white w-8 h-8 rounded-full shadow-lg shadow-[#749D8E]/20 font-black text-sm"
+            >
+              {{ totalQty }}
+            </div>
           </div>
-        </div>
-      </nav>
+        </template>
+      </AppNavbar>
 
       <div class="max-w-md mx-auto px-6 pb-60">
         <div
@@ -230,19 +225,7 @@ const handleReload = () => {
           </p>
         </div>
 
-        <div
-          v-if="loading"
-          class="flex flex-col items-center justify-center py-32"
-        >
-          <div
-            class="w-8 h-8 border-4 border-[#749D8E]/20 border-t-[#749D8E] rounded-full animate-spin mb-4"
-          ></div>
-          <p
-            class="text-[11px] font-bold text-[#A4B8B0] tracking-[0.2em] uppercase text-center"
-          >
-            正在為您準備...
-          </p>
-        </div>
+        <AppLoading v-if="loading" />
 
         <div v-else-if="items.length > 0" class="space-y-10 mt-6">
           <div
@@ -350,40 +333,15 @@ const handleReload = () => {
         </div>
       </div>
 
-      <footer
+      <AppBottomBar
         v-if="items.length > 0"
-        class="fixed bottom-6 left-0 right-0 z-40 px-6"
-      >
-        <div
-          class="max-w-md mx-auto bg-white/80 backdrop-blur-2xl p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(116,157,142,0.15)] border border-white/50"
-        >
-          <div class="flex justify-between items-center mb-6">
-            <div class="flex flex-col">
-              <span
-                class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest"
-                >Est. Total</span
-              >
-              <span class="text-[9px] text-[#749D8E] font-bold"
-                >※ 不包含運費與其他費用</span
-              >
-            </div>
-            <div class="text-right">
-              <p class="text-3xl font-black tracking-tighter text-[#5A746B]">
-                <span class="text-sm">NT$</span>
-                {{ totalAmount.toLocaleString() }}
-              </p>
-            </div>
-          </div>
-
-          <button
-            @click="handleCheckout"
-            :disabled="syncing"
-            class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white py-4 rounded-[1.5rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-[0_10px_25px_rgba(116,157,142,0.3)] active:scale-[0.96] transition-all disabled:opacity-50"
-          >
-            {{ syncing ? 'Synchronizing...' : 'Checkout Now' }}
-          </button>
-        </div>
-      </footer>
+        label="預估總額"
+        sublabel="不包含運費與其他費用"
+        :amount="totalAmount"
+        :button-text="syncing ? '加載中...' : '下一步'"
+        :disabled="syncing"
+        @submit="handleCheckout"
+      />
     </div>
   </ClientOnly>
 </template>
