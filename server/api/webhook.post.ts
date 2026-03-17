@@ -125,6 +125,19 @@ export default defineEventHandler(async (event) => {
         const action = data.get('action');
 
         if (action === 'buy') {
+          // ✅ 檢查輪播是否過期（2 小時）
+          const createdTs = data.get('ts');
+          if (createdTs) {
+            const ageMs = Date.now() - Number(createdTs) * 1000;
+            if (ageMs > 2 * 60 * 60 * 1000) {
+              await sendReplyOrPush({
+                type: 'text',
+                text: '⚠️ 此商品輪播已超過 2 小時，為確保價格與庫存是最新狀況，請重新貼上商品網址以取得最新資訊再加入購物車喔！',
+              });
+              return;
+            }
+          }
+
           const itemTitle = data.get('t') || '未知商品';
           const itemColor = data.get('c') || 'F';
           const itemSize = data.get('s') || 'F';
@@ -317,7 +330,7 @@ export default defineEventHandler(async (event) => {
 
           const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
             // 💡 直接傳實際圖片路徑，不再用 cc/gid 重組
-            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
+            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}&ts=${Math.floor(Date.now() / 1000)}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
 
             // 💡 4. 根據庫存狀態調整按鈕樣式和行為
             const themeColor = s.isStock ? '#ffffff' : '#888888';

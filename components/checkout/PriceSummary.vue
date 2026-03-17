@@ -54,7 +54,7 @@ defineProps({
         class="flex justify-between items-center text-[#749D8E]"
       >
         <span class="text-[11px] font-semibold">轉帳優惠折扣（-3%）</span>
-        <span class="text-sm font-bold"
+        <span class="text-sm font-bold text-[#5A746B]"
           >-NT${{ hiddenSurcharge.toLocaleString() }}</span
         >
       </div>

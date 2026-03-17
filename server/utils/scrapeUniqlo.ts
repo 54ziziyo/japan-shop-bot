@@ -16,15 +16,17 @@ export const scrapeUniqlo = async (url: string) => {
 
     const BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
 
-    // 2. 同時呼叫「商品詳情 API」和「商品搜尋 API（含庫存篩選）」
+    // 2. 同時呼叫「商品詳情 API」、「庫存 API」和「L2s API」
     const detailUrl = `${BASE}/products/${rawCode}/price-groups/${priceGroup}/details?httpFailure=true`;
-    const stockUrl = `${BASE}/products?productIds=${rawCode}&offset=0&limit=1&httpFailure=true`;
+    const stockUrl = `${BASE}/products/${rawCode}/price-groups/${priceGroup}/stock?httpFailure=true`;
+    const l2sUrl = `${BASE}/products/${rawCode}/price-groups/${priceGroup}/l2s?httpFailure=true`;
 
-    const [detailRes, stockRes] = await Promise.all([
+    const [detailRes, stockRes, l2sRes] = await Promise.all([
       axios.get(detailUrl, { headers }),
+      axios.get(stockUrl, { headers }).catch(() => ({ data: { result: {} } })),
       axios
-        .get(stockUrl, { headers })
-        .catch(() => ({ data: { result: { items: [] } } })),
+        .get(l2sUrl, { headers })
+        .catch(() => ({ data: { result: { l2s: [] } } })),
     ]);
 
     const result = detailRes.data?.result;
@@ -60,15 +62,37 @@ export const scrapeUniqlo = async (url: string) => {
     const categoryName = breadcrumbs?.category?.name || '';
     const category = categoryName ? `${className}|${categoryName}` : className;
 
-    // 4. 從 products search API 取得「全部顏色聯集」的有庫存尺寸
-    const stockItem = stockRes.data?.result?.items?.[0];
-    const inStockSizeCodes = new Set<string>();
-    if (stockItem?.sizes) {
-      for (const s of stockItem.sizes) {
-        inStockSizeCodes.add(s.displayCode); // e.g. "006", "007"
-      }
+    // 4. 從 stock API + l2s API 建立精確的每色每尺寸庫存
+    //    stock API: { [l2Id]: { statusCode: "IN_STOCK" | "STOCK_OUT", ... } }
+    //    l2s API:   [{ l2Id, color: { displayCode }, size: { displayCode } }]
+    const stockData: Record<string, any> = stockRes.data?.result || {};
+    const l2sList: any[] = l2sRes.data?.result?.l2s || [];
+
+    // 建立 l2Id → { colorDC, sizeDC } 映射
+    const l2Map = new Map<string, { colorDC: string; sizeDC: string }>();
+    for (const item of l2sList) {
+      l2Map.set(item.l2Id, {
+        colorDC: item.color.displayCode,
+        sizeDC: item.size.displayCode,
+      });
     }
-    console.log('📦 聯集有庫存尺寸:', [...inStockSizeCodes].join(', ') || '無');
+
+    // 建立 per-color stock map: colorDisplayCode → Set<sizeDisplayCode>
+    const perColorStock = new Map<string, Set<string>>();
+    for (const [l2Id, stock] of Object.entries(stockData)) {
+      if ((stock as any)?.statusCode !== 'IN_STOCK') continue;
+      const mapping = l2Map.get(l2Id);
+      if (!mapping) continue;
+      if (!perColorStock.has(mapping.colorDC))
+        perColorStock.set(mapping.colorDC, new Set());
+      perColorStock.get(mapping.colorDC)!.add(mapping.sizeDC);
+    }
+
+    console.log(`📦 庫存 API 取得 ${Object.keys(stockData).length} 筆 SKU`);
+    // log 每色庫存
+    for (const [cdc, sSet] of perColorStock) {
+      console.log(`  🎨 ${cdc}: ${[...sSet].join(', ')}`);
+    }
 
     // 5. 圖片
     const mainImages: Record<string, { image: string }> =
@@ -82,57 +106,7 @@ export const scrapeUniqlo = async (url: string) => {
       (s: any) => s.display?.showFlag !== false,
     );
 
-    // ────────────────────────────────────────────────────
-    // 7. ✅ 精確每色每尺寸庫存：用 colorCodes + sizeCodes 組合查詢
-    //    若 items > 0 → 該色 + 該尺寸有庫存
-    //    若 items = 0 → 該色 + 該尺寸缺貨
-    // ────────────────────────────────────────────────────
-    type StockCheck = {
-      colorDC: string; // e.g. "08"
-      sizeDC: string; // e.g. "006"
-    };
-    const checks: StockCheck[] = [];
-
-    for (const c of colors) {
-      for (const s of sizes) {
-        // 只檢查聯集中有庫存的尺寸（其他一定缺貨，不用查）
-        if (inStockSizeCodes.has(s.displayCode)) {
-          checks.push({ colorDC: c.displayCode, sizeDC: s.displayCode });
-        }
-      }
-    }
-
-    console.log(`🔍 需檢查 ${checks.length} 個顏色×尺寸組合`);
-
-    // 並行查詢所有組合
-    const checkResults = await Promise.all(
-      checks.map(({ colorDC, sizeDC }) =>
-        axios
-          .get(
-            `${BASE}/products?productIds=${rawCode}&colorCodes=COL${colorDC}&sizeCodes=SMA${sizeDC}&offset=0&limit=1&httpFailure=true`,
-            { headers },
-          )
-          .then((res) => (res.data?.result?.items?.length ?? 0) > 0)
-          .catch(() => false),
-      ),
-    );
-
-    // 建立 per-color stock map: colorDisplayCode → Set<sizeDisplayCode>
-    const perColorStock = new Map<string, Set<string>>();
-    for (let i = 0; i < checks.length; i++) {
-      if (checkResults[i]) {
-        const { colorDC, sizeDC } = checks[i]!;
-        if (!perColorStock.has(colorDC)) perColorStock.set(colorDC, new Set());
-        perColorStock.get(colorDC)!.add(sizeDC);
-      }
-    }
-
-    // log 每色庫存
-    for (const [cdc, sSet] of perColorStock) {
-      console.log(`  🎨 ${cdc}: ${[...sSet].join(', ')}`);
-    }
-
-    // 8. 組裝 Variants（每個顏色 = 一張輪播卡片）
+    // 7. 組裝 Variants（每個顏色 = 一張輪播卡片）
     const variants = colors.map((c: any, index: number) => {
       const displayCode = c.displayCode; // e.g. "31"
       const colorName = `${displayCode} ${c.name}`;
