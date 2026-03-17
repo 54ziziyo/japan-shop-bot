@@ -24,7 +24,7 @@ const handleReload = () => {
         </NuxtLink>
         <!-- <button
           @click="handleReload"
-          class="inline-block py-3 border border-black text-black font-black text-sm uppercase tracking-widest rounded-full hover:bg-gray-800 hover:text-white transition-colors"
+          class="inline-block py-3 border border-[#3d4e4a] text-black font-black text-sm uppercase tracking-widest rounded-full hover:bg-gray-800 hover:text-white transition-colors"
         >
           重新整理
         </button> -->

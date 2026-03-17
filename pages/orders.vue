@@ -33,7 +33,7 @@ function statusEmoji(status: string) {
     pending: '⏳',
     confirmed: '💰',
     processing: '📦',
-    packing: '🎌',
+    packing: '✅',
   };
   return map[status] ?? '•';
 }
@@ -169,25 +169,27 @@ function closeLiff() {
 
 <template>
   <ClientOnly>
-    <div class="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans antialiased">
+    <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
       <!-- ── Navbar ── -->
       <nav
-        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex justify-between items-end"
+        class="sticky top-0 z-30 bg-[#F4F9F5]/70 backdrop-blur-xl p-6 flex justify-between items-end border-b border-[#E8F0E9]"
       >
         <div>
           <div class="flex items-center gap-2 mb-2">
-            <p
-              class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none"
+            <span
+              class="px-2 py-0.5 bg-[#749D8E]/10 text-[#749D8E] text-[9px] font-black rounded-full tracking-widest uppercase"
             >
-              🏠 囉姆嚕日貨代購
-            </p>
+              ROMURUMU JP
+            </span>
           </div>
-          <h1 class="text-3xl font-black italic tracking-tighter leading-none">
+          <h1
+            class="text-3xl font-black tracking-tight leading-none text-[#5A746B]"
+          >
             訂單查詢
           </h1>
         </div>
         <button
-          class="text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors"
+          class="text-[10px] font-black text-[#749D8E] hover:text-[#5A746B] transition-colors uppercase tracking-widest"
           @click="$router.push('/cart')"
         >
           前往購物車 →
@@ -201,24 +203,26 @@ function closeLiff() {
           class="flex flex-col items-center justify-center py-32"
         >
           <div
-            class="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin mb-4"
+            class="w-8 h-8 border-4 border-[#749D8E]/20 border-t-[#749D8E] rounded-full animate-spin mb-4"
           ></div>
           <p
-            class="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase"
+            class="text-[11px] font-bold text-[#A4B8B0] tracking-[0.2em] uppercase text-center"
           >
-            Loading
+            正在為您準備...
           </p>
         </div>
 
         <!-- ── 無訂單 ── -->
         <div v-else-if="orders.length === 0" class="text-center py-32">
-          <p class="text-2xl font-black mb-3">目前無進行中訂單</p>
-          <p class="text-sm text-gray-400 leading-relaxed">
+          <p class="text-2xl font-black mb-3 text-[#5A746B]">
+            目前無進行中訂單
+          </p>
+          <p class="text-sm text-[#A4B8B0] leading-relaxed mb-6">
             尚無進行中的訂單記錄<br />
             已完成的歷史訂單暫不顯示
           </p>
           <button
-            class="text-xs font-bold text-black-400 hover:text-gray-700 transition-colors underline underline-offset-2 decoration-2"
+            class="text-[10px] font-bold text-[#749D8E] hover:text-[#5A746B] transition-colors border-b-2 border-[#749D8E] pb-1 uppercase tracking-widest"
             @click="closeLiff()"
           >
             返回官方帳號
@@ -226,21 +230,21 @@ function closeLiff() {
         </div>
 
         <!-- ── 訂單卡片列表 ── -->
-        <div v-else class="space-y-6 mt-4">
+        <div v-else class="space-y-6 mt-6">
           <div
             v-for="order in orders"
             :key="order.id"
-            class="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-100"
+            class="bg-white rounded-[1.75rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.08)] border border-[#E8F0E9]"
           >
             <!-- 狀態標頭 -->
             <div class="px-5 py-4 flex justify-between items-center">
               <div>
                 <p
-                  class="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1"
+                  class="text-[10px] font-bold tracking-widest uppercase text-[#A4B8B0] mb-1"
                 >
                   {{ formatDate(order.created_at) }}
                 </p>
-                <p class="font-black text-lg leading-tight">
+                <p class="font-black text-lg leading-tight text-[#5A746B]">
                   {{ statusLabel(order.status) }}
                 </p>
               </div>
@@ -253,31 +257,31 @@ function closeLiff() {
             </div>
 
             <!-- 收件人資訊 -->
-            <div class="px-5 pb-3 border-b border-gray-100 space-y-1">
-              <p class="text-xs text-gray-500">
-                <span class="font-bold text-gray-800">{{
+            <div class="px-5 pb-3 border-b border-[#E8F0E9] space-y-1.5">
+              <p class="text-xs text-[#A4B8B0]">
+                <span class="font-bold text-[#5A746B]">{{
                   order.customer_name
                 }}</span>
                 &nbsp;&nbsp;{{ order.phone }}
               </p>
               <!-- 地址列 -->
               <div class="flex items-center gap-1">
-                <p class="text-xs text-gray-500 flex items-center gap-1">
+                <p class="text-xs text-[#A4B8B0] flex items-center gap-1">
                   <span>📍</span>
                   <template v-if="editingAddressId === order.id">
                     <input
                       v-model="editAddress"
                       type="text"
-                      class="border border-gray-300 rounded-lg px-2 py-0.5 text-xs w-full mt-1 focus:outline-none focus:border-black"
+                      class="border border-[#D1E2D5] rounded-xl px-2 py-0.5 text-xs w-full mt-1 focus:outline-none focus:border-[#749D8E] text-[#4A5D59] bg-white"
                     />
                   </template>
                   <template v-else>{{ order.address }}</template>
                 </p>
                 <!-- 編輯 / 儲存 / 取消 -->
-                <template v-if="canEditAddress(order.status)">
+                <!-- <template v-if="canEditAddress(order.status)">
                   <template v-if="editingAddressId === order.id">
                     <button
-                      class="text-green-600 p-0.5 shrink-0"
+                      class="text-[#749D8E] p-0.5 shrink-0"
                       @click="saveAddress(order)"
                       title="儲存"
                     >
@@ -296,7 +300,7 @@ function closeLiff() {
                       </svg>
                     </button>
                     <button
-                      class="text-gray-400 p-0.5 shrink-0 ml-0.5"
+                      class="text-[#A4B8B0] p-0.5 shrink-0 ml-0.5"
                       @click="cancelEdit"
                       title="取消"
                     >
@@ -317,7 +321,7 @@ function closeLiff() {
                   </template>
                   <button
                     v-else
-                    class="text-gray-400 hover:text-black p-0.5 shrink-0"
+                    class="text-[#A4B8B0] hover:text-[#749D8E] p-0.5 shrink-0 transition-colors"
                     @click="startEdit(order)"
                     title="修改地址"
                   >
@@ -341,12 +345,12 @@ function closeLiff() {
                 <template
                   v-else-if="['processing', 'packing'].includes(order.status)"
                 >
-                  <span class="text-[9px] text-gray-400 shrink-0"
+                  <span class="text-[9px] text-[#A4B8B0] shrink-0"
                     >🔒 已鎖定</span
                   >
-                </template>
+                </template> -->
               </div>
-              <p class="text-xs text-gray-500">
+              <p class="text-xs text-[#A4B8B0]">
                 💳
                 {{
                   order.payment_method === 'bank_transfer'
@@ -359,8 +363,8 @@ function closeLiff() {
                     order.account_last5
                   "
                 >
-                  &middot; 末五碼 {{ order.account_last5 }}</span
-                >
+                  &middot; 末五碼 {{ order.account_last5 }}
+                </span>
               </p>
               <!-- 我要轉帳按鈕 -->
               <div
@@ -372,7 +376,7 @@ function closeLiff() {
               >
                 <button
                   @click="copyBankInfo(order)"
-                  class="w-full text-center text-xs font-black bg-black text-white rounded-xl py-2.5 active:opacity-70 transition-opacity"
+                  class="w-full text-center text-[11px] font-black bg-[#749D8E] hover:bg-[#63897B] text-white rounded-2xl py-3 active:scale-[0.97] transition-all shadow-[0_4px_15px_rgba(116,157,142,0.25)] uppercase tracking-[0.2em]"
                 >
                   🏦 我要轉帳
                 </button>
@@ -388,7 +392,7 @@ function closeLiff() {
               >
                 <!-- 商品圖片 -->
                 <div
-                  class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100"
+                  class="w-16 h-16 rounded-[1.1rem] overflow-hidden bg-[#F4F9F5] flex-shrink-0 border border-[#E8F0E9] shadow-[0_2px_8px_rgb(116,157,142,0.08)]"
                 >
                   <img
                     v-if="item.image_url"
@@ -399,19 +403,24 @@ function closeLiff() {
                 </div>
                 <!-- 商品資訊 -->
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold leading-snug line-clamp-2">
+                  <p
+                    class="text-xs font-bold leading-snug line-clamp-2 text-[#4A5D59]"
+                  >
                     {{ item.product_title }}
                   </p>
-                  <p class="text-[11px] text-gray-400 mt-0.5">
-                    {{ item.color }} / {{ item.size }}
+                  <p
+                    class="text-[10px] font-semibold text-[#749D8E]/60 uppercase tracking-wide mt-0.5"
+                  >
+                    {{ item.color }} <span class="opacity-40 mx-0.5">/</span>
+                    {{ item.size }}
                   </p>
-                  <p class="text-[11px] text-gray-400 mt-0.5">
+                  <p class="text-[10px] text-[#A4B8B0] mt-0.5">
                     × {{ item.quantity }} 件
                   </p>
                 </div>
                 <!-- 價格 -->
                 <div class="text-right flex-shrink-0">
-                  <p class="text-sm font-black">
+                  <p class="text-sm font-black text-[#5A746B]">
                     NT${{ (item.priceTwd || 0).toLocaleString() }}
                   </p>
                 </div>
@@ -421,15 +430,16 @@ function closeLiff() {
             <!-- 訂單總計 -->
             <div
               v-if="order.grand_total_twd"
-              class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center"
+              class="px-5 py-3 bg-[#F4F9F5] border-t border-[#E8F0E9] flex justify-between items-center"
             >
               <p
-                class="text-[10px] text-gray-400 font-black uppercase tracking-widest"
+                class="text-[10px] text-[#A4B8B0] font-black uppercase tracking-widest"
               >
                 訂單總計
               </p>
-              <p class="font-black text-xl">
-                NT${{ Number(order.grand_total_twd).toLocaleString() }}
+              <p class="font-black text-xl text-[#5A746B]">
+                <span class="text-xs">NT$</span
+                >{{ Number(order.grand_total_twd).toLocaleString() }}
               </p>
             </div>
           </div>

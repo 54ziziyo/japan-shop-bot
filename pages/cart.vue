@@ -185,39 +185,48 @@ const handleReload = () => {
 
 <template>
   <ClientOnly>
-    <div class="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans antialiased">
+    <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
       <nav
-        class="sticky top-0 z-30 bg-[#F9F9F9]/80 backdrop-blur-md p-6 flex items-end justify-between"
+        class="sticky top-0 z-30 bg-[#F4F9F5]/70 backdrop-blur-xl p-6 flex items-end justify-between border-b border-[#E8F0E9]"
       >
         <div>
           <div class="flex items-center gap-2 mb-2 h-6">
-            <p
-              class="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase leading-none"
+            <span
+              class="px-2 py-0.5 bg-[#749D8E]/10 text-[#749D8E] text-[9px] font-black rounded-full tracking-widest uppercase"
             >
-              🏠 囉姆嚕日貨代購
-            </p>
+              ROMURUMU JP
+            </span>
           </div>
-          <h1 class="text-3xl font-black tracking-[0.1em] leading-none">
+          <h1
+            class="text-3xl font-black tracking-tight leading-none text-[#5A746B]"
+          >
             購物清單
           </h1>
         </div>
         <div v-if="!loading" class="text-right">
           <p
-            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 text-gray-400"
+            class="text-[10px] font-bold text-[#A4B8B0] uppercase tracking-widest mb-1"
           >
-            總共數量
+            Total Qty
           </p>
-          <p class="font-black text-xl leading-none">{{ totalQty }}</p>
+          <div
+            class="inline-flex items-center justify-center bg-[#749D8E] text-white w-8 h-8 rounded-full shadow-lg shadow-[#749D8E]/20 font-black text-sm"
+          >
+            {{ totalQty }}
+          </div>
         </div>
       </nav>
 
       <div class="max-w-md mx-auto px-6 pb-60">
         <div
           v-if="!loading && items.length > 0"
-          class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
+          class="bg-[#E8F0E9] border border-[#D1E2D5] rounded-3xl px-5 py-3 mb-8 mt-6"
         >
-          <p class="text-[10px] text-amber-700 font-semibold leading-relaxed">
-            🕒 為確保價格與日本官網同步，購物車將於每 6 小時自動清空。<br />請抓緊時間下單喔！
+          <p
+            class="text-[11px] text-[#5A746B] font-medium leading-relaxed flex items-center gap-2"
+          >
+            <span class="text-base">🍃</span> 為確保同步，購物車將於 6
+            小時後清空喔！
           </p>
         </div>
 
@@ -226,41 +235,37 @@ const handleReload = () => {
           class="flex flex-col items-center justify-center py-32"
         >
           <div
-            class="w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin mb-4"
+            class="w-8 h-8 border-4 border-[#749D8E]/20 border-t-[#749D8E] rounded-full animate-spin mb-4"
           ></div>
           <p
-            class="text-[10px] font-bold text-center tracking-[0.2em] text-gray-400 uppercase"
+            class="text-[11px] font-bold text-[#A4B8B0] tracking-[0.2em] uppercase text-center"
           >
-            稍等購物車抓資料唷！<br />跑跑跑，向前跑~
+            正在為您準備...
           </p>
         </div>
 
-        <div v-else-if="items.length > 0" class="space-y-8 mt-4">
+        <div v-else-if="items.length > 0" class="space-y-10 mt-6">
           <div
             v-for="item in items"
             :key="item.id"
             class="group relative flex gap-5 items-center"
           >
             <div
-              class="w-24 h-24 bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex-shrink-0 border border-gray-100"
+              class="w-24 h-24 bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.12)] flex-shrink-0 border border-[#F0F4F1]"
             >
-              <img
-                :src="item.image_url"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+              <img :src="item.image_url" class="w-full h-full object-cover" />
             </div>
 
             <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-start mb-0.5">
+              <div class="flex justify-between items-start mb-1">
                 <h2
-                  class="font-bold text-sm uppercase tracking-tight truncate leading-tight"
+                  class="font-bold text-sm tracking-tight truncate text-[#4A5D59]"
                 >
                   {{ item.product_title }}
                 </h2>
-
                 <button
                   @click="removeItem(item.id)"
-                  class="p-1 -mt-1 -mr-1 text-gray-200 hover:text-red-500 transition-colors"
+                  class="p-1 text-[#D1E2D5] hover:text-red-400 transition-colors"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -282,40 +287,42 @@ const handleReload = () => {
 
               <p
                 v-if="item.product_code"
-                class="text-[9px] font-mono text-gray-500 tracking-wide mb-1"
+                class="text-[9px] font-mono text-[#749D8E]/60 tracking-wide mb-1"
               >
                 {{ item.product_code }}
               </p>
 
               <p
-                class="text-[10px] font-semibold text-gray-800 uppercase tracking-wider mb-2"
+                class="text-[10px] font-bold text-[#749D8E]/60 mb-2 uppercase tracking-wide"
               >
-                {{ item.color }} <span class="mx-1 text-gray-200">|</span>
+                {{ item.color }} <span class="mx-1 opacity-30">/</span>
                 {{ item.size }}
               </p>
 
               <div class="flex items-center justify-between">
-                <p class="font-black text-lg tracking-tighter">
-                  NT${{
+                <p class="font-black text-xl tracking-tighter text-[#5A746B]">
+                  <span class="text-xs mr-0.5">NT$</span
+                  >{{
                     jpyToTwd(parseJpy(item.price), jpyRate).toLocaleString()
                   }}
                 </p>
 
-                <div class="flex items-center gap-0 select-none">
+                <div
+                  class="flex items-center bg-[#F4F9F5] rounded-xl p-1 shadow-inner border border-[#E8F0E9]"
+                >
                   <button
                     @click="decreaseQty(item)"
-                    class="w-7 h-7 flex items-center justify-center rounded-l-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
+                    class="w-6 h-6 flex items-center justify-center rounded-lg text-[#749D8E] hover:bg-white transition-all font-bold"
                   >
                     −
                   </button>
                   <span
-                    class="w-8 h-7 flex items-center justify-center border-t border-b border-gray-200 bg-white text-xs font-black"
+                    class="w-8 text-center text-[11px] font-black text-[#5A746B]"
+                    >{{ item.quantity || 1 }}</span
                   >
-                    {{ item.quantity || 1 }}
-                  </span>
                   <button
                     @click="increaseQty(item)"
-                    class="w-7 h-7 flex items-center justify-center rounded-r-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors text-sm font-bold"
+                    class="w-6 h-6 flex items-center justify-center rounded-lg bg-[#749D8E] text-white shadow-md shadow-[#749D8E]/30 font-bold"
                   >
                     +
                   </button>
@@ -330,13 +337,13 @@ const handleReload = () => {
           class="flex flex-col items-center justify-center py-32 text-center"
         >
           <p
-            class="text-[11px] font-bold text-gray-300 uppercase tracking-[0.3em] mb-6 italic"
+            class="text-[11px] font-bold text-[#A4B8B0] uppercase tracking-[0.3em] mb-6 italic"
           >
             你的購物車空蕩蕩，快去逛逛吧！
           </p>
           <button
             @click="handleReload"
-            class="text-[10px] font-black border-b-[3px] border-black pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
+            class="text-[10px] text-[#5A746B] font-black border-b-[3px] border-[#749D8E] pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
           >
             🔄 點擊我重整
           </button>
@@ -345,29 +352,25 @@ const handleReload = () => {
 
       <footer
         v-if="items.length > 0"
-        class="fixed bottom-0 left-0 right-0 z-40 px-6 py-4"
+        class="fixed bottom-6 left-0 right-0 z-40 px-6"
       >
         <div
-          class="max-w-md mx-auto bg-white/90 backdrop-blur-2xl p-6 rounded-[32px] shadow-xl border border-white/50"
+          class="max-w-md mx-auto bg-white/80 backdrop-blur-2xl p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(116,157,142,0.15)] border border-white/50"
         >
-          <div class="flex justify-between items-end mb-4">
-            <div>
-              <p
-                class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 leading-none"
+          <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col">
+              <span
+                class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest"
+                >Est. Total</span
               >
-                商品總額：
-              </p>
-              <p
-                class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic"
+              <span class="text-[9px] text-[#749D8E] font-bold"
+                >※ 不包含運費與其他費用</span
               >
-                ※ 不包含運費與其他費用
-              </p>
             </div>
             <div class="text-right">
-              <p
-                class="text-3xl font-black tracking-tighter italic leading-none"
-              >
-                NT$ {{ totalAmount.toLocaleString() }}
+              <p class="text-3xl font-black tracking-tighter text-[#5A746B]">
+                <span class="text-sm">NT$</span>
+                {{ totalAmount.toLocaleString() }}
               </p>
             </div>
           </div>
@@ -375,21 +378,12 @@ const handleReload = () => {
           <button
             @click="handleCheckout"
             :disabled="syncing"
-            class="w-full bg-black text-white py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-[0_10px_30px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all disabled:opacity-50"
+            class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white py-4 rounded-[1.5rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-[0_10px_25px_rgba(116,157,142,0.3)] active:scale-[0.96] transition-all disabled:opacity-50"
           >
-            {{ syncing ? 'Loading...' : '前往下單' }}
+            {{ syncing ? 'Synchronizing...' : 'Checkout Now' }}
           </button>
         </div>
       </footer>
     </div>
   </ClientOnly>
 </template>
-
-<style>
-::-webkit-scrollbar {
-  display: none;
-}
-body {
-  -webkit-tap-highlight-color: transparent;
-}
-</style>
