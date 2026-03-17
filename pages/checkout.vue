@@ -465,6 +465,7 @@ onMounted(async () => {
           color: item.color,
           size: item.size,
           price: item.price,
+          product_url: item.product_url || '',
         }));
         const res = await fetch('/api/sync-cart', {
           method: 'POST',

@@ -7,6 +7,7 @@ interface CartItem {
   color: string;
   size: string;
   price: string;
+  product_url?: string;
 }
 
 interface SyncResult {
@@ -35,53 +36,71 @@ export default defineEventHandler(async (event) => {
 
   const BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
 
-  // 1. 按商品代碼分組（同商品只查一次 API）
-  const grouped = new Map<string, CartItem[]>();
+  // 從 product_url 提取 price group（e.g. ".../E481040-000/02" → "02"）
+  function extractPG(url?: string): string {
+    if (!url) return '00';
+    const m = url.match(/products\/E\d+-\d+\/(\d+)/);
+    return m?.[1] || '00';
+  }
+
+  // 1. 按 「商品代碼 + price group」 分組（同商品同 PG 只查一次 API）
+  const grouped = new Map<string, { pg: string; items: CartItem[] }>();
   for (const item of items) {
     const code = item.product_code;
     if (!code) continue;
-    if (!grouped.has(code)) grouped.set(code, []);
-    grouped.get(code)!.push(item);
+    const pg = extractPG(item.product_url);
+    const key = `${code}|${pg}`;
+    if (!grouped.has(key)) grouped.set(key, { pg, items: [] });
+    grouped.get(key)!.items.push(item);
   }
 
-  // 2. 並行取得所有不重複商品的詳情（同時查 price-group 00 和 01）
-  const productEntries = [...grouped.entries()];
-  const detailResults = await Promise.all(
-    productEntries.map(async ([rawCode]) => {
+  // 2. 並行取得所有不重複商品的「詳情 + 庫存 + L2s」
+  const groupEntries = [...grouped.entries()];
+  const fetchResults = await Promise.all(
+    groupEntries.map(async ([key, { pg }]) => {
+      const rawCode = key.split('|')[0]!;
       try {
-        // 同一商品可能有多個 price group（不同顏色不同價格）
-        const [pg00, pg01] = await Promise.all([
+        const [detailRes, stockRes, l2sRes] = await Promise.all([
           axios
             .get(
-              `${BASE}/products/${rawCode}/price-groups/00/details?httpFailure=true`,
+              `${BASE}/products/${rawCode}/price-groups/${pg}/details?httpFailure=true`,
               { headers },
             )
             .catch(() => null),
           axios
             .get(
-              `${BASE}/products/${rawCode}/price-groups/01/details?httpFailure=true`,
+              `${BASE}/products/${rawCode}/price-groups/${pg}/stock?httpFailure=true`,
+              { headers },
+            )
+            .catch(() => null),
+          axios
+            .get(
+              `${BASE}/products/${rawCode}/price-groups/${pg}/l2s?httpFailure=true`,
               { headers },
             )
             .catch(() => null),
         ]);
-        const results = [pg00?.data?.result, pg01?.data?.result].filter(
-          Boolean,
-        );
-        return { rawCode, results, error: null };
+        return {
+          key,
+          detail: detailRes?.data?.result || null,
+          stockData: stockRes?.data?.result || {},
+          l2sList: l2sRes?.data?.result?.l2s || [],
+        };
       } catch (err: any) {
-        console.error(`❌ sync-cart: ${rawCode} 詳情取得失敗:`, err.message);
-        return { rawCode, results: [], error: err.message };
+        console.error(`❌ sync-cart: ${key} 取得失敗:`, err.message);
+        return { key, detail: null, stockData: {}, l2sList: [] };
       }
     }),
   );
 
-  // 3. 對每個商品，檢查每個購物車項目的庫存
+  // 3. 對每個購物車項目，用 stock API 精確判斷庫存
   const allResults: SyncResult[] = [];
 
-  for (const { rawCode, results } of detailResults) {
-    const cartItems = grouped.get(rawCode) || [];
+  for (const { key, detail, stockData, l2sList } of fetchResults) {
+    const rawCode = key.split('|')[0]!;
+    const cartItems = grouped.get(key)?.items || [];
 
-    if (!results.length) {
+    if (!detail) {
       // API 失敗：標記為商品可能已下架
       for (const item of cartItems) {
         allResults.push({
@@ -99,66 +118,51 @@ export default defineEventHandler(async (event) => {
       continue;
     }
 
-    // 建立 colorCode → priceGroupResult 的對照表
-    const colorToPG = new Map<string, any>();
-    for (const pgResult of results) {
-      for (const c of pgResult.colors || []) {
-        colorToPG.set(c.displayCode, pgResult);
-      }
+    // 建立 l2Id → { colorDC, sizeDC } 映射
+    const l2Map = new Map<string, { colorDC: string; sizeDC: string }>();
+    for (const entry of l2sList) {
+      l2Map.set(entry.l2Id, {
+        colorDC: entry.color.displayCode,
+        sizeDC: entry.size.displayCode,
+      });
     }
 
-    // 合併所有 price group 的尺寸對照表
+    // 建立 per-color-size stock: "colorDC|sizeDC" → boolean
+    const stockSet = new Set<string>();
+    for (const [l2Id, stock] of Object.entries(stockData)) {
+      if ((stock as any)?.statusCode !== 'IN_STOCK') continue;
+      const mapping = l2Map.get(l2Id);
+      if (mapping) stockSet.add(`${mapping.colorDC}|${mapping.sizeDC}`);
+    }
+
+    // 尺寸名稱 → displayCode 對照表
     const sizeMap = new Map<string, string>();
-    for (const pgResult of results) {
-      for (const s of pgResult.sizes || []) {
-        sizeMap.set(s.name, s.displayCode);
-      }
+    for (const s of detail.sizes || []) {
+      sizeMap.set(s.name, s.displayCode);
     }
 
-    // 並行檢查該商品所有項目的庫存
-    const stockChecks = await Promise.all(
-      cartItems.map(async (item) => {
-        const colorDC = item.color.split(' ')[0]; // "08" from "08 DARK GRAY"
-        const sizeDC = sizeMap.get(item.size);
+    // 價格和促銷資訊
+    const baseVal = detail.prices?.base?.value;
+    const currentPrice = baseVal ? `¥${baseVal}` : '';
+    const priceFlags: any[] = detail.representative?.flags?.priceFlags || [];
+    const limitedFlag = priceFlags.find((f: any) => f.code === 'limitedOffer');
+    const isPromo = !!limitedFlag;
+    const promoEndTs: number | null = limitedFlag?.effectiveTime?.end || null;
 
-        if (!sizeDC) {
-          return { item, inStock: false };
-        }
+    for (const item of cartItems) {
+      const colorDC = item.color.split(' ')[0] || ''; // "34" from "34 BROWN"
+      const sizeDC = sizeMap.get(item.size);
 
-        try {
-          const stockUrl = `${BASE}/products?productIds=${rawCode}&colorCodes=COL${colorDC}&sizeCodes=SMA${sizeDC}&offset=0&limit=1&httpFailure=true`;
-          const res = await axios.get(stockUrl, { headers });
-          const inStock = (res.data?.result?.items?.length ?? 0) > 0;
-          return { item, inStock };
-        } catch {
-          return { item, inStock: false };
-        }
-      }),
-    );
+      const inStock = sizeDC ? stockSet.has(`${colorDC}|${sizeDC}`) : false;
 
-    for (const { item, inStock } of stockChecks) {
-      // 找到該顏色對應的 price group 結果
-      const colorDC = item.color.split(' ')[0] || '';
-      const pgResult = colorToPG.get(colorDC) || results[0]!;
-
-      const baseVal = pgResult.prices?.base?.value;
-      const currentPrice = baseVal ? `¥${baseVal}` : item.price;
-
-      const priceFlags: any[] =
-        pgResult.representative?.flags?.priceFlags || [];
-      const limitedFlag = priceFlags.find(
-        (f: any) => f.code === 'limitedOffer',
-      );
-      const isPromo = !!limitedFlag;
-      const promoEndTs: number | null = limitedFlag?.effectiveTime?.end || null;
-
-      const priceChanged = currentPrice !== item.price;
+      const itemPrice = currentPrice || item.price;
+      const priceChanged = itemPrice !== item.price;
 
       allResults.push({
         product_code: rawCode,
         color: item.color,
         size: item.size,
-        currentPrice,
+        currentPrice: itemPrice,
         inStock,
         isPromo,
         promoEndTs,
