@@ -306,18 +306,14 @@ const copyAccount = () => {
         </div>
       </div>
 
-      <!-- 期間限定提示：顯示最近截止時間 -->
       <div
         v-if="hasPromoItems"
         class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3"
       >
         <p class="text-[10px] text-amber-700 font-semibold leading-relaxed">
-          ⏰ 部分商品為期間限定特價。系統每日採購時間約為台灣
-          22:00，若超過特價截止時間，最終報價將以採購當下價格為準。
+          ⏰ 請注意特價商品截止時間，系統於每日 22:00 統一採購。<br />
+          請儘早下單以免錯過特價或庫存，若遇價格恢復原價需補足差額。
         </p>
-        <!-- <p v-if="earliestPromoDeadline" class="text-[10px] text-orange-700 font-black mt-1">
-          最近截止：{{ earliestPromoDeadline }}
-        </p> -->
       </div>
     </div>
   </div>

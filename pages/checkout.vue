@@ -101,19 +101,42 @@ watch(
   },
 );
 
-// ── Helpers ──
-
 const formatTaiwanDeadline = (unixTs) => {
   if (!unixTs) return null;
-  // effectiveTime.end 是 UTC 時間戳
-  // 台灣 = UTC + 8hr，再扣 1hr 預留日本下單緩衝 = UTC + 7hr
   const utcMs = Number(unixTs) * 1000;
+
+  console.log('---------- 採購截止計算分析 ----------');
+  console.log('1. 原始時間戳 (Unix):', unixTs);
+  console.log('2. UTC 時間 (GMT):', new Date(utcMs).toUTCString());
+
+  // 計算日本時間 (UTC+9)
+  const dateJP = new Date(utcMs + 9 * 60 * 60 * 1000);
+  console.log(
+    `3. 日本官網截止 (JST): ${dateJP.getUTCMonth() + 1}/${dateJP.getUTCDate()} ${dateJP.getUTCHours().toString().padStart(2, '0')}:${dateJP.getUTCMinutes().toString().padStart(2, '0')}`,
+  );
+
+  // 計算台灣對應時間 (UTC+8)
+  const dateTW = new Date(utcMs + 8 * 60 * 60 * 1000);
+  console.log(
+    `4. 台灣對應時間 (CST): ${dateTW.getUTCMonth() + 1}/${dateTW.getUTCDate()} ${dateTW.getUTCHours().toString().padStart(2, '0')}:${dateTW.getUTCMinutes().toString().padStart(2, '0')}`,
+  );
+
+  // 你的緩衝計算邏輯 (UTC + 7)
+  // 這等於是「台灣時間 (UTC+8)」再「提前 1 小時 ( -1 )」收單
   const tw = new Date(utcMs + 7 * 60 * 60 * 1000);
+
+  // 這裡要用 getUTCHours，因為 tw 已經手動加了時差偏移，要取其絕對值
   const m = tw.getUTCMonth() + 1;
   const day = tw.getUTCDate();
   const h = tw.getUTCHours();
   const min = tw.getUTCMinutes();
-  return `${m}/${day} ${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}（台灣時間）`;
+
+  const finalResult = `${m}/${day} ${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}（台灣時間）`;
+  console.log('5. 顯示給客戶看 (緩衝後):', finalResult);
+  console.log('------------------------------------');
+  // --- 偵錯結束 ---
+
+  return finalResult;
 };
 
 // ── Computed ──
