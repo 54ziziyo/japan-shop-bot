@@ -79,7 +79,7 @@ export async function getJpyRate(config: {
     const freshRate = await fetchRateFromEsun();
     console.log(`💱 玉山即時匯率（現金賣出）：${freshRate}`);
 
-    await supabase.from('exchange_rates').upsert(
+    const { error } = await supabase.from('exchange_rates').upsert(
       {
         currency: CACHE_KEY,
         rate: freshRate,
@@ -88,25 +88,43 @@ export async function getJpyRate(config: {
       { onConflict: 'currency' },
     );
 
+    if (error) {
+      console.error('❌ 資料庫更新失敗 (請檢查 RLS Policy):', error.message);
+    }
+
     return freshRate;
   } catch (err: any) {
     console.error('❌ 玉山匯率爬取失敗:', err.message);
   }
 
-  // 3. 台銀失敗，用舊快取（不管多舊）
+  // 3. 爬蟲失敗：嘗試從資料庫撈出最近一次成功的舊紀錄（不論多久前）
   try {
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('exchange_rates')
       .select('rate')
       .eq('currency', CACHE_KEY)
       .single();
+    
     if (data?.rate) {
-      console.warn(`⚠️ 使用舊快取匯率：${data.rate}`);
+      console.warn(`⚠️ 爬蟲失敗，暫時沿用資料庫舊紀錄：${data.rate}`);
       return data.rate;
     }
-  } catch {}
+  } catch (err) {
+    // 如果資料庫也沒資料，才進到第 4 步
+  }
 
   // 4. 最後手段：用寫死的值
   console.warn(`⚠️ 使用預設匯率：${FALLBACK_RATE}`);
+
+  // 建議：即使玉山掛掉，也把 FALLBACK_RATE 寫回資料庫，確保 Table 永遠有這行 Row
+  await supabase.from('exchange_rates').upsert(
+    {
+      currency: CACHE_KEY,
+      rate: FALLBACK_RATE,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'currency' },
+  );
+
   return FALLBACK_RATE;
 }
