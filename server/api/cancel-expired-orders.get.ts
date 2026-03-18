@@ -1,19 +1,25 @@
 // server/api/cancel-expired-orders.get.ts
-// Vercel Cron Job：每日自動取消超過三天未轉帳的待付款訂單
-// 不使用 LINE push 也不寄 email（避免通知雜訊），狀態改為 cancelled 即可
+// Vercel Cron Job：自動刪除逾期未轉帳的 pending 訂單（DB + Google 試算表）
 import { createClient } from '@supabase/supabase-js';
+import { deleteOrderRows } from '../utils/googleSheets';
 
-// ⏱️ 逾期門檻（毫秒）— 測試時改為 1 分鐘，正式上線改回 3 天
-const EXPIRE_MS = 1 * 60 * 1000; // 🔧 測試中：1 分鐘
-// const EXPIRE_MS = 3 * 24 * 60 * 60 * 1000; // ✅ 正式：3 天
+// ⏱️ 逾期門檻（毫秒）
+const EXPIRE_MS = 3 * 24 * 60 * 60 * 1000; // ✅ 正式：3 天
+// const EXPIRE_MS = 1 * 60 * 1000; // 🔧 測試中：1 分鐘 http://localhost:3000/api/cancel-expired-orders?secret=CRON_SECRET
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
 
-  // 驗證只有 Vercel Cron 可呼叫（Authorization: Bearer {CRON_SECRET}）
+  // 驗證身份：Vercel Cron 用 Authorization header，本機測試可用 ?secret= query
   const authHeader = getHeader(event, 'authorization') ?? '';
+  const querySecret = getQuery(event).secret as string | undefined;
   const cronSecret = config.cronSecret;
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+
+  const authorized =
+    cronSecret &&
+    (authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret);
+
+  if (!authorized) {
     throw createError({ statusCode: 401, statusMessage: '未授權' });
   }
 
@@ -37,26 +43,42 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!expiredOrders || expiredOrders.length === 0) {
-    console.log('✅ 無逾期訂單需要取消');
-    return { ok: true, cancelled: 0 };
+    console.log('✅ 無逾期訂單需要刪除');
+    return { ok: true, deleted: 0 };
   }
 
-  // 批次更新狀態為 cancelled
   const expiredIds = expiredOrders.map((o) => o.id);
-  const { error: updateError } = await supabase
+
+  // 1. 從 Google 試算表刪除對應的列
+  try {
+    await deleteOrderRows(
+      {
+        googleServiceAccountJson: config.googleServiceAccountJson,
+        googleSpreadsheetId: config.googleSpreadsheetId,
+        googleSheetName: config.googleSheetName,
+      },
+      expiredIds,
+    );
+    console.log('✅ 試算表刪除成功');
+  } catch (err: any) {
+    console.error('❌ 試算表刪除失敗（不影響 DB 刪除）:', err.message);
+  }
+
+  // 2. 從資料庫直接刪除訂單
+  const { error: deleteError } = await supabase
     .from('orders')
-    .update({ status: 'cancelled' })
+    .delete()
     .in('id', expiredIds);
 
-  if (updateError) {
-    console.error('❌ 批次取消訂單失敗:', updateError.message);
-    throw createError({ statusCode: 500, statusMessage: '更新失敗' });
+  if (deleteError) {
+    console.error('❌ 刪除訂單失敗:', deleteError.message);
+    throw createError({ statusCode: 500, statusMessage: '刪除失敗' });
   }
 
   console.log(
-    `✅ 已取消 ${expiredOrders.length} 筆逾期訂單:`,
+    `✅ 已刪除 ${expiredOrders.length} 筆逾期訂單:`,
     expiredIds.join(', '),
   );
 
-  return { ok: true, cancelled: expiredOrders.length };
+  return { ok: true, deleted: expiredOrders.length };
 });

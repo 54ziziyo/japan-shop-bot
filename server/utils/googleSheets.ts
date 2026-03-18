@@ -67,3 +67,81 @@ export async function appendOrderRow(
     requestBody: { values: rows },
   });
 }
+
+/**
+ * 依 orderId（B 欄）搜尋並刪除試算表中對應的所有列
+ * 一筆訂單可能佔多列（每種商品一列），全部刪除
+ */
+export async function deleteOrderRows(
+  config: {
+    googleServiceAccountJson: string;
+    googleSpreadsheetId: string;
+    googleSheetName: string;
+  },
+  orderIds: string[],
+) {
+  if (!orderIds.length) return;
+
+  const json = JSON.parse(config.googleServiceAccountJson);
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: json.client_email,
+      private_key: json.private_key.replace(/\\n/g, '\n'),
+    },
+    scopes: SCOPES,
+  });
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 1. 讀取 B 欄（orderId）以找出要刪除的列位置
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: config.googleSpreadsheetId,
+    range: `${config.googleSheetName}!B:B`,
+  });
+
+  const rows = res.data.values || [];
+  const orderIdSet = new Set(orderIds);
+
+  // 收集需要刪除的行號索引（0-based）
+  const rowIndicesToDelete: number[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const cellValue = rows[i]?.[0] ?? '';
+    if (orderIdSet.has(cellValue)) {
+      rowIndicesToDelete.push(i);
+    }
+  }
+
+  if (rowIndicesToDelete.length === 0) {
+    console.log('⚠️ 試算表中找不到對應的訂單列');
+    return;
+  }
+
+  // 2. 取得 sheetId（數字 ID，非工作表名稱）
+  const spreadsheet = await sheets.spreadsheets.get({
+    spreadsheetId: config.googleSpreadsheetId,
+  });
+  const sheet = spreadsheet.data.sheets?.find(
+    (s) => s.properties?.title === config.googleSheetName,
+  );
+  const sheetId = sheet?.properties?.sheetId ?? 0;
+
+  // 3. 由下往上刪除（避免索引偏移）
+  const requests = rowIndicesToDelete
+    .sort((a, b) => b - a)
+    .map((rowIndex) => ({
+      deleteDimension: {
+        range: {
+          sheetId,
+          dimension: 'ROWS' as const,
+          startIndex: rowIndex,
+          endIndex: rowIndex + 1,
+        },
+      },
+    }));
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: config.googleSpreadsheetId,
+    requestBody: { requests },
+  });
+
+  console.log(`✅ 已從試算表刪除 ${rowIndicesToDelete.length} 列`);
+}
