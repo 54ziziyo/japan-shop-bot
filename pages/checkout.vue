@@ -1,6 +1,5 @@
 <script setup>
 const config = useRuntimeConfig();
-
 const pageLoading = ref(true);
 const orderSubmitted = ref(false);
 const submitting = ref(false);
