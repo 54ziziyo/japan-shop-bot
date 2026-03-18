@@ -163,12 +163,12 @@ export default defineEventHandler(async (event) => {
   const adminItemLines = items
     .map(
       (item: any, i: number) =>
-        `${i + 1}. ${item.product_title}\n   ${item.color} / ${item.size} ×${item.quantity}  NT$${(item.priceTwd || 0).toLocaleString()} (${item.price})`,
+        `${i + 1}. ${item.product_title}\n   ${item.color} / ${item.size} ×${item.quantity}  NT$${(item.priceTwd || 0).toLocaleString()} (${item.price})${item.product_url ? `\n   ${item.product_url}` : ''}`,
     )
     .join('\n');
 
   const adminMsg = [
-    '🔔 新訂單通知！',
+    '🔔 LINE 代購機器人新訂單通知！',
     '━━━━━━━━━━━━━━━━━',
     `👤 LINE：${lineName || '未知'}`,
     `📝 姓名：${customerName}`,
@@ -185,7 +185,6 @@ export default defineEventHandler(async (event) => {
     '💰 費用明細：',
     `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(totalJpy || 0).toLocaleString()}）`,
     `  國際運費：NT$${(shippingTwd || 0).toLocaleString()}（${shippingMethod || 'ePacket'}）`,
-    `  服務費：NT$${serviceFeeTwd || 50}`,
     `  ─────────`,
     `  總計：NT$${gt.toLocaleString()}`,
     '',
@@ -194,6 +193,59 @@ export default defineEventHandler(async (event) => {
   ]
     .filter(Boolean)
     .join('\n');
+
+  // HTML 版信件（含商品圖片和連結）
+  const adminItemHtml = items
+    .map(
+      (item: any, i: number) => `
+      <tr>
+        <td style="padding:12px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top;width:72px">
+          ${item.image_url ? `<img src="${item.image_url}" width="64" height="64" style="border-radius:8px;object-fit:cover;display:block" />` : ''}
+        </td>
+        <td style="padding:12px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px">
+            ${item.product_url ? `<a href="${item.product_url}" style="color:#4A5D59;text-decoration:none">${item.product_title}</a>` : item.product_title}
+          </div>
+          <div style="color:#888;font-size:12px;margin-bottom:4px">${item.color} / ${item.size} ×${item.quantity}</div>
+          <div style="font-size:13px;font-weight:600">NT$${(item.priceTwd || 0).toLocaleString()} <span style="color:#aaa;font-weight:400">(${item.price})</span></div>
+        </td>
+      </tr>`,
+    )
+    .join('');
+
+  const adminHtml = `
+  <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333">
+    <div style="background:#4A5D59;color:white;padding:20px 24px;border-radius:12px 12px 0 0">
+      <h2 style="margin:0;font-size:18px">🔔 新訂單通知</h2>
+      <p style="margin:4px 0 0;opacity:0.8;font-size:13px">${orderNo}</p>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e8e8;padding:20px 24px">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+        <tr><td style="padding:4px 0;color:#888;font-size:12px;width:80px">LINE</td><td style="font-size:13px">${lineName || '未知'}</td></tr>
+        <tr><td style="padding:4px 0;color:#888;font-size:12px">姓名</td><td style="font-size:13px">${customerName}</td></tr>
+        <tr><td style="padding:4px 0;color:#888;font-size:12px">電話</td><td style="font-size:13px">${phone}</td></tr>
+        <tr><td style="padding:4px 0;color:#888;font-size:12px">地址</td><td style="font-size:13px">${address}</td></tr>
+        <tr><td style="padding:4px 0;color:#888;font-size:12px">付款</td><td style="font-size:13px">${paymentLabel}${accountLast5 ? ` ／ 末五碼：${accountLast5}` : ''}</td></tr>
+      </table>
+
+      <h3 style="font-size:14px;color:#4A5D59;border-bottom:2px solid #e8f0e9;padding-bottom:8px;margin-bottom:0">📦 商品明細</h3>
+      <table style="width:100%;border-collapse:collapse">${adminItemHtml}</table>
+
+      <h3 style="font-size:14px;color:#4A5D59;border-bottom:2px solid #e8f0e9;padding-bottom:8px">💰 費用明細</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:3px 0;color:#666">商品小計</td><td style="text-align:right">NT$${(subtotalTwd || 0).toLocaleString()} （¥${(totalJpy || 0).toLocaleString()}）</td></tr>
+        <tr><td style="padding:3px 0;color:#666">國際運費（${shippingMethod || 'ePacket'}）</td><td style="text-align:right">NT$${(shippingTwd || 0).toLocaleString()}</td></tr>
+        <tr><td style="padding:3px 0;color:#666">服務費</td><td style="text-align:right">NT$${serviceFeeTwd || 50}</td></tr>
+        <tr style="font-weight:700;font-size:15px;border-top:2px solid #e8e8e8">
+          <td style="padding:8px 0">總計</td><td style="text-align:right">NT$${gt.toLocaleString()}</td>
+        </tr>
+      </table>
+
+      <div style="margin-top:16px;padding:12px;background:#f8f8f8;border-radius:8px;font-size:11px;color:#aaa">
+        訂單編號：${orderNo}　UUID：${order.id}
+      </div>
+    </div>
+  </div>`;
 
   // 5. 發送 LINE 通知
   try {
@@ -232,6 +284,7 @@ export default defineEventHandler(async (event) => {
       to: config.adminEmail,
       subject: `🔔 新訂單通知：${orderNo} - ${customerName}`,
       text: adminMsg,
+      html: adminHtml,
     };
 
     await transporter.sendMail(mailOptions);
