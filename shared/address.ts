@@ -1,4 +1,4 @@
-// utils/constants/address.ts
+// shared/address.ts — 前後端共用，Nuxt auto-import 入口在 utils/pricing.ts
 export const TW_REGIONS = [
   '台北市',
   '臺北市',
