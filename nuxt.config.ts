@@ -18,6 +18,11 @@ export default defineNuxtConfig({
       channelSecret: '',
     },
 
+    // 電郵設定（用於訂單通知）
+    mailUser: process.env.MAIL_USER || '',
+    mailPass: process.env.MAIL_PASS || '',
+    adminEmail: process.env.ADMIN_EMAIL || '',
+
     public: {
       supabaseUrl: '',
       supabaseKey: '',
