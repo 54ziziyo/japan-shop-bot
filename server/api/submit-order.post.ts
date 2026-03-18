@@ -168,8 +168,9 @@ export default defineEventHandler(async (event) => {
     )
     .join('\n');
 
+  // LINE 管理員訂單成功收到的通知（目前是失效的，但還沒有需要此功能就先保留）
   const adminMsg = [
-    '🔔 LINE 代購機器人新訂單通知！',
+    '新訂單通知',
     '━━━━━━━━━━━━━━━━━',
     `👤 LINE：${lineName || '未知'}`,
     `📝 姓名：${customerName}`,
@@ -217,7 +218,7 @@ export default defineEventHandler(async (event) => {
   const adminHtml = `
   <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333">
     <div style="background:#4A5D59;color:white;padding:20px 24px;border-radius:12px 12px 0 0">
-      <h2 style="margin:0;font-size:18px">🔔 Line代購機器人新訂單通知</h2>
+      <h2 style="margin:0;font-size:18px">新訂單通知</h2>
       <p style="margin:4px 0 0;opacity:0.8;font-size:13px">${orderNo}</p>
     </div>
     <div style="background:#fff;border:1px solid #e8e8e8;padding:20px 24px">
@@ -239,7 +240,7 @@ export default defineEventHandler(async (event) => {
         <tr><td style="padding:3px 0;color:#666">代購服務費</td><td style="text-align:right">NT$${serviceFeeTwd || 0}</td></tr>
         ${discountTwd > 0 ? `<tr><td style="padding:3px 0;color:#c0392b">轉帳優惠折扣（-3%）</td><td style="text-align:right;color:#c0392b">-NT$${discountTwd.toLocaleString()}</td></tr>` : ''}
         <tr style="font-weight:700;font-size:15px;border-top:2px solid #e8e8e8">
-          <td style="padding:8px 0">總計</td><td style="text-align:right">NT$${gt.toLocaleString()}</td>
+          <td style="padding:8px 0">總計(含稅)</td><td style="text-align:right">NT$${gt.toLocaleString()}</td>
         </tr>
       </table>
 
@@ -249,7 +250,7 @@ export default defineEventHandler(async (event) => {
     </div>
   </div>`;
 
-  // 5. 發送 LINE 通知
+  // 5. 發送 LINE 通知（目前是失效的，但還沒有需要此功能先保留）
   try {
     await lineClient.pushMessage(userId, { type: 'text', text: customerMsg });
   } catch (err: any) {

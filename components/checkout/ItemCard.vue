@@ -39,7 +39,7 @@ defineProps({
         {{ item.product_code }}
       </p>
       <p
-        class="text-[10px] text-[#749D8E]/60 font-semibold uppercase tracking-wider mb-1.5"
+        class="text-[10px] text-[#749D8E] font-semibold uppercase tracking-wider mb-1.5"
       >
         {{ item.color }}
         <span class="mx-0.5 opacity-40">/</span>
