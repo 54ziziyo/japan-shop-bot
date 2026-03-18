@@ -385,6 +385,7 @@ const submitOrder = async () => {
         shippingTwd: shippingInfo.value.costTwd,
         shippingMethod: shippingInfo.value.method,
         serviceFeeTwd: displayServiceFee.value,
+        discountTwd: form.value.paymentMethod === 'bank_transfer' ? hiddenSurcharge.value : 0,
         grandTotalTwd: displayTotal.value,
         website: form.value.website, // 🍯 honeypot（server-side 也會檢查）
       }),

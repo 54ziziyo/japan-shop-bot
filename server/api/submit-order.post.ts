@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
     shippingTwd,
     shippingMethod,
     serviceFeeTwd,
+    discountTwd,
     grandTotalTwd,
     website,
   } = body || {};
@@ -216,7 +217,7 @@ export default defineEventHandler(async (event) => {
   const adminHtml = `
   <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333">
     <div style="background:#4A5D59;color:white;padding:20px 24px;border-radius:12px 12px 0 0">
-      <h2 style="margin:0;font-size:18px">🔔 新訂單通知</h2>
+      <h2 style="margin:0;font-size:18px">🔔 Line代購機器人新訂單通知</h2>
       <p style="margin:4px 0 0;opacity:0.8;font-size:13px">${orderNo}</p>
     </div>
     <div style="background:#fff;border:1px solid #e8e8e8;padding:20px 24px">
@@ -235,7 +236,8 @@ export default defineEventHandler(async (event) => {
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <tr><td style="padding:3px 0;color:#666">商品小計</td><td style="text-align:right">NT$${(subtotalTwd || 0).toLocaleString()} （¥${(totalJpy || 0).toLocaleString()}）</td></tr>
         <tr><td style="padding:3px 0;color:#666">國際運費（${shippingMethod || 'ePacket'}）</td><td style="text-align:right">NT$${(shippingTwd || 0).toLocaleString()}</td></tr>
-        <tr><td style="padding:3px 0;color:#666">服務費</td><td style="text-align:right">NT$${serviceFeeTwd || 50}</td></tr>
+        <tr><td style="padding:3px 0;color:#666">代購服務費</td><td style="text-align:right">NT$${serviceFeeTwd || 0}</td></tr>
+        ${discountTwd > 0 ? `<tr><td style="padding:3px 0;color:#c0392b">轉帳優惠折扣（-3%）</td><td style="text-align:right;color:#c0392b">-NT$${discountTwd.toLocaleString()}</td></tr>` : ''}
         <tr style="font-weight:700;font-size:15px;border-top:2px solid #e8e8e8">
           <td style="padding:8px 0">總計</td><td style="text-align:right">NT$${gt.toLocaleString()}</td>
         </tr>
