@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: '未授權' });
   }
 
-  const { orderId, status } = body || {};
+  const { orderId, status, trackingCode } = body || {};
   if (!orderId || !status) {
     throw createError({
       statusCode: 400,
@@ -37,9 +37,14 @@ export default defineEventHandler(async (event) => {
     config.public.supabaseKey,
   );
 
+  const updatePayload: Record<string, string> = { status };
+  if (trackingCode) {
+    updatePayload.tracking_code = trackingCode;
+  }
+
   const { error } = await supabase
     .from('orders')
-    .update({ status })
+    .update(updatePayload)
     .eq('id', orderId);
 
   if (error) {
