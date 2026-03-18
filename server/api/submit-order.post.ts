@@ -216,24 +216,37 @@ export default defineEventHandler(async (event) => {
   // 6. 發送電子郵件通知公司信箱
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
-        user: config.mailUser, // 妳的 Gmail
-        pass: config.mailPass, // 妳的 Google 應用程式密碼
+        user: config.mailUser,
+        pass: config.mailPass,
       },
     });
 
+    await transporter.verify();
+
     const mailOptions = {
       from: `"囉姆嚕代購" <${config.mailUser}>`,
-      to: config.adminEmail, // 妳接收訂單的信箱
+      to: config.adminEmail,
       subject: `🔔 新訂單通知：${orderNo} - ${customerName}`,
-      text: adminMsg, // 直接沿用妳寫好的 adminMsg，省時又省力
+      text: adminMsg,
     };
 
     await transporter.sendMail(mailOptions);
     console.log('✅ 訂單信件發送成功');
   } catch (err: any) {
-    console.error('❌ 信件發送失敗:', err.message);
+    console.error(
+      '❌ 信件發送失敗:',
+      err.message,
+      '| code:',
+      err.code,
+      '| mailUser:',
+      config.mailUser ? '已設定' : '未設定',
+      '| mailPass:',
+      config.mailPass ? '已設定' : '未設定',
+    );
   }
 
   return { ok: true, orderId: order.id, orderNo };
