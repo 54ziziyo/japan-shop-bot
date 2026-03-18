@@ -19,9 +19,10 @@ let supabaseClient: any = null;
 // ── Status helpers ──
 const STATUS_LABELS: Record<string, string> = {
   pending: '待付款確認中',
-  confirmed: '採購中',
-  processing: '包裝中',
-  packing: '已出貨',
+  confirmed: '商品採購中',
+  processing: '商品包裝中',
+  packing: '已出貨成功',
+  cancelled: '訂單已取消',
 };
 
 function statusLabel(status: string) {
@@ -34,6 +35,7 @@ function statusEmoji(status: string) {
     confirmed: '💰',
     processing: '📦',
     packing: '✅',
+    cancelled: '❌',
   };
   return map[status] ?? '•';
 }
@@ -44,6 +46,7 @@ function statusBadgeClass(status: string) {
     confirmed: 'bg-blue-100 text-blue-700',
     processing: 'bg-purple-100 text-purple-700',
     packing: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-700',
   };
   return map[status] ?? 'bg-gray-100 text-gray-600';
 }
