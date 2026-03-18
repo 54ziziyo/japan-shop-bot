@@ -34,7 +34,7 @@ function statusEmoji(status: string) {
     pending: '⏳',
     confirmed: '💰',
     processing: '📦',
-    packing: '✅',
+    packing: '✔️',
     cancelled: '❌',
   };
   return map[status] ?? '•';
@@ -441,6 +441,102 @@ function closeLiff() {
             <!-- 追蹤碼（已出貨時顯示） -->
             <div
               v-if="order.status === 'packing' && order.tracking_code"
+              class="px-5 pt-4 pb-5 border-t border-[#E8F0E9]"
+            >
+              <div class="flex items-center gap-1.5 mb-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#A4B8B0"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"
+                  />
+                  <circle cx="18.5" cy="15.5" r="2.5" />
+                  <path d="M20.27 17.22 22 19" />
+                </svg>
+                <p
+                  class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest"
+                >
+                  國際包裹追蹤碼
+                </p>
+              </div>
+
+              <!-- 追蹤碼卡片 -->
+              <div class="mb-2.5">
+                <p
+                  class="text-xl font-black font-mono tracking-wider text-[#5A746B] mb-4"
+                >
+                  {{ order.tracking_code }}
+                </p>
+                <button
+                  @click="copyTrackingCode(order.tracking_code)"
+                  class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white rounded-[0.875rem] py-2.5 text-[11px] font-black uppercase tracking-[0.2em] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                >
+                  複製追蹤碼
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- 郵局查詢連結 -->
+              <a
+                href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500200"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center justify-center gap-1.5 py-2.5 border border-[#D1E2D5] rounded-[0.875rem] bg-[#F4F9F5] hover:bg-[#E8F0E9] active:scale-[0.97] transition-all"
+              >
+                <span class="text-[11px] font-bold text-[#5A746B]"
+                  >前往郵局官網查詢包裹</span
+                >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#749D8E"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                  />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+            </div>
+            <!-- <div
+              v-if="order.status === 'packing' && order.tracking_code"
               class="px-5 py-4 bg-[#EFF6FF]/60 border-t border-[#D6E4F0]"
             >
               <p
@@ -488,7 +584,7 @@ function closeLiff() {
               >
                 前往郵局查詢包裹 →
               </a>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
