@@ -14,7 +14,10 @@ export default defineEventHandler(async (event) => {
 
   const { orderId, status } = body || {};
   if (!orderId || !status) {
-    throw createError({ statusCode: 400, statusMessage: '缺少 orderId 或 status' });
+    throw createError({
+      statusCode: 400,
+      statusMessage: '缺少 orderId 或 status',
+    });
   }
 
   // 只允許這些狀態值
@@ -23,6 +26,7 @@ export default defineEventHandler(async (event) => {
     'confirmed',
     'processing',
     'packing',
+    'cancelled',
   ];
   if (!ALLOWED_STATUSES.includes(status)) {
     throw createError({ statusCode: 400, statusMessage: '不合法的狀態值' });
