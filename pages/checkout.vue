@@ -279,7 +279,13 @@ const validateForm = () => {
   }
 
   // 重置錯誤訊息
-  errors.value = { name: '', phone: '', address: '', email: '', accountLast5: '' };
+  errors.value = {
+    name: '',
+    phone: '',
+    address: '',
+    email: '',
+    accountLast5: '',
+  };
   let valid = true;
 
   // 收件人姓名
@@ -383,7 +389,10 @@ const submitOrder = async () => {
         shippingTwd: shippingInfo.value.costTwd,
         shippingMethod: shippingInfo.value.method,
         serviceFeeTwd: displayServiceFee.value,
-        discountTwd: form.value.paymentMethod === 'bank_transfer' ? hiddenSurcharge.value : 0,
+        discountTwd:
+          form.value.paymentMethod === 'bank_transfer'
+            ? hiddenSurcharge.value
+            : 0,
         grandTotalTwd: displayTotal.value,
         website: form.value.website, // 🍯 honeypot（server-side 也會檢查）
       }),
@@ -662,15 +671,22 @@ onMounted(async () => {
           <p class="font-bold mb-1">一、訂購與缺貨處理</p>
           <ul class="list-disc pl-4 space-y-1">
             <li>送出訂單後，我們會在 1～2 個工作天內確認商品庫存。</li>
-            <li>若遇缺貨，我們會盡快透過 LINE 通知您，並提供替換款式或辦理退款。</li>
-            <li>實際到貨商品可能因批次差異，在色差或細節上略有不同，敬請理解。</li>
+            <li>
+              若遇缺貨，我們會盡快透過 LINE 通知您，並提供替換款式或辦理退款。
+            </li>
+            <li>
+              實際到貨商品可能因批次差異，在色差或細節上略有不同，敬請理解。
+            </li>
           </ul>
         </div>
 
         <div>
           <p class="font-bold mb-1">二、匯款與對帳規範</p>
           <ul class="list-disc pl-4 space-y-1">
-            <li>選擇「銀行轉帳」者，請於送出訂單後 3 天內完成匯款，逾期系統將自動取消訂單。</li>
+            <li>
+              選擇「銀行轉帳」者，請於送出訂單後 3
+              天內完成匯款，逾期系統將自動取消訂單。
+            </li>
             <li>每筆訂單僅接受一次匯款，金額須與訂單總額完全一致。</li>
             <li>匯款後請確認您填寫的帳號末五碼正確，以利對帳作業。</li>
           </ul>
@@ -680,15 +696,22 @@ onMounted(async () => {
           <p class="font-bold mb-1">三、收貨與售後保障</p>
           <ul class="list-disc pl-4 space-y-1">
             <li>商品寄出後，我們會提供追蹤編號供您查詢物流進度。</li>
-            <li>收到商品後如有破損或品項錯誤，請於 3 天內拍照並透過 LINE 聯繫我們。</li>
-            <li>因代購性質，恕不接受個人因素（如尺寸不合、不喜歡）的退換貨要求。</li>
+            <li>
+              收到商品後如有破損或品項錯誤，請於 3 天內拍照並透過 LINE
+              聯繫我們。
+            </li>
+            <li>
+              因代購性質，恕不接受個人因素（如尺寸不合、不喜歡）的退換貨要求。
+            </li>
           </ul>
         </div>
 
         <div>
           <p class="font-bold mb-1">四、隱私與資料使用</p>
           <ul class="list-disc pl-4 space-y-1">
-            <li>您提供的姓名、電話、地址、信箱等資訊僅用於訂單處理與寄送通知。</li>
+            <li>
+              您提供的姓名、電話、地址、信箱等資訊僅用於訂單處理與寄送通知。
+            </li>
             <li>我們不會將您的個人資料轉售或分享給第三方。</li>
             <li>電子信箱將用於寄送電子發票，請確保填寫正確。</li>
           </ul>
