@@ -62,7 +62,7 @@ const copyAccount = () => {
       </div>
 
       <!-- 收件人真實姓名 -->
-      <div>
+      <div id="field-name">
         <label
           class="text-[10px] font-bold text-[#749D8E] uppercase tracking-wider block mb-1.5"
           >收件人</label
@@ -87,7 +87,7 @@ const copyAccount = () => {
       </div>
 
       <!-- 手機號碼 -->
-      <div>
+      <div id="field-phone">
         <label
           class="text-[10px] font-bold text-[#749D8E] uppercase tracking-wider block mb-1.5"
           >手機號碼</label
@@ -114,7 +114,7 @@ const copyAccount = () => {
       </div>
 
       <!-- 地址 -->
-      <div>
+      <div id="field-address">
         <label
           class="text-[10px] font-bold text-[#749D8E] uppercase tracking-wider block mb-1.5"
           >台灣收件地址</label
@@ -142,7 +142,7 @@ const copyAccount = () => {
       </div>
 
       <!-- 電子信箱（電子發票用） -->
-      <div>
+      <div id="field-email">
         <label
           class="text-[10px] font-bold text-[#749D8E] uppercase tracking-wider block mb-1.5"
           >電子信箱</label
@@ -216,7 +216,7 @@ const copyAccount = () => {
       </div>
 
       <!-- 銀行轉帳：帳號末五碼 -->
-      <div v-if="form.paymentMethod === 'bank_transfer'" class="space-y-2">
+      <div v-if="form.paymentMethod === 'bank_transfer'" id="field-accountLast5" class="space-y-2">
         <label
           class="text-[10px] font-bold text-[#A4B8B0] uppercase tracking-wider block"
         >

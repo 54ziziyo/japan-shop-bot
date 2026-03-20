@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS 防止 input 聚焦時頁面自動放大 */
+/* iOS Safari 在 font-size < 16px 的 input 聚焦時會自動縮放頁面 */
+/* 此規則只作用於 iOS（-webkit-touch-callout 是 iOS 專屬屬性）*/
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 ::-webkit-scrollbar {
   display: none;
 }
