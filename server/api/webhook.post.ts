@@ -389,7 +389,7 @@ export default defineEventHandler(async (event) => {
               justifyContent: 'center',
               alignItems: 'center',
               paddingAll: 'lg',
-              backgroundColor: '#ffffff',
+              backgroundColor: '#F4F9F5',
               contents: [
                 {
                   type: 'text',
@@ -584,8 +584,8 @@ export default defineEventHandler(async (event) => {
           layout: 'horizontal',
           paddingAll: 'lg',
           backgroundColor: '#FFFFFF',
-          cornerRadius: 'xl',
-          margin: 'md',
+          cornerRadius: 'lg',
+          margin: 'lg',
           action: {
             type: 'postback',
             label: cat.label,
@@ -613,7 +613,7 @@ export default defineEventHandler(async (event) => {
               text: '›',
               size: 'xl',
               color: '#C8D5CF',
-              align: 'end',
+              align: 'center',
               gravity: 'center',
               flex: 0,
             },
