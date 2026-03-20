@@ -264,9 +264,8 @@ export default defineEventHandler(async (event) => {
         const faqAnswers: Record<string, string> = {
           faq_order: [
             '🛒 訂購流程',
-            '━━━━━━━━━━━━━━━━━',
             '',
-            '1️⃣ 在 Uniqlo / GU 日本官網找到喜歡的商品',
+            '1️⃣ 在 Uniqlo 日本官網找到喜歡的商品',
             '2️⃣ 複製商品頁網址，貼到這個聊天室',
             '3️⃣ 系統會自動產生商品卡片，選擇顏色和尺寸後點擊「加入購物車」',
             '4️⃣ 點擊選單「購物車」查看已選商品',
@@ -277,7 +276,6 @@ export default defineEventHandler(async (event) => {
           ].join('\n'),
           faq_payment: [
             '💳 付款與匯款',
-            '━━━━━━━━━━━━━━━━━',
             '',
             '【銀行轉帳】',
             '• 銀行：玉山銀行（808）',
@@ -293,7 +291,6 @@ export default defineEventHandler(async (event) => {
           ].join('\n'),
           faq_shipping: [
             '📦 運送與物流',
-            '━━━━━━━━━━━━━━━━━',
             '',
             '• 所有商品由日本空運直送台灣。',
             '• 正常現貨約 7-14 個工作天到貨。',
@@ -304,7 +301,6 @@ export default defineEventHandler(async (event) => {
           ].join('\n'),
           faq_return: [
             '🔄 退換貨政策',
-            '━━━━━━━━━━━━━━━━━',
             '',
             '• 代購屬「客製化給付」，恕不接受個人因素退換貨（如尺寸不合、不喜歡）。',
             '• 收到商品如有破損或品項錯誤，請於 3 天內 拍照並透過 LINE 聯繫。',
@@ -314,7 +310,6 @@ export default defineEventHandler(async (event) => {
           ].join('\n'),
           faq_promo: [
             '🏷️ 特價與促銷',
-            '━━━━━━━━━━━━━━━━━',
             '',
             '• 系統會自動偵測期間限定特價，並在商品卡片中提示。',
             '• 每日採購時間約為 22:00（台灣時間），請在截止前提交訂單。',
@@ -381,6 +376,58 @@ export default defineEventHandler(async (event) => {
           {
             type: 'bubble',
             size: 'micro',
+            // hero: {
+            //   type: 'image',
+            //   url: 'https://placehold.co/400x200.png?text=', // ← 換成你的圖片網址
+            //   size: 'full',
+            //   aspectRatio: '20:13',
+            //   aspectMode: 'cover',
+            // },
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingAll: 'lg',
+              backgroundColor: '#ffffff',
+              contents: [
+                {
+                  type: 'text',
+                  text: '📋',
+                  size: '3xl',
+                  align: 'center',
+                },
+                {
+                  type: 'text',
+                  text: '使用教學',
+                  weight: 'bold',
+                  size: 'md',
+                  color: '#4A5D59',
+                  align: 'center',
+                  margin: 'md',
+                },
+                {
+                  type: 'text',
+                  text: '複製商品網址\n貼到聊天室\n選尺寸加入購物車',
+                  size: 'xxs',
+                  color: '#888888',
+                  align: 'center',
+                  margin: 'sm',
+                  wrap: true,
+                },
+              ],
+            },
+          },
+          {
+            type: 'bubble',
+            size: 'micro',
+            // hero: {
+            //   type: 'image',
+            //   url: 'https://placehold.co/400x300.png?text=UNIQLO', // ← 換成你的圖片網址
+            //   size: 'full',
+            //   aspectRatio: '20:13',
+            //   aspectMode: 'cover',
+            // },
             body: {
               type: 'box',
               layout: 'vertical',
@@ -464,7 +511,7 @@ export default defineEventHandler(async (event) => {
                 },
                 {
                   type: 'text',
-                  text: 'GU',
+                  text: '開發中',
                   weight: 'bold',
                   size: 'lg',
                   color: '#4A5D59',
@@ -473,7 +520,7 @@ export default defineEventHandler(async (event) => {
                 },
                 {
                   type: 'text',
-                  text: '日本官網',
+                  text: '敬請期待更多品牌',
                   size: 'xs',
                   color: '#999999',
                   align: 'center',
@@ -496,7 +543,7 @@ export default defineEventHandler(async (event) => {
                   action: {
                     type: 'uri',
                     label: '前往選購',
-                    uri: 'https://www.gu-global.com/jp/ja/',
+                    uri: 'https://www.uniqlo.com/jp/ja/',
                   },
                   contents: [
                     {
@@ -508,44 +555,6 @@ export default defineEventHandler(async (event) => {
                       align: 'center',
                     },
                   ],
-                },
-              ],
-            },
-          },
-          {
-            type: 'bubble',
-            size: 'micro',
-            body: {
-              type: 'box',
-              layout: 'vertical',
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingAll: 'lg',
-              backgroundColor: '#F0F4F1',
-              contents: [
-                {
-                  type: 'text',
-                  text: '📋',
-                  size: '3xl',
-                  align: 'center',
-                },
-                {
-                  type: 'text',
-                  text: '使用教學',
-                  weight: 'bold',
-                  size: 'md',
-                  color: '#4A5D59',
-                  align: 'center',
-                  margin: 'md',
-                },
-                {
-                  type: 'text',
-                  text: '複製商品網址\n貼到聊天室\n選尺寸加入購物車',
-                  size: 'xxs',
-                  color: '#888888',
-                  align: 'center',
-                  margin: 'sm',
-                  wrap: true,
                 },
               ],
             },
@@ -620,7 +629,7 @@ export default defineEventHandler(async (event) => {
             body: {
               type: 'box',
               layout: 'vertical',
-              backgroundColor: '#F0F4F1',
+              backgroundColor: '#ffffff',
               paddingAll: 'lg',
               contents: [
                 {
