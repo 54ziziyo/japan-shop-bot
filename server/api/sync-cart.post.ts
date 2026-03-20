@@ -1,6 +1,19 @@
 // server/api/sync-cart.post.ts
 // 結帳前同步檢查：重新驗證每個購物車商品的「價格」和「庫存」
 import axios from 'axios';
+import https from 'node:https';
+
+const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
+const api = axios.create({
+  httpsAgent: keepAliveAgent,
+  timeout: 8000,
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Encoding': 'gzip, deflate, br',
+    Referer: 'https://www.uniqlo.com/',
+  },
+});
 
 interface CartItem {
   product_code: string;
@@ -27,12 +40,6 @@ export default defineEventHandler(async (event) => {
   const items: CartItem[] = body?.items || [];
 
   if (!items.length) return { results: [], hasChanges: false };
-
-  const headers = {
-    'User-Agent':
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    Referer: 'https://www.uniqlo.com/',
-  };
 
   const BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
 
@@ -61,22 +68,19 @@ export default defineEventHandler(async (event) => {
       const rawCode = key.split('|')[0]!;
       try {
         const [detailRes, stockRes, l2sRes] = await Promise.all([
-          axios
+          api
             .get(
               `${BASE}/products/${rawCode}/price-groups/${pg}/details?httpFailure=true`,
-              { headers },
             )
             .catch(() => null),
-          axios
+          api
             .get(
               `${BASE}/products/${rawCode}/price-groups/${pg}/stock?httpFailure=true`,
-              { headers },
             )
             .catch(() => null),
-          axios
+          api
             .get(
               `${BASE}/products/${rawCode}/price-groups/${pg}/l2s?httpFailure=true`,
-              { headers },
             )
             .catch(() => null),
         ]);

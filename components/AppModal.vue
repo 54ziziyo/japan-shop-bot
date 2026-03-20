@@ -1,11 +1,22 @@
 <script setup>
-defineProps({
+const props = defineProps({
   show: { type: Boolean, required: true },
   title: { type: String, default: '' },
   maxWidth: { type: String, default: 'max-w-lg' },
 });
 
 defineEmits(['close']);
+
+// 鎖定背景滾動
+watch(
+  () => props.show,
+  (open) => {
+    document.body.style.overflow = open ? 'hidden' : '';
+  },
+);
+onUnmounted(() => {
+  document.body.style.overflow = '';
+});
 </script>
 
 <template>
@@ -14,10 +25,12 @@ defineEmits(['close']);
       <div
         v-if="show"
         class="fixed inset-0 z-50 flex items-center justify-center px-4"
-        @click.self="$emit('close')"
       >
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div
+          class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          @click="$emit('close')"
+        />
 
         <!-- Panel -->
         <div

@@ -1,4 +1,19 @@
 import axios from 'axios';
+import http from 'node:http';
+import https from 'node:https';
+
+// 共用 Keep-Alive agent，同一次 serverless invocation 內重用 TCP 連線
+const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
+const api = axios.create({
+  httpsAgent: keepAliveAgent,
+  timeout: 8000,
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Encoding': 'gzip, deflate, br',
+    Referer: 'https://www.uniqlo.com/',
+  },
+});
 
 export const scrapeUniqlo = async (url: string) => {
   try {
@@ -8,12 +23,6 @@ export const scrapeUniqlo = async (url: string) => {
     const rawCode = match[1];
     const priceGroup = match[2] || '00';
 
-    const headers = {
-      'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      Referer: 'https://www.uniqlo.com/',
-    };
-
     const BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
 
     // 2. 同時呼叫「商品詳情 API」、「庫存 API」和「L2s API」
@@ -22,11 +31,9 @@ export const scrapeUniqlo = async (url: string) => {
     const l2sUrl = `${BASE}/products/${rawCode}/price-groups/${priceGroup}/l2s?httpFailure=true`;
 
     const [detailRes, stockRes, l2sRes] = await Promise.all([
-      axios.get(detailUrl, { headers }),
-      axios.get(stockUrl, { headers }).catch(() => ({ data: { result: {} } })),
-      axios
-        .get(l2sUrl, { headers })
-        .catch(() => ({ data: { result: { l2s: [] } } })),
+      api.get(detailUrl),
+      api.get(stockUrl).catch(() => ({ data: { result: {} } })),
+      api.get(l2sUrl).catch(() => ({ data: { result: { l2s: [] } } })),
     ]);
 
     const result = detailRes.data?.result;

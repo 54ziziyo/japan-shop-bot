@@ -353,7 +353,6 @@ const handleSubmitClick = () => {
 };
 
 const submitOrder = async () => {
-  showTermsModal.value = false;
   submitting.value = true;
   try {
     const orderItems = validItems.value.map((item) => ({
@@ -407,6 +406,7 @@ const submitOrder = async () => {
     orderNo.value = data.orderNo || '';
     submittedPaymentMethod.value = form.value.paymentMethod;
     submittedTotal.value = displayTotal.value;
+    showTermsModal.value = false;
     orderSubmitted.value = true;
     await nextTick();
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -660,7 +660,7 @@ onMounted(async () => {
     <AppModal
       :show="showTermsModal"
       title="📋 服務條款與隱私聲明"
-      @close="showTermsModal = false"
+      @close="!submitting && (showTermsModal = false)"
     >
       <div
         class="max-h-[50vh] overflow-y-auto text-sm text-[#4A5D59] leading-relaxed space-y-4 bg-[#f4f7f7] p-4 rounded-lg"
@@ -748,6 +748,7 @@ onMounted(async () => {
       <template #footer>
         <label
           class="flex items-center gap-2 mb-4 cursor-pointer select-none"
+          :class="{ 'opacity-50 pointer-events-none': submitting }"
           @click.prevent="termsAccepted = !termsAccepted"
         >
           <span
@@ -780,9 +781,30 @@ onMounted(async () => {
         <button
           :disabled="!termsAccepted || submitting"
           @click="submitOrder"
-          class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white py-3.5 rounded-2xl font-bold text-sm tracking-wider shadow-[0_10px_25px_rgba(116,157,142,0.3)] active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+          class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white py-3.5 rounded-2xl font-bold text-sm tracking-wider shadow-[0_10px_25px_rgba(116,157,142,0.3)] active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
         >
-          {{ submitting ? '送出中...' : '確認送出訂單' }}
+          <svg
+            v-if="submitting"
+            class="animate-spin h-4 w-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          {{ submitting ? '訂單送出中，請稍候...' : '確認送出訂單' }}
         </button>
       </template>
     </AppModal>

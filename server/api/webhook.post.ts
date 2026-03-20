@@ -125,6 +125,18 @@ export default defineEventHandler(async (event) => {
         const action = data.get('action');
 
         if (action === 'buy') {
+          // 💡 顯示 LINE Loading Animation（讓客人知道系統正在處理）
+          if (userId) {
+            fetch('https://api.line.me/v2/bot/chat/loading', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${config.line.channelAccessToken}`,
+              },
+              body: JSON.stringify({ chatId: userId, loadingSeconds: 10 }),
+            }).catch(() => {});
+          }
+
           // ✅ 檢查輪播是否過期（2 小時）
           const createdTs = data.get('ts');
           if (createdTs) {
