@@ -146,3 +146,67 @@ export async function deleteOrderRows(
 
   console.log(`✅ 已從試算表刪除 ${rowIndicesToDelete.length} 列`);
 }
+
+/**
+ * 依 orderId（B 欄）搜尋並更新試算表中 H 欄的貨物狀態
+ */
+export async function updateOrderStatusInSheet(
+  config: {
+    googleServiceAccountJson: string;
+    googleSpreadsheetId: string;
+    googleSheetName: string;
+  },
+  orderIds: string[],
+  newStatus: string,
+) {
+  if (!orderIds.length) return;
+
+  const json = JSON.parse(config.googleServiceAccountJson);
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: json.client_email,
+      private_key: json.private_key.replace(/\\n/g, '\n'),
+    },
+    scopes: SCOPES,
+  });
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // 讀取 B 欄找到對應的列
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: config.googleSpreadsheetId,
+    range: `${config.googleSheetName}!B:B`,
+  });
+
+  const rows = res.data.values || [];
+  const orderIdSet = new Set(orderIds);
+
+  // 收集需要更新狀態的行號（1-based，只取有 orderId 的首列）
+  const rowsToUpdate: number[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const cellValue = rows[i]?.[0] ?? '';
+    if (orderIdSet.has(cellValue)) {
+      rowsToUpdate.push(i + 1); // 轉為 1-based
+    }
+  }
+
+  if (rowsToUpdate.length === 0) {
+    console.log('⚠️ 試算表中找不到對應的訂單列');
+    return;
+  }
+
+  // 批次更新 H 欄
+  const data = rowsToUpdate.map((row) => ({
+    range: `${config.googleSheetName}!H${row}`,
+    values: [[newStatus]],
+  }));
+
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: config.googleSpreadsheetId,
+    requestBody: {
+      valueInputOption: 'USER_ENTERED',
+      data,
+    },
+  });
+
+  console.log(`✅ 已更新試算表 ${rowsToUpdate.length} 列狀態為 ${newStatus}`);
+}
