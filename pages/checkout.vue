@@ -11,6 +11,8 @@ const lineName = ref('');
 const orderNo = ref('');
 const submittedPaymentMethod = ref('');
 const submittedTotal = ref(0);
+const showTermsModal = ref(false);
+const termsAccepted = ref(false);
 let supabase = null;
 let liff = null;
 const { rate: jpyRate, fetchRate } = useExchangeRate();
@@ -19,6 +21,7 @@ const form = ref({
   name: '',
   phone: '',
   address: '',
+  email: '',
   paymentMethod: 'bank_transfer', // 預設選擇銀行轉帳
   accountLast5: '',
   website: '', // 🍯 honeypot — 正常用戶不會看到也不會填
@@ -29,6 +32,7 @@ const errors = ref({
   name: '',
   phone: '',
   address: '',
+  email: '',
   accountLast5: '',
 });
 
@@ -67,6 +71,14 @@ watch(
   (val) => {
     if (errors.value.accountLast5 && /^\d{5}$/.test(val.trim()))
       errors.value.accountLast5 = '';
+  },
+);
+
+watch(
+  () => form.value.email,
+  (val) => {
+    if (errors.value.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()))
+      errors.value.email = '';
   },
 );
 
@@ -267,7 +279,7 @@ const validateForm = () => {
   }
 
   // 重置錯誤訊息
-  errors.value = { name: '', phone: '', address: '', accountLast5: '' };
+  errors.value = { name: '', phone: '', address: '', email: '', accountLast5: '' };
   let valid = true;
 
   // 收件人姓名
@@ -303,6 +315,16 @@ const validateForm = () => {
     valid = false;
   }
 
+  // 電子信箱
+  const emailVal = form.value.email.trim();
+  if (!emailVal) {
+    errors.value.email = '請輸入電子信箱（電子發票寄送用）';
+    valid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+    errors.value.email = '請輸入正確的電子信箱格式';
+    valid = false;
+  }
+
   // 帳號末五碼（銀行轉帳時必填）
   if (form.value.paymentMethod === 'bank_transfer') {
     const last5 = form.value.accountLast5.trim();
@@ -318,9 +340,14 @@ const validateForm = () => {
   return valid;
 };
 
-const submitOrder = async () => {
+const handleSubmitClick = () => {
   if (!validateForm()) return;
+  termsAccepted.value = false;
+  showTermsModal.value = true;
+};
 
+const submitOrder = async () => {
+  showTermsModal.value = false;
   submitting.value = true;
   try {
     const orderItems = validItems.value.map((item) => ({
@@ -345,6 +372,7 @@ const submitOrder = async () => {
         phone: form.value.phone.trim(),
         address: form.value.address.trim(),
         paymentMethod: form.value.paymentMethod,
+        email: form.value.email.trim(),
         accountLast5:
           form.value.paymentMethod === 'bank_transfer'
             ? form.value.accountLast5.trim()
@@ -615,8 +643,98 @@ onMounted(async () => {
         :amount="displayTotal"
         :button-text="submitting ? '送出中' : '下一步'"
         :disabled="submitting"
-        @submit="submitOrder"
+        @submit="handleSubmitClick"
       />
     </div>
+
+    <!-- 服務條款 Modal -->
+    <AppModal
+      :show="showTermsModal"
+      title="📋 服務條款與隱私聲明"
+      @close="showTermsModal = false"
+    >
+      <div
+        class="max-h-[50vh] overflow-y-auto text-sm text-[#4A5D59] leading-relaxed space-y-4 pr-1"
+      >
+        <p class="font-bold text-base">囉姆嚕日貨代購：服務條款與隱私聲明</p>
+
+        <div>
+          <p class="font-bold mb-1">一、訂購與缺貨處理</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li>送出訂單後，我們會在 1～2 個工作天內確認商品庫存。</li>
+            <li>若遇缺貨，我們會盡快透過 LINE 通知您，並提供替換款式或辦理退款。</li>
+            <li>實際到貨商品可能因批次差異，在色差或細節上略有不同，敬請理解。</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-bold mb-1">二、匯款與對帳規範</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li>選擇「銀行轉帳」者，請於送出訂單後 3 天內完成匯款，逾期系統將自動取消訂單。</li>
+            <li>每筆訂單僅接受一次匯款，金額須與訂單總額完全一致。</li>
+            <li>匯款後請確認您填寫的帳號末五碼正確，以利對帳作業。</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-bold mb-1">三、收貨與售後保障</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li>商品寄出後，我們會提供追蹤編號供您查詢物流進度。</li>
+            <li>收到商品後如有破損或品項錯誤，請於 3 天內拍照並透過 LINE 聯繫我們。</li>
+            <li>因代購性質，恕不接受個人因素（如尺寸不合、不喜歡）的退換貨要求。</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-bold mb-1">四、隱私與資料使用</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li>您提供的姓名、電話、地址、信箱等資訊僅用於訂單處理與寄送通知。</li>
+            <li>我們不會將您的個人資料轉售或分享給第三方。</li>
+            <li>電子信箱將用於寄送電子發票，請確保填寫正確。</li>
+          </ul>
+        </div>
+      </div>
+
+      <template #footer>
+        <label
+          class="flex items-start gap-3 mb-4 cursor-pointer select-none"
+          @click.prevent="termsAccepted = !termsAccepted"
+        >
+          <span
+            :class="[
+              'mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all',
+              termsAccepted
+                ? 'bg-[#749D8E] border-[#749D8E]'
+                : 'border-[#C8D5CF] bg-white',
+            ]"
+          >
+            <svg
+              v-if="termsAccepted"
+              class="w-3 h-3 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </span>
+          <span class="text-xs text-[#5A746B] leading-relaxed">
+            我已閱讀並同意以上條款，並確認訂單內容無誤
+          </span>
+        </label>
+        <button
+          :disabled="!termsAccepted || submitting"
+          @click="submitOrder"
+          class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white py-3.5 rounded-2xl font-bold text-sm tracking-wider shadow-[0_10px_25px_rgba(116,157,142,0.3)] active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+        >
+          {{ submitting ? '送出中...' : '確認送出訂單' }}
+        </button>
+      </template>
+    </AppModal>
   </ClientOnly>
 </template>

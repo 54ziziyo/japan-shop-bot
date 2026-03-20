@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
     discountTwd,
     grandTotalTwd,
     website,
+    email,
   } = body || {};
 
   // 🍯 Honeypot
@@ -76,6 +77,7 @@ export default defineEventHandler(async (event) => {
       items,
       total_jpy: totalJpy,
       grand_total_twd: grandTotalTwd || null,
+      email: email || null,
       status: 'pending',
     })
     .select('id')
@@ -120,6 +122,7 @@ export default defineEventHandler(async (event) => {
         serviceFeeTwd: serviceFeeTwd || 0,
         grandTotalTwd: grandTotalTwd || 0,
         totalJpy: totalJpy || 0,
+        email: email || '',
       },
     );
     console.log('✅ 試算表寫入成功');

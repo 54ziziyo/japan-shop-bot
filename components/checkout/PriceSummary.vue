@@ -38,14 +38,14 @@ defineProps({
         >
       </div>
       <!-- 服務費 -->
-      <div class="flex justify-between items-center">
+      <!-- <div class="flex justify-between items-center">
         <span class="text-[11px] text-[#749D8E] font-semibold">代購服務費</span>
         <span class="text-sm font-bold text-[#5A746B]"
           >NT${{ displayServiceFee.toLocaleString() }}</span
         >
-      </div>
+      </div> -->
       <!-- 銀行轉帳折扣 -->
-      <div
+      <!-- <div
         v-if="paymentMethod === 'bank_transfer'"
         class="flex justify-between items-center text-[#749D8E]"
       >
@@ -53,7 +53,7 @@ defineProps({
         <span class="text-sm font-bold text-[#5A746B]"
           >-NT${{ hiddenSurcharge.toLocaleString() }}</span
         >
-      </div>
+      </div> -->
       <!-- 分隔線 + 總計 -->
       <div
         class="flex justify-between items-end pt-3 mt-1 border-t border-[#E8F0E9]"

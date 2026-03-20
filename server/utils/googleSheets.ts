@@ -25,6 +25,7 @@ export async function appendOrderRow(
     serviceFeeTwd: number;
     grandTotalTwd: number;
     totalJpy: number;
+    email: string;
   },
 ) {
   const json = JSON.parse(config.googleServiceAccountJson);
@@ -59,11 +60,12 @@ export async function appendOrderRow(
     index === 0 ? order.shippingTwd : '', // Q 運費(台幣) (僅首列顯示)
     index === 0 ? order.grandTotalTwd : '', // R 含稅總額(台幣) (僅首列顯示)
     index === 0 ? '' : '', // S 追蹤碼 (僅首列顯示，出貨時由管理員填入)
+    index === 0 ? order.email : '', // T 電子信箱 (僅首列顯示)
   ]);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: config.googleSpreadsheetId,
-    range: `${config.googleSheetName}!A:S`, // 範圍確保包含 S 欄
+    range: `${config.googleSheetName}!A:T`, // 範圍確保包含 T 欄
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: rows },
   });

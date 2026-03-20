@@ -141,6 +141,33 @@ const copyAccount = () => {
         </p>
       </div>
 
+      <!-- 電子信箱（電子發票用） -->
+      <div>
+        <label
+          class="text-[10px] font-bold text-[#749D8E] uppercase tracking-wider block mb-1.5"
+          >電子信箱</label
+        >
+        <input
+          v-model="form.email"
+          type="email"
+          inputmode="email"
+          :class="[
+            'w-full text-[#4A5D59] border rounded-2xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-1 transition-all',
+            errors.email
+              ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+              : 'border-[#E8F0E9] focus:border-[#749D8E] focus:ring-[#749D8E]/10',
+          ]"
+          placeholder="example@email.com"
+        />
+        <p
+          v-if="errors.email"
+          class="text-[10px] text-red-500 font-semibold mt-1"
+        >
+          {{ errors.email }}
+        </p>
+        <p v-else class="text-[10px] text-[#749D8E] mt-1">用於寄送電子發票</p>
+      </div>
+
       <!-- 支付方式 -->
       <div>
         <label
@@ -177,11 +204,11 @@ const copyAccount = () => {
                 銀行轉帳
               </p>
               <p class="text-[10px] text-[#A4B8B0] mt-0.5">
-                直接轉帳至指定帳戶，<span class="text-[#749D8E] font-bold"
-                  >享 3% 優惠，省 NT${{
+                直接轉帳至指定帳戶
+                <!-- <span class="text-[#749D8E] font-bold"
+                  >，享 3% 優惠，省 NT${{
                     hiddenSurcharge.toLocaleString()
-                  }}</span
-                >
+                  }}</span> -->
               </p>
             </div>
           </label>
