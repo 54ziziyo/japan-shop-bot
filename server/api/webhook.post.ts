@@ -583,9 +583,9 @@ export default defineEventHandler(async (event) => {
           type: 'box',
           layout: 'horizontal',
           paddingAll: 'lg',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#D1E2D5',
           cornerRadius: 'xl',
-          margin: 'sm',
+          margin: 'md',
           action: {
             type: 'postback',
             label: cat.label,
@@ -629,7 +629,7 @@ export default defineEventHandler(async (event) => {
             body: {
               type: 'box',
               layout: 'vertical',
-              backgroundColor: '#ffffff',
+              backgroundColor: '#FFFFFF',
               paddingAll: 'lg',
               contents: [
                 {
