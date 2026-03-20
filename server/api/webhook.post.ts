@@ -583,7 +583,7 @@ export default defineEventHandler(async (event) => {
           type: 'box',
           layout: 'horizontal',
           paddingAll: 'lg',
-          backgroundColor: '#D1E2D5',
+          backgroundColor: '#FFFFFF',
           cornerRadius: 'xl',
           margin: 'md',
           action: {
@@ -629,7 +629,7 @@ export default defineEventHandler(async (event) => {
             body: {
               type: 'box',
               layout: 'vertical',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: '#F4F9F5',
               paddingAll: 'lg',
               contents: [
                 {
