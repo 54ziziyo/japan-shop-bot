@@ -608,15 +608,6 @@ export default defineEventHandler(async (event) => {
               margin: 'md',
               gravity: 'center',
             },
-            {
-              type: 'text',
-              text: '›',
-              size: 'xl',
-              color: '#C8D5CF',
-              align: 'center',
-              gravity: 'center',
-              flex: 0,
-            },
           ],
         }));
 
@@ -648,13 +639,13 @@ export default defineEventHandler(async (event) => {
                 },
                 {
                   type: 'separator',
-                  margin: 'lg',
+                  margin: 'md',
                   color: '#E0E8E4',
                 },
                 {
                   type: 'box',
                   layout: 'vertical',
-                  margin: 'lg',
+                  margin: 'md',
                   contents: faqButtons,
                 },
               ],
