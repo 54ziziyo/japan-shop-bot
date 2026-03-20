@@ -245,7 +245,7 @@ const copyAccount = () => {
 
         <!-- 銀行轉帳資訊框 -->
         <div
-          class="relative bg-red-50/80 border border-red-100 rounded-[2rem] p-5 cursor-pointer hover:bg-white hover:shadow-xl hover:shadow-red-500/5 transition-all duration-500 group overflow-hidden"
+          class="relative bg-red-50/80 border border-red-100 rounded-[2rem] p-5 cursor-pointer hover:bg-white hover:shadow-xl hover:shadow-red-500/5 transition-all duration-500 group overflow-hidden mt-5"
           @click="copyAccount"
         >
           <div
