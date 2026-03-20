@@ -259,6 +259,78 @@ export default defineEventHandler(async (event) => {
             text: `❌ 抱歉，尺寸 ${itemSize} 目前無庫存，暫時無法下單唷！\n\n建議稍後再查看，或選擇其他有庫存的尺寸 🙏`,
           });
         }
+
+        // --- 📖 FAQ 回覆 ---
+        const faqAnswers: Record<string, string> = {
+          faq_order: [
+            '🛒 訂購流程',
+            '━━━━━━━━━━━━━━━━━',
+            '',
+            '1️⃣ 在 Uniqlo / GU 日本官網找到喜歡的商品',
+            '2️⃣ 複製商品頁網址，貼到這個聊天室',
+            '3️⃣ 系統會自動產生商品卡片，選擇顏色和尺寸後點擊「加入購物車」',
+            '4️⃣ 點擊選單「購物車」查看已選商品',
+            '5️⃣ 確認無誤後進入結帳頁，填寫收件資訊並送出訂單',
+            '',
+            '⚠️ 庫存動態：下單不代表購買成功，若遇官網缺貨，客服會主動聯繫並退款。',
+            '⚠️ 代購性質：下單後即進入採購流程，不接受取消、改單或併單。',
+          ].join('\n'),
+          faq_payment: [
+            '💳 付款與匯款',
+            '━━━━━━━━━━━━━━━━━',
+            '',
+            '【銀行轉帳】',
+            '• 銀行：玉山銀行（808）',
+            '• 帳號：0624940150560',
+            '• 請於訂單送出後 3 天內 完成匯款，逾期系統自動取消。',
+            '• 金額須與訂單總額完全一致。',
+            '• 對帳約需 1-2 個工作天，付款後 24 小時未更新狀態請主動聯繫客服。',
+            '',
+            '【轉帳優惠】',
+            '• 選擇銀行轉帳可享 3% 折扣！',
+            '',
+            '⚠️ 惡意棄單、故意匯錯金額者，將永久停止服務。',
+          ].join('\n'),
+          faq_shipping: [
+            '📦 運送與物流',
+            '━━━━━━━━━━━━━━━━━',
+            '',
+            '• 所有商品由日本空運直送台灣。',
+            '• 正常現貨約 7-14 個工作天到貨。',
+            '• 若遇海關查驗或物流狀況，最長需 30 個工作天。',
+            '• 商品寄出後會提供追蹤編號，可自行查詢物流進度。',
+            '',
+            '💡 急單請斟酌下單，代購無法保證確切到貨日期。',
+          ].join('\n'),
+          faq_return: [
+            '🔄 退換貨政策',
+            '━━━━━━━━━━━━━━━━━',
+            '',
+            '• 代購屬「客製化給付」，恕不接受個人因素退換貨（如尺寸不合、不喜歡）。',
+            '• 收到商品如有破損或品項錯誤，請於 3 天內 拍照並透過 LINE 聯繫。',
+            '• 收貨拆封時請務必全程錄影，無錄影存證恕不受理爭議。',
+            '',
+            '⚠️ 輕微線頭、溢膠、螢幕色差等不屬瑕疵範圍。',
+          ].join('\n'),
+          faq_promo: [
+            '🏷️ 特價與促銷',
+            '━━━━━━━━━━━━━━━━━',
+            '',
+            '• 系統會自動偵測期間限定特價，並在商品卡片中提示。',
+            '• 每日採購時間約為 22:00（台灣時間），請在截止前提交訂單。',
+            '• 若採購時特價已結束恢復原價，客服會主動聯繫確認是否補差額或取消。',
+            '',
+            '💡 限時特價隨時可能結束，建議看到特價就盡快下單！',
+          ].join('\n'),
+        };
+
+        if (action && faqAnswers[action]) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: faqAnswers[action],
+          });
+        }
+
         return;
       }
 
@@ -303,10 +375,303 @@ export default defineEventHandler(async (event) => {
         return;
       }
 
-      // 📌 目前僅支援 Uniqlo / GU
-      const isUniqlo =
-        userText.includes('uniqlo.com') || userText.includes('gu-global.com');
-      if (!isUniqlo) return;
+      // �️ 「開始購物」— 回傳品牌導覽輪播
+      if (userText === '開始購物' || userText.includes('請輸入商品內頁網址')) {
+        const shopBubbles: FlexBubble[] = [
+          {
+            type: 'bubble',
+            size: 'micro',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingAll: 'xl',
+              backgroundColor: '#FFFFFF',
+              contents: [
+                {
+                  type: 'text',
+                  text: '🇯🇵',
+                  size: '3xl',
+                  align: 'center',
+                },
+                {
+                  type: 'text',
+                  text: 'UNIQLO',
+                  weight: 'bold',
+                  size: 'lg',
+                  color: '#4A5D59',
+                  align: 'center',
+                  margin: 'md',
+                },
+                {
+                  type: 'text',
+                  text: '日本官網',
+                  size: 'xs',
+                  color: '#999999',
+                  align: 'center',
+                  margin: 'xs',
+                },
+              ],
+            },
+            footer: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: 'sm',
+              backgroundColor: '#749D8E',
+              contents: [
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '36px',
+                  action: {
+                    type: 'uri',
+                    label: '前往選購',
+                    uri: 'https://www.uniqlo.com/jp/ja/',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '前往選購 →',
+                      color: '#FFFFFF',
+                      weight: 'bold',
+                      size: 'sm',
+                      align: 'center',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            type: 'bubble',
+            size: 'micro',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingAll: 'xl',
+              backgroundColor: '#FFFFFF',
+              contents: [
+                {
+                  type: 'text',
+                  text: '🇯🇵',
+                  size: '3xl',
+                  align: 'center',
+                },
+                {
+                  type: 'text',
+                  text: 'GU',
+                  weight: 'bold',
+                  size: 'lg',
+                  color: '#4A5D59',
+                  align: 'center',
+                  margin: 'md',
+                },
+                {
+                  type: 'text',
+                  text: '日本官網',
+                  size: 'xs',
+                  color: '#999999',
+                  align: 'center',
+                  margin: 'xs',
+                },
+              ],
+            },
+            footer: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: 'sm',
+              backgroundColor: '#749D8E',
+              contents: [
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '36px',
+                  action: {
+                    type: 'uri',
+                    label: '前往選購',
+                    uri: 'https://www.gu-global.com/jp/ja/',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '前往選購 →',
+                      color: '#FFFFFF',
+                      weight: 'bold',
+                      size: 'sm',
+                      align: 'center',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            type: 'bubble',
+            size: 'micro',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingAll: 'lg',
+              backgroundColor: '#F0F4F1',
+              contents: [
+                {
+                  type: 'text',
+                  text: '📋',
+                  size: '3xl',
+                  align: 'center',
+                },
+                {
+                  type: 'text',
+                  text: '使用教學',
+                  weight: 'bold',
+                  size: 'md',
+                  color: '#4A5D59',
+                  align: 'center',
+                  margin: 'md',
+                },
+                {
+                  type: 'text',
+                  text: '複製商品網址\n貼到聊天室\n選尺寸加入購物車',
+                  size: 'xxs',
+                  color: '#888888',
+                  align: 'center',
+                  margin: 'sm',
+                  wrap: true,
+                },
+              ],
+            },
+          },
+        ];
+
+        await sendReplyOrPush({
+          type: 'flex',
+          altText: '🛍️ 開始購物 — 選擇品牌',
+          contents: { type: 'carousel', contents: shopBubbles },
+        } as FlexMessage);
+        return;
+      }
+
+      // 📖 「購物須知」— FAQ 分類選單
+      if (userText === '購物須知' || userText === 'FAQ') {
+        const faqCategories = [
+          { emoji: '🛒', label: '訂購流程', key: 'faq_order' },
+          { emoji: '💳', label: '付款與匯款', key: 'faq_payment' },
+          { emoji: '📦', label: '運送與物流', key: 'faq_shipping' },
+          { emoji: '🔄', label: '退換貨政策', key: 'faq_return' },
+          { emoji: '🏷️', label: '特價與促銷', key: 'faq_promo' },
+        ];
+
+        const faqButtons: FlexComponent[] = faqCategories.map((cat) => ({
+          type: 'box',
+          layout: 'horizontal',
+          paddingAll: 'lg',
+          backgroundColor: '#FFFFFF',
+          cornerRadius: 'xl',
+          margin: 'sm',
+          action: {
+            type: 'postback',
+            label: cat.label,
+            data: `action=${cat.key}`,
+            displayText: cat.label,
+          },
+          contents: [
+            {
+              type: 'text',
+              text: cat.emoji,
+              size: 'xl',
+              flex: 0,
+            },
+            {
+              type: 'text',
+              text: cat.label,
+              size: 'sm',
+              weight: 'bold',
+              color: '#4A5D59',
+              margin: 'md',
+              gravity: 'center',
+            },
+            {
+              type: 'text',
+              text: '›',
+              size: 'xl',
+              color: '#C8D5CF',
+              align: 'end',
+              gravity: 'center',
+              flex: 0,
+            },
+          ],
+        }));
+
+        await sendReplyOrPush({
+          type: 'flex',
+          altText: '📖 購物須知 — 選擇問題分類',
+          contents: {
+            type: 'bubble',
+            size: 'mega',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: '#F0F4F1',
+              paddingAll: 'lg',
+              contents: [
+                {
+                  type: 'text',
+                  text: '📖 購物須知',
+                  weight: 'bold',
+                  size: 'lg',
+                  color: '#4A5D59',
+                },
+                {
+                  type: 'text',
+                  text: '請點選想了解的問題分類',
+                  size: 'xs',
+                  color: '#999999',
+                  margin: 'sm',
+                },
+                {
+                  type: 'separator',
+                  margin: 'lg',
+                  color: '#E0E8E4',
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  margin: 'lg',
+                  contents: faqButtons,
+                },
+              ],
+            },
+          },
+        } as FlexMessage);
+        return;
+      }
+
+      // 📌 僅支援「商品內頁」網址（必須含 /products/E）
+      const productUrlMatch = userText.match(
+        /https?:\/\/(?:www\.)?(?:uniqlo\.com|gu-global\.com)\/[^\s]*\/products\/E[^\s]*/i,
+      );
+      if (!productUrlMatch) {
+        // 包含品牌域名但不是商品頁 → 提示用戶
+        if (
+          userText.includes('uniqlo.com') ||
+          userText.includes('gu-global.com')
+        ) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: '⚠️ 請貼上「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.uniqlo.com/jp/ja/products/E469077-000/00\n\n❌ 首頁或分類頁無法使用\n\n💡 在 Uniqlo/GU 官網找到喜歡的商品 → 點進商品頁 → 複製網址 → 貼到這裡即可！',
+          });
+        }
+        return;
+      }
 
       // 💡 用 LINE Loading Animation（免費、不計訊息額度）取代 ACK 文字訊息
       if (userId) {
