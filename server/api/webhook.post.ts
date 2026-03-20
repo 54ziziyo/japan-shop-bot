@@ -126,15 +126,14 @@ export default defineEventHandler(async (event) => {
 
         if (action === 'buy') {
           // 💡 顯示 LINE Loading Animation（讓客人知道系統正在處理）
-          if (userId) {
-            fetch('https://api.line.me/v2/bot/chat/loading', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${config.line.channelAccessToken}`,
-              },
-              body: JSON.stringify({ chatId: userId, loadingSeconds: 10 }),
-            }).catch(() => {});
+          const replyToken =
+            'replyToken' in webhookEvent ? webhookEvent.replyToken : undefined;
+          if (replyToken) {
+            await client.replyMessage(replyToken, {
+              type: 'text',
+              text: '🛒 處理中，請稍候...',
+            });
+            replyTokenUsed = true; // 標記已用掉，後續自動走 pushMessage
           }
 
           // ✅ 檢查輪播是否過期（2 小時）
