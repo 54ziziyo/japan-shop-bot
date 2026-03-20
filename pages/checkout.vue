@@ -350,13 +350,13 @@ const handleSubmitClick = async () => {
   if (!validateForm()) {
     await nextTick();
     // 找到第一個驗證失敗的欄位並滾動過去，自動避開 sticky nav
-    const fieldOrder = ['name', 'phone', 'address', 'email', 'accountLast5'] as const;
+    const fieldOrder = ['name', 'phone', 'address', 'email', 'accountLast5'];
     for (const field of fieldOrder) {
       if (errors.value[field]) {
         const el = document.getElementById(`field-${field}`);
         if (el) {
           const nav = document.querySelector('nav');
-          const navHeight = nav ? (nav as HTMLElement).offsetHeight : 80;
+          const navHeight = nav ? nav.offsetHeight : 80;
           const y = el.getBoundingClientRect().top + window.scrollY - navHeight - 16;
           window.scrollTo({ top: y, behavior: 'smooth' });
         }
