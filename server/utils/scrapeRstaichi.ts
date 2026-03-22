@@ -160,7 +160,8 @@ export const scrapeRstaichi = async (
     // stocks: { [productId]: "在庫あり" | "完売" | "入荷待ち" | ... }
     const stocks: Record<string, string> = jsonConfig.stocks || {};
     const images: Record<string, any[]> = jsonConfig.images || {};
-    const index: Record<string, Record<string, string>> = jsonConfig.index || {};
+    const index: Record<string, Record<string, string>> = jsonConfig.index ||
+    {};
 
     // 建立 per-color 的尺寸庫存 + 圖片
     const colorData = new Map<
@@ -173,12 +174,12 @@ export const scrapeRstaichi = async (
     >();
 
     // 取得 color attribute options 的順序
-    const colorOrder: string[] = (
-      attributes[colorAttrId]?.options || []
-    ).map((o: any) => String(o.id));
-    const sizeOrder: string[] = (
-      attributes[sizeAttrId]?.options || []
-    ).map((o: any) => String(o.id));
+    const colorOrder: string[] = (attributes[colorAttrId]?.options || []).map(
+      (o: any) => String(o.id),
+    );
+    const sizeOrder: string[] = (attributes[sizeAttrId]?.options || []).map(
+      (o: any) => String(o.id),
+    );
 
     for (const [productId, attrs] of Object.entries(index)) {
       const colorId = attrs[colorAttrId];
@@ -222,7 +223,9 @@ export const scrapeRstaichi = async (
         // 依尺寸順序排列；該顏色沒有的尺寸標記為完售
         const sizeList = sizeOrder
           .map((sid) => sizeMap[sid])
-          .filter((label): label is string => !!label && allSizeLabels.has(label))
+          .filter(
+            (label): label is string => !!label && allSizeLabels.has(label),
+          )
           .map((label) => ({
             name: label,
             isStock: data.sizes.get(label) ?? false,

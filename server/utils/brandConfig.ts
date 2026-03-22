@@ -24,9 +24,12 @@ export const RSTAICHI_HELMET_PREFIXES = ['hjh', 'hja', 'hjp'];
  * @returns BrandId 或 null（不支援的品牌）
  */
 export function detectBrand(url: string): BrandId | null {
-  if (/(?:www\.)?uniqlo\.com\/[^\s]*\/products\/E[^\s]*/i.test(url)) return 'uniqlo';
-  if (/(?:www\.)?gu-global\.com\/[^\s]*\/products\/E[^\s]*/i.test(url)) return 'uniqlo';
-  if (/(?:www\.)?ec\.rs-taichi\.com\/[a-z0-9]+\.html/i.test(url)) return 'rstaichi';
+  if (/(?:www\.)?uniqlo\.com\/[^\s]*\/products\/E[^\s]*/i.test(url))
+    return 'uniqlo';
+  if (/(?:www\.)?gu-global\.com\/[^\s]*\/products\/E[^\s]*/i.test(url))
+    return 'uniqlo';
+  if (/(?:www\.)?ec\.rs-taichi\.com\/[a-z0-9]+\.html/i.test(url))
+    return 'rstaichi';
   return null;
 }
 

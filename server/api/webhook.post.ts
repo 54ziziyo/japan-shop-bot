@@ -134,17 +134,23 @@ export default defineEventHandler(async (event) => {
           // 💡 顯示 LINE Loading Animation（讓客人知道系統正在處理）
           if (userId) {
             try {
-              const loadRes = await fetch('https://api.line.me/v2/bot/chat/loading', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${config.line.channelAccessToken}`,
+              const loadRes = await fetch(
+                'https://api.line.me/v2/bot/chat/loading',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${config.line.channelAccessToken}`,
+                  },
+                  body: JSON.stringify({ chatId: userId, loadingSeconds: 5 }),
                 },
-                body: JSON.stringify({ chatId: userId, loadingSeconds: 5 }),
-              });
+              );
               if (!loadRes.ok) {
                 const errBody = await loadRes.text();
-                console.warn(`⚠️ Loading animation 失敗 [${loadRes.status}]:`, errBody);
+                console.warn(
+                  `⚠️ Loading animation 失敗 [${loadRes.status}]:`,
+                  errBody,
+                );
               }
             } catch (loadErr) {
               console.warn('⚠️ Loading animation 例外:', loadErr);
@@ -534,7 +540,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'text',
-                  text: '�️',
+                  text: '🏍️',
                   size: '3xl',
                   align: 'center',
                 },
@@ -737,17 +743,23 @@ export default defineEventHandler(async (event) => {
       // 💡 用 LINE Loading Animation（免費、不計訊息額度）取代 ACK 文字訊息
       if (userId) {
         try {
-          const loadRes = await fetch('https://api.line.me/v2/bot/chat/loading', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${config.line.channelAccessToken}`,
+          const loadRes = await fetch(
+            'https://api.line.me/v2/bot/chat/loading',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${config.line.channelAccessToken}`,
+              },
+              body: JSON.stringify({ chatId: userId, loadingSeconds: 20 }),
             },
-            body: JSON.stringify({ chatId: userId, loadingSeconds: 20 }),
-          });
+          );
           if (!loadRes.ok) {
             const errBody = await loadRes.text();
-            console.warn(`⚠️ Loading animation 失敗 [${loadRes.status}]:`, errBody);
+            console.warn(
+              `⚠️ Loading animation 失敗 [${loadRes.status}]:`,
+              errBody,
+            );
           } else {
             console.log('✅ Loading animation 已發送');
           }
@@ -924,12 +936,18 @@ export default defineEventHandler(async (event) => {
               const baseData = `action=buy&brand=rstaichi&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.sku}&img=${encodeURIComponent(imgCompact)}&cat=rstaichi|${productData.weightGrams}&ts=${Math.floor(Date.now() / 1000)}`;
               const titleBudget = 300 - baseData.length - 3; // 3 = "&t="
               let titleSlice = productData.title;
-              while (encodeURIComponent(titleSlice).length > titleBudget && titleSlice.length > 0) {
+              while (
+                encodeURIComponent(titleSlice).length > titleBudget &&
+                titleSlice.length > 0
+              ) {
                 titleSlice = titleSlice.slice(0, -1);
               }
               if (titleSlice.length < productData.title.length) {
                 // 截斷時加省略號，且不在 | 或空格處斷開
-                titleSlice = titleSlice.length > 3 ? titleSlice.slice(0, -1) + '…' : titleSlice;
+                titleSlice =
+                  titleSlice.length > 3
+                    ? titleSlice.slice(0, -1) + '…'
+                    : titleSlice;
               }
               const compactData = `${baseData}&t=${encodeURIComponent(titleSlice)}`;
               const themeColor = s.isStock ? '#ffffff' : '#888888';

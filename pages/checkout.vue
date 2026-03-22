@@ -364,7 +364,8 @@ const handleSubmitClick = async () => {
         if (el) {
           const nav = document.querySelector('nav');
           const navHeight = nav ? nav.offsetHeight : 80;
-          const y = el.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+          const y =
+            el.getBoundingClientRect().top + window.scrollY - navHeight - 16;
           window.scrollTo({ top: y, behavior: 'smooth' });
         }
         break;
