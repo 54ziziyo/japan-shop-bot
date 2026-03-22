@@ -1,6 +1,6 @@
 # 囉姆嚕日貨代購機器人（Japan Shop Bot）
 
-LINE 官方帳號的日本代購服務，整合 Uniqlo 商品查詢、購物車、結帳、訂單管理、Google 試算表同步及自動化運維。
+LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**RS Taichi（重機齒輪）** 等多品牌商品查詢、購物車、結帳、訂單管理、Google 試算表同步及自動化運維。
 
 ---
 
@@ -59,6 +59,8 @@ japan-shop-bot/
 │   │
 │   └── utils/                 # 後端共用工具
 │       ├── scrapeUniqlo.ts    # 刮取 Uniqlo 商品資訊（價格、庫存、圖片）
+│       ├── scrapeRstaichi.ts  # 刮取 RS Taichi 商品資訊（Magento 2 jsonConfig 解析）
+│       ├── brandConfig.ts     # 多品牌路由工具（detectBrand / extractRstaichiSku / isRstaichiBlocked）
 │       ├── exchangeRate.ts    # 從玉山銀行網站抓 JPY 現金賣出匯率
 │       ├── googleSheets.ts    # Google Sheets 讀寫（appendOrderRow / deleteOrderRows）
 │       ├── pricing.ts         # re-export shared/pricing
@@ -92,6 +94,14 @@ LINE 官方帳號
     │   回傳 LINE Flex Message（商品卡片 + 顏色/尺寸選擇）
     │       ↓
     │   選好後加入購物車（寫入 Supabase cart_items）
+    │
+    ├─ 傳送 RS Taichi 商品網址（ec.rs-taichi.com）
+    │       ↓
+    │   webhook.post.ts detectBrand() 辨識品牌 → scrapeRstaichi 讀 Magento jsonConfig
+    │       ↓
+    │   回傳 LINE Flex Message（Overlay 設計 + 動態 aspectRatio）
+    │       ↓
+    │   選好後加入購物車（category 儲存為 rstaichi|{grams} 格式）
     │
     ├─ 開啟購物車 LIFF（cart.vue）
     │       ↓
@@ -172,6 +182,13 @@ pending  → 【自動刪除】（3 天未付款，見下方）
 - 代購服務費另計（見 `SERVICE_FEE_TWD`）
 - **要修改商品重量估算 → 改 [`shared/shipping.ts`](shared/shipping.ts) 的 `WEIGHT_MAP`**
 - **要修改服務費 → 改 [`shared/shipping.ts`](shared/shipping.ts) 的 `SERVICE_FEE_TWD`**
+
+#### RS Taichi 運費特殊規則
+
+- 只要購物車含有任何 RS Taichi 商品（包含混合 Uniqlo），**一律強制使用國際小包**計算運費
+- RS Taichi 商品重量 = 爬蟲抓到的實際重量（公克）**+ 500g 包材緩衝**
+- RS Taichi 商品 category 欄位格式：`rstaichi|{grams}`（e.g. `rstaichi|1700`）
+- 部分商品（如頭盔）為禁購品，在 `server/utils/brandConfig.ts` 的 `BLOCKED_SKUS` 管理
 
 ### 銀行轉帳優惠
 
@@ -298,6 +315,23 @@ Google 試算表有一個觸發器 `handleStatusEdit`，監聽 H 欄（貨物狀
 若管理員在 S 欄填入追蹤碼（如 `EN507442770JP`），Apps Script 會一併將 `trackingCode` 送至 API，同步寫入 Supabase `orders.tracking_code` 欄位。
 
 **不需要在 Apps Script 加任何狀態白名單**，白名單在 Nuxt 端的 `ALLOWED_STATUSES` 控制。
+
+---
+
+## 更新紀錄
+
+### 2026-03-23
+
+**RS Taichi 庫存狀態解析修正（`server/utils/scrapeRstaichi.ts`）**
+
+- **Bug 1 修正**：原本 `inStock` 只認 `「在庫あり」` 為有貨，導致 `「在庫切れ※ご注文受付中」`（接受預購）被誤標為完售
+  - 新邏輯：只有包含 `「完売」` 才視為完售；`在庫切れ※ご注文受付中`、`入荷待ち` 等都視為可購買
+- **Bug 2 修正**：某顏色若在 Magento index 中沒有某尺寸的組合，該尺寸直接消失，不顯示在 LINE 卡片上
+  - 新邏輯：收集所有顏色的尺寸聯集，讓每個顏色都展示完整尺寸列表，缺少的組合標記為「完售」
+
+**RS Taichi 包材重量修正（`shared/shipping.ts`）**
+
+- `getCategoryWeight` 對 `rstaichi|{grams}` 格式的商品，在實際重量基礎上**額外加 500g** 作為包材緩衝
 
 ---
 

@@ -201,9 +201,16 @@ const totalWeight = computed(() => {
   }, 0);
 });
 
+// 是否包含 RsTaichi 商品（強制國際小包）
+const hasRstaichiItems = computed(() =>
+  validItems.value.some((item) =>
+    (item.category || '').toLowerCase().startsWith('rstaichi|'),
+  ),
+);
+
 // 運費資訊
 const shippingInfo = computed(() =>
-  getShippingTwd(totalWeight.value, jpyRate.value),
+  getShippingTwd(totalWeight.value, jpyRate.value, hasRstaichiItems.value),
 );
 
 // 基礎金額（商品 + 運費 + 基本服務費）

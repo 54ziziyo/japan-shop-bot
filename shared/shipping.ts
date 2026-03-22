@@ -140,9 +140,10 @@ const FALLBACK_WEIGHT = 500;
 /**
  * 依分類字串取得預估重量（公克）
  *
- * 支援兩種輸入格式：
- * - 新格式 "class|category"  → e.g. "tops|t shirts"
- * - 舊格式 "class"           → e.g. "tops"（向下相容）
+ * 支援三種輸入格式：
+ * - 直接重量 "rstaichi|1700"  → 直接回傳 1700（RsTaichi 等品牌的實際重量）
+ * - 新格式   "class|category"  → e.g. "tops|t shirts"（Uniqlo 分類查表）
+ * - 舊格式   "class"           → e.g. "tops"（向下相容）
  */
 export function getCategoryWeight(categoryStr: string): number {
   if (!categoryStr) return FALLBACK_WEIGHT;
@@ -152,9 +153,17 @@ export function getCategoryWeight(categoryStr: string): number {
 
   if (pipeIdx !== -1) {
     const cls = lower.slice(0, pipeIdx);
-    const cat = lower.slice(pipeIdx + 1);
+    const rest = lower.slice(pipeIdx + 1);
+
+    // 品牌直接重量格式: "rstaichi|1700"
+    // +500g 為包材（紙箱 / 緩衝材）
+    if (cls === 'rstaichi') {
+      const grams = parseInt(rest);
+      return grams > 0 ? grams + 500 : FALLBACK_WEIGHT;
+    }
+
     const classMap = WEIGHT_MAP[cls];
-    if (classMap) return classMap[cat] ?? classMap._default ?? FALLBACK_WEIGHT;
+    if (classMap) return classMap[rest] ?? classMap._default ?? FALLBACK_WEIGHT;
   } else {
     const classMap = WEIGHT_MAP[lower];
     if (classMap) return classMap._default ?? FALLBACK_WEIGHT;
@@ -189,6 +198,7 @@ export function getCategoryLabel(categoryStr: string): string {
   if (!categoryStr) return '其他';
   const lower = categoryStr.toLowerCase();
   const cls = lower.includes('|') ? lower.split('|')[0]! : lower;
+  if (cls === 'rstaichi') return '重機部品';
   return CLASS_LABELS[cls] || '其他';
 }
 
@@ -259,10 +269,13 @@ const INTL_SMALL_PACKET_RATES: [number, number][] = [
  * ≤ 2000g → ePacket
  * > 2000g → 國際小包
  * 回傳日圓運費 + 台幣運費（基礎匯率 0.205）
+ *
+ * @param forceIntlPacket 強制使用國際小包（RsTaichi 等大型商品）
  */
 export function getShippingTwd(
   totalWeightGrams: number,
   rate?: number,
+  forceIntlPacket?: boolean,
 ): {
   method: string;
   costJpy: number;
@@ -274,7 +287,7 @@ export function getShippingTwd(
   let costJpy = 0;
   let method = '';
 
-  if (totalWeightGrams <= 2000) {
+  if (!forceIntlPacket && totalWeightGrams <= 2000) {
     method = 'ePacket';
     for (const [maxW, cost] of EPACKET_RATES) {
       if (totalWeightGrams <= maxW) {
@@ -348,7 +361,12 @@ export function calculateQuote(
     categoryCounts[label] = (categoryCounts[label] || 0) + qty;
   }
 
-  const shipping = getShippingTwd(totalWeight, rate);
+  const shipping = getShippingTwd(
+    totalWeight,
+    rate,
+    // 只要有任何 RsTaichi 商品 → 強制國際小包
+    items.some((i) => i.category?.toLowerCase().startsWith('rstaichi|')),
+  );
 
   return {
     subtotalTwd,

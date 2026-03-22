@@ -61,11 +61,12 @@ export async function appendOrderRow(
     index === 0 ? order.grandTotalTwd : '', // R 含稅總額(台幣) (僅首列顯示)
     index === 0 ? '' : '', // S 追蹤碼 (僅首列顯示，出貨時由管理員填入)
     index === 0 ? order.email : '', // T 電子信箱 (僅首列顯示)
+    item.product_url || '', // U 商品網址 (每列顯示)
   ]);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: config.googleSpreadsheetId,
-    range: `${config.googleSheetName}!A:T`, // 範圍確保包含 T 欄
+    range: `${config.googleSheetName}!A:U`, // 範圍確保包含 U 欄
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: rows },
   });

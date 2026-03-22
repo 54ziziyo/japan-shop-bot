@@ -10,6 +10,12 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 import { scrapeUniqlo } from '../utils/scrapeUniqlo';
+import { scrapeRstaichi } from '../utils/scrapeRstaichi';
+import {
+  detectBrand,
+  extractRstaichiSku,
+  isRstaichiBlocked,
+} from '../utils/brandConfig';
 import { parseJpy, jpyToTwd, formatTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
 
@@ -127,14 +133,22 @@ export default defineEventHandler(async (event) => {
         if (action === 'buy') {
           // 💡 顯示 LINE Loading Animation（讓客人知道系統正在處理）
           if (userId) {
-            fetch('https://api.line.me/v2/bot/chat/loading', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${config.line.channelAccessToken}`,
-              },
-              body: JSON.stringify({ chatId: userId, loadingSeconds: 10 }),
-            }).catch(() => {});
+            try {
+              const loadRes = await fetch('https://api.line.me/v2/bot/chat/loading', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${config.line.channelAccessToken}`,
+                },
+                body: JSON.stringify({ chatId: userId, loadingSeconds: 5 }),
+              });
+              if (!loadRes.ok) {
+                const errBody = await loadRes.text();
+                console.warn(`⚠️ Loading animation 失敗 [${loadRes.status}]:`, errBody);
+              }
+            } catch (loadErr) {
+              console.warn('⚠️ Loading animation 例外:', loadErr);
+            }
           }
 
           // ✅ 檢查輪播是否過期（2 小時）
@@ -157,11 +171,26 @@ export default defineEventHandler(async (event) => {
           const productCode = data.get('code') || '';
           const itemCategory = data.get('cat') || '';
           const pg = data.get('pg') || '00';
+          const brand = data.get('brand') || 'uniqlo';
 
-          // 💡 還原圖片網址：直接用實際圖片路徑（從 API 取得的真實 URL）
+          // 💡 還原圖片網址：依品牌使用不同前綴
           const imgPath = data.get('img') || '';
-          const itemImg = imgPath ? `https://image.uniqlo.com/${imgPath}` : '';
-          const productUrl = `https://www.uniqlo.com/jp/ja/products/${productCode}/${pg}`;
+          let itemImg = '';
+          if (brand === 'rstaichi') {
+            // 將 postback 壓縮的 RST: 前綴還原為完整 URL
+            itemImg = imgPath.startsWith('RST:')
+              ? `https://media-www.ec.rs-taichi.com/${imgPath.slice(4)}`
+              : imgPath;
+          } else {
+            itemImg = imgPath ? `https://image.uniqlo.com/${imgPath}` : '';
+          }
+
+          let productUrl = '';
+          if (brand === 'rstaichi') {
+            productUrl = `https://www.ec.rs-taichi.com/${productCode.toLowerCase()}.html`;
+          } else {
+            productUrl = `https://www.uniqlo.com/jp/ja/products/${productCode}/${pg}`;
+          }
           const promoEnd = data.get('pd') || null; // 期間限定截止 unix timestamp
 
           console.log(
@@ -505,13 +534,13 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'text',
-                  text: '🇯🇵',
+                  text: '�️',
                   size: '3xl',
                   align: 'center',
                 },
                 {
                   type: 'text',
-                  text: '開發中',
+                  text: 'RS Taichi',
                   weight: 'bold',
                   size: 'lg',
                   color: '#4A5D59',
@@ -520,7 +549,7 @@ export default defineEventHandler(async (event) => {
                 },
                 {
                   type: 'text',
-                  text: '敬請期待更多品牌',
+                  text: '重機人身部品',
                   size: 'xs',
                   color: '#999999',
                   align: 'center',
@@ -543,7 +572,7 @@ export default defineEventHandler(async (event) => {
                   action: {
                     type: 'uri',
                     label: '前往選購',
-                    uri: 'https://www.uniqlo.com/jp/ja/',
+                    uri: 'https://www.ec.rs-taichi.com/products.html',
                   },
                   contents: [
                     {
@@ -655,186 +684,391 @@ export default defineEventHandler(async (event) => {
         return;
       }
 
-      // 📌 僅支援「商品內頁」網址（必須含 /products/E）
-      const productUrlMatch = userText.match(
-        /https?:\/\/(?:www\.)?(?:uniqlo\.com|gu-global\.com)\/[^\s]*\/products\/E[^\s]*/i,
-      );
-      if (!productUrlMatch) {
-        // 包含品牌域名但不是商品頁 → 提示用戶
+      // ── 🔍 多品牌 URL 偵測與路由 ──
+
+      // 提取使用者訊息中的 URL
+      const urlMatch = userText.match(/https?:\/\/[^\s]+/i);
+      if (!urlMatch) return;
+      const pastedUrl = urlMatch[0];
+
+      const brand = detectBrand(pastedUrl);
+
+      if (!brand) {
+        // 包含已知品牌域名但不符合商品頁格式 → 提示
         if (
-          userText.includes('uniqlo.com') ||
-          userText.includes('gu-global.com')
+          pastedUrl.includes('uniqlo.com') ||
+          pastedUrl.includes('gu-global.com')
         ) {
           await sendReplyOrPush({
             type: 'text',
             text: '⚠️ 請貼上「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.uniqlo.com/jp/ja/products/E469077-000/00\n\n❌ 首頁或分類頁無法使用\n\n💡 在 Uniqlo/GU 官網找到喜歡的商品 → 點進商品頁 → 複製網址 → 貼到這裡即可！',
           });
+        } else if (pastedUrl.includes('ec.rs-taichi.com')) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: '⚠️ 請貼上 RS Taichi「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.ec.rs-taichi.com/rsj334.html\n\n❌ 首頁或分類頁無法使用',
+          });
         }
         return;
+      }
+
+      // ── 🚫 RsTaichi 禁售品 & 安全帽檢查 ──
+      if (brand === 'rstaichi') {
+        const sku = extractRstaichiSku(pastedUrl);
+        if (sku) {
+          const blocked = isRstaichiBlocked(sku);
+          if (blocked === 'prohibited') {
+            await sendReplyOrPush({
+              type: 'text',
+              text: '🚫 很抱歉，此商品含有電池、酒精、油類或液體成分，屬於國際郵寄運送禁止品項，無法提供代購服務。\n\n如有疑問，歡迎聯繫專人客服 🙏',
+            });
+            return;
+          }
+          if (blocked === 'helmet') {
+            await sendReplyOrPush({
+              type: 'text',
+              text: '🪖 安全帽類商品因規格與尺寸較為特殊，目前不提供線上直接加入購物車。\n\n如需購買安全帽，請直接聯繫專人客服為您報價與處理！\n\n👉 請在聊天室輸入「🙋‍♂️」+想要的型號，專員會儘速回覆您 😊',
+            });
+            return;
+          }
+        }
       }
 
       // 💡 用 LINE Loading Animation（免費、不計訊息額度）取代 ACK 文字訊息
       if (userId) {
         try {
-          await fetch('https://api.line.me/v2/bot/chat/loading', {
+          const loadRes = await fetch('https://api.line.me/v2/bot/chat/loading', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${config.line.channelAccessToken}`,
             },
-            body: JSON.stringify({ chatId: userId, loadingSeconds: 30 }),
+            body: JSON.stringify({ chatId: userId, loadingSeconds: 20 }),
           });
+          if (!loadRes.ok) {
+            const errBody = await loadRes.text();
+            console.warn(`⚠️ Loading animation 失敗 [${loadRes.status}]:`, errBody);
+          } else {
+            console.log('✅ Loading animation 已發送');
+          }
         } catch (loadErr) {
-          console.warn('⚠️ Loading animation 失敗，不影響主流程');
+          console.warn('⚠️ Loading animation 例外:', loadErr);
         }
       }
 
       try {
-        console.log(`🕷️ 收到網址：${userText}`);
-        const productData = await scrapeUniqlo(userText);
-        if (!productData) throw new Error('無法識別的網站資料');
+        console.log(`🕷️ [${brand}] 收到網址：${pastedUrl}`);
 
-        console.log(`✅ 抓取成功：${productData.title}`);
+        let bubbles: FlexBubble[] = [];
+        let productTitle = '';
 
-        // 🎨 製作卡片 (輕盈透明版)
-        const bubbles = productData.variants.map((v: any) => {
-          const safeImageUrl = ensureLineImageUrl(v.image);
+        // ── UNIQLO 抓取 + 卡片 ──
+        if (brand === 'uniqlo') {
+          const productData = await scrapeUniqlo(pastedUrl);
+          if (!productData) throw new Error('無法識別的網站資料');
+          productTitle = productData.title;
+          console.log(`✅ 抓取成功：${productTitle}`);
 
-          // 💡 將實際圖片 URL 去掉共同前綴 + query string，縮減 postback data 大小
-          const imgPath = (v.image || '')
-            .replace(/^https?:\/\/image\.uniqlo\.com\//, '')
-            .split('?')[0];
+          bubbles = productData.variants.map((v: any) => {
+            const safeImageUrl = ensureLineImageUrl(v.image);
+            const imgPath = (v.image || '')
+              .replace(/^https?:\/\/image\.uniqlo\.com\//, '')
+              .split('?')[0];
 
-          const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
-            // 💡 直接傳實際圖片路徑，不再用 cc/gid 重組
-            const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}&ts=${Math.floor(Date.now() / 1000)}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
-
-            // 💡 4. 根據庫存狀態調整按鈕樣式和行為
-            const themeColor = s.isStock ? '#ffffff' : '#888888';
+            const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
+              const compactData = `action=buy&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}&ts=${Math.floor(Date.now() / 1000)}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
+              const themeColor = s.isStock ? '#ffffff' : '#888888';
+              return {
+                type: 'box',
+                layout: 'vertical',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '32px',
+                margin: 'sm',
+                cornerRadius: 'sm',
+                borderWidth: '1px',
+                borderColor: s.isStock ? themeColor : '#00000000',
+                backgroundColor: s.isStock ? '#00000000' : '#3d4e4ab3',
+                action: s.isStock
+                  ? { type: 'postback', label: s.name, data: compactData }
+                  : {
+                      type: 'postback',
+                      label: s.name,
+                      data: `action=soldout&s=${encodeURIComponent(s.name)}`,
+                    },
+                contents: [
+                  {
+                    type: 'text',
+                    text: s.isStock
+                      ? `加入購物車 | ${s.name}`
+                      : `${s.name} 完售`,
+                    color: themeColor,
+                    align: 'center',
+                    weight: 'bold',
+                    size: 'xxs',
+                  },
+                ],
+              };
+            });
 
             return {
-              type: 'box',
-              layout: 'vertical',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '32px',
-              margin: 'sm',
-              cornerRadius: 'sm',
-              borderWidth: '1px',
-              borderColor: s.isStock ? themeColor : '#00000000',
-              backgroundColor: s.isStock ? '#00000000' : '#3d4e4ab3',
-              action: s.isStock
-                ? { type: 'postback', label: s.name, data: compactData }
-                : {
-                    type: 'postback',
-                    label: s.name,
-                    data: `action=soldout&s=${encodeURIComponent(s.name)}`,
+              type: 'bubble',
+              size: 'mega',
+              body: {
+                type: 'box',
+                layout: 'vertical',
+                paddingAll: '0px',
+                contents: [
+                  {
+                    type: 'image',
+                    url: safeImageUrl,
+                    size: 'full',
+                    aspectRatio: '3:4',
+                    aspectMode: 'cover',
                   },
-              contents: [
-                {
-                  type: 'text',
-                  text: s.isStock ? `加入購物車 | ${s.name}` : `${s.name} 完售`,
-                  color: themeColor,
-                  align: 'center',
-                  weight: 'bold',
-                  size: 'xxs',
-                },
-              ],
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    position: 'absolute',
+                    offsetBottom: '0px',
+                    offsetStart: '0px',
+                    offsetEnd: '0px',
+                    backgroundColor: '#3d4e4ab8',
+                    paddingAll: 'lg',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: productData.title,
+                        weight: 'bold',
+                        size: 'md',
+                        color: '#ffffff',
+                        wrap: true,
+                      },
+                      {
+                        type: 'text',
+                        text: `${formatTwd(jpyToTwd(parseJpy(v.price), jpyRate))}`,
+                        size: 'md',
+                        weight: 'bold',
+                        color: '#ffffff',
+                        margin: 'md',
+                      },
+                      {
+                        type: 'text',
+                        text: `顏色：${v.color} ¥${parseJpy(v.price).toLocaleString()}`,
+                        size: 'xs',
+                        color: '#dddddd',
+                        margin: 'xs',
+                      },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        margin: 'md',
+                        contents: sizeButtons.slice(0, 7),
+                      },
+                    ],
+                  },
+                ],
+              },
+              footer: {
+                type: 'box',
+                layout: 'vertical',
+                paddingAll: '0px',
+                backgroundColor: '#3d4e4a',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '40px',
+                    action: {
+                      type: 'uri',
+                      label: '查看詳情',
+                      uri: pastedUrl,
+                    },
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '查看官網詳情',
+                        color: '#ffffff',
+                        weight: 'bold',
+                        size: 'xs',
+                        align: 'center',
+                      },
+                    ],
+                  },
+                ],
+              },
             };
-          });
+          }) as FlexBubble[];
+        }
 
-          return {
-            type: 'bubble',
-            size: 'mega',
-            body: {
-              type: 'box',
-              layout: 'vertical',
-              paddingAll: '0px',
-              contents: [
-                {
-                  type: 'image',
-                  url: safeImageUrl,
-                  size: 'full',
-                  aspectRatio: '3:4',
-                  aspectMode: 'cover',
-                },
-                // 💡 3. 調整遮罩：將底色調淺
-                {
-                  type: 'box',
-                  layout: 'vertical',
-                  position: 'absolute',
-                  offsetBottom: '0px',
-                  offsetStart: '0px',
-                  offsetEnd: '0px',
-                  backgroundColor: '#3d4e4ab8', // 遮罩背景
-                  paddingAll: 'lg',
-                  contents: [
-                    {
-                      type: 'text',
-                      text: productData.title,
-                      weight: 'bold',
-                      size: 'md',
-                      color: '#ffffff',
-                      wrap: true,
+        // ── RS TAICHI 抓取 + 卡片 ──
+        // 維持 overlay 風格（圖片 + 底部半透明遮罩），
+        // 根據尺寸數量動態拉高圖片 aspectRatio，確保所有尺寸完整顯示
+        if (brand === 'rstaichi') {
+          const productData = await scrapeRstaichi(pastedUrl);
+          if (!productData) throw new Error('無法識別的 RS Taichi 商品資料');
+          productTitle = productData.title;
+          console.log(`✅ 抓取成功：${productTitle}`);
+
+          bubbles = productData.variants.map((v: any) => {
+            const safeImageUrl = ensureLineImageUrl(v.image);
+            const imgCompact = (v.image || '').replace(
+              /^https?:\/\/media-www\.ec\.rs-taichi\.com\//,
+              'RST:',
+            );
+
+            const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
+              // 動態計算標題可用長度，盡量塞入最多字（LINE postback 上限 300 字元）
+              const baseData = `action=buy&brand=rstaichi&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.sku}&img=${encodeURIComponent(imgCompact)}&cat=rstaichi|${productData.weightGrams}&ts=${Math.floor(Date.now() / 1000)}`;
+              const titleBudget = 300 - baseData.length - 3; // 3 = "&t="
+              let titleSlice = productData.title;
+              while (encodeURIComponent(titleSlice).length > titleBudget && titleSlice.length > 0) {
+                titleSlice = titleSlice.slice(0, -1);
+              }
+              if (titleSlice.length < productData.title.length) {
+                // 截斷時加省略號，且不在 | 或空格處斷開
+                titleSlice = titleSlice.length > 3 ? titleSlice.slice(0, -1) + '…' : titleSlice;
+              }
+              const compactData = `${baseData}&t=${encodeURIComponent(titleSlice)}`;
+              const themeColor = s.isStock ? '#ffffff' : '#888888';
+              return {
+                type: 'box',
+                layout: 'vertical',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '32px',
+                margin: 'sm',
+                cornerRadius: 'sm',
+                borderWidth: '1px',
+                borderColor: s.isStock ? themeColor : '#00000000',
+                backgroundColor: s.isStock ? '#00000000' : '#3d4e4ab3',
+                action: s.isStock
+                  ? { type: 'postback', label: s.name, data: compactData }
+                  : {
+                      type: 'postback',
+                      label: s.name,
+                      data: `action=soldout&s=${encodeURIComponent(s.name)}`,
                     },
-                    {
-                      type: 'text',
-                      text: `${formatTwd(jpyToTwd(parseJpy(v.price), jpyRate))}`,
-                      size: 'md',
-                      weight: 'bold',
-                      color: '#ffffff',
-                      margin: 'md',
+                contents: [
+                  {
+                    type: 'text',
+                    text: s.isStock
+                      ? `加入購物車 | ${s.name}`
+                      : `${s.name} 完售`,
+                    color: themeColor,
+                    align: 'center',
+                    weight: 'bold',
+                    size: 'xxs',
+                  },
+                ],
+              };
+            });
+
+            // 根據尺寸數量動態決定圖片高度
+            // ≤7: 3:4（原始）, 8-11: 9:16, 12+: 1:2
+            const sizeCount = v.sizes.length;
+            const aspectRatio =
+              sizeCount <= 7 ? '3:4' : sizeCount <= 11 ? '9:16' : '1:2';
+
+            return {
+              type: 'bubble',
+              size: 'mega',
+              body: {
+                type: 'box',
+                layout: 'vertical',
+                paddingAll: '0px',
+                contents: [
+                  {
+                    type: 'image',
+                    url: safeImageUrl,
+                    size: 'full',
+                    aspectRatio,
+                    aspectMode: 'cover',
+                  },
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    position: 'absolute',
+                    offsetBottom: '0px',
+                    offsetStart: '0px',
+                    offsetEnd: '0px',
+                    backgroundColor: '#3d4e4ab8',
+                    paddingAll: 'lg',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: productData.title,
+                        weight: 'bold',
+                        size: 'md',
+                        color: '#ffffff',
+                        wrap: true,
+                      },
+                      {
+                        type: 'text',
+                        text: `${formatTwd(jpyToTwd(parseJpy(v.price), jpyRate))}`,
+                        size: 'md',
+                        weight: 'bold',
+                        color: '#ffffff',
+                        margin: 'md',
+                      },
+                      {
+                        type: 'text',
+                        text: `顏色：${v.color} ¥${parseJpy(v.price).toLocaleString()}`,
+                        size: 'xs',
+                        color: '#dddddd',
+                        margin: 'xs',
+                      },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        margin: 'md',
+                        contents: sizeButtons,
+                      },
+                    ],
+                  },
+                ],
+              },
+              footer: {
+                type: 'box',
+                layout: 'vertical',
+                paddingAll: '0px',
+                backgroundColor: '#3d4e4a',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '40px',
+                    action: {
+                      type: 'uri',
+                      label: '查看詳情',
+                      uri: pastedUrl,
                     },
-                    {
-                      type: 'text',
-                      text: `顏色：${v.color} ¥${parseJpy(v.price).toLocaleString()}`,
-                      size: 'xs',
-                      color: '#dddddd',
-                      margin: 'xs',
-                    },
-                    {
-                      type: 'box',
-                      layout: 'vertical',
-                      margin: 'md',
-                      contents: sizeButtons.slice(0, 7),
-                    },
-                  ],
-                },
-              ],
-            },
-            // 💡 4. Footer 和諧化：背景改用稍微透一點的深灰
-            footer: {
-              type: 'box',
-              layout: 'vertical',
-              paddingAll: '0px',
-              backgroundColor: '#3d4e4a',
-              contents: [
-                {
-                  type: 'box',
-                  layout: 'vertical',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '40px',
-                  action: { type: 'uri', label: '查看詳情', uri: userText },
-                  contents: [
-                    {
-                      type: 'text',
-                      text: '查看官網詳情',
-                      color: '#ffffff',
-                      weight: 'bold',
-                      size: 'xs',
-                      align: 'center',
-                    },
-                  ],
-                },
-              ],
-            },
-          };
-        }) as FlexBubble[];
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '查看官網詳情',
+                        color: '#ffffff',
+                        weight: 'bold',
+                        size: 'xs',
+                        align: 'center',
+                      },
+                    ],
+                  },
+                ],
+              },
+            };
+          }) as FlexBubble[];
+        }
+
+        if (!bubbles.length) throw new Error('未取得任何商品變體');
 
         const flexMessage: FlexMessage = {
           type: 'flex',
-          altText: `推薦商品：${productData.title}`,
+          altText: `推薦商品：${productTitle}`,
           contents: { type: 'carousel', contents: bubbles },
         };
 
