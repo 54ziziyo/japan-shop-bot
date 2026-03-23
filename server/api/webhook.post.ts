@@ -438,7 +438,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'image',
-                  url: 'https://romoru.vercel.app/image/rstaichi.jpg',
+                  url: 'https://romoru.vercel.app/image/logo-rstaichi.jpg',
                   size: 'full',
                   aspectMode: 'cover',
                   aspectRatio: '800:894',
@@ -448,7 +448,7 @@ export default defineEventHandler(async (event) => {
                   layout: 'vertical',
                   paddingAll: '0px',
                   backgroundColor: '#FFFFFF',
-                  height: '68px', // 👈 固定的高度
+                  height: '55px', // 👈 固定的高度
                   justifyContent: 'center', // 👈 垂直置中關鍵
                   alignItems: 'center', // 👈 水平置中關鍵
                   action: {
@@ -460,6 +460,29 @@ export default defineEventHandler(async (event) => {
                     {
                       type: 'text',
                       text: '前往日本官網',
+                      size: 'sm',
+                      color: '#000000',
+                      weight: 'bold',
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: '0px',
+                  backgroundColor: '#ffffff',
+                  height: '55px', // 👈 固定的高度
+                  justifyContent: 'center', // 👈 垂直置中關鍵
+                  alignItems: 'center', // 👈 水平置中關鍵
+                  action: {
+                    type: 'message',
+                    label: '購物須知',
+                    text: '購物須知',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '購物須知',
                       size: 'sm',
                       color: '#000000',
                       weight: 'bold',
@@ -480,7 +503,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'image',
-                  url: 'https://romoru.vercel.app/image/uniqlo.jpg',
+                  url: 'https://romoru.vercel.app/image/logo-uniqlo.jpg',
                   size: 'full',
                   aspectMode: 'cover',
                   aspectRatio: '800:894',
@@ -490,7 +513,7 @@ export default defineEventHandler(async (event) => {
                   layout: 'vertical',
                   paddingAll: '0px',
                   backgroundColor: '#FFFFFF',
-                  height: '68px', // 👈 固定的高度
+                  height: '55px', // 👈 固定的高度
                   justifyContent: 'center', // 👈 垂直置中關鍵
                   alignItems: 'center', // 👈 水平置中關鍵
                   action: {
@@ -502,6 +525,29 @@ export default defineEventHandler(async (event) => {
                     {
                       type: 'text',
                       text: '前往日本官網',
+                      size: 'sm',
+                      color: '#000000',
+                      weight: 'bold',
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: '0px',
+                  backgroundColor: '#ffffff',
+                  height: '55px', // 👈 固定的高度
+                  justifyContent: 'center', // 👈 垂直置中關鍵
+                  alignItems: 'center', // 👈 水平置中關鍵
+                  action: {
+                    type: 'message',
+                    label: '購物須知',
+                    text: '購物須知',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '購物須知',
                       size: 'sm',
                       color: '#000000',
                       weight: 'bold',
@@ -527,12 +573,13 @@ export default defineEventHandler(async (event) => {
                   aspectMode: 'cover',
                   aspectRatio: '800:898',
                 },
+
                 {
                   type: 'box',
                   layout: 'vertical',
                   paddingAll: '0px',
                   backgroundColor: '#689E8D',
-                  height: '68px', // 👈 固定的高度
+                  height: '56px', // 👈 固定的高度
                   justifyContent: 'center', // 👈 垂直置中關鍵
                   alignItems: 'center', // 👈 水平置中關鍵
                   action: {
@@ -546,6 +593,29 @@ export default defineEventHandler(async (event) => {
                       text: '呼叫真人客服',
                       size: 'sm',
                       color: '#ffffff',
+                      weight: 'bold',
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: '0px',
+                  backgroundColor: '#ffffff',
+                  height: '55px', // 👈 固定的高度
+                  justifyContent: 'center', // 👈 垂直置中關鍵
+                  alignItems: 'center', // 👈 水平置中關鍵
+                  action: {
+                    type: 'message',
+                    label: '購物須知',
+                    text: '購物須知',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '購物須知',
+                      size: 'sm',
+                      color: '#689E8D',
                       weight: 'bold',
                     },
                   ],
