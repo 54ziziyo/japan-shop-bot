@@ -522,7 +522,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'image',
-                  url: 'https://romoru.vercel.app/image/customer-service.jpg',
+                  url: 'https://romoru.vercel.app/image/comming-soon.jpg',
                   size: 'full',
                   aspectMode: 'cover',
                   aspectRatio: '800:894',
