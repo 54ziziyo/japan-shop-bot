@@ -406,13 +406,12 @@ export default defineEventHandler(async (event) => {
       }
 
       // 「開始購物」— 回傳品牌導覽輪播
-      // 「開始購物」— 回傳品牌導覽輪播
       if (userText === '開始購物' || userText.includes('請輸入商品內頁網址')) {
         const shopBubbles: FlexBubble[] = [
           // 1. 教學全圖卡 — 改用 micro 尺寸
           {
             type: 'bubble',
-            size: 'micro', // 👈 關鍵：改成 micro 會立刻變精緻
+            size: 'micro',
             body: {
               type: 'box',
               layout: 'vertical',
@@ -422,51 +421,13 @@ export default defineEventHandler(async (event) => {
                   url: 'https://romoru.vercel.app/image/guide.jpg',
                   size: 'full',
                   aspectMode: 'cover',
-                  aspectRatio: '800:1240', // 👈 根據妳提供的尺寸精確比例
+                  aspectRatio: '800:1240',
                 },
               ],
               paddingAll: '0px',
             },
           },
-          // 2. 品牌卡 UNIQLO — 圖片+按鈕
-          {
-            type: 'bubble',
-            size: 'micro', // 👈 關鍵：保持一致
-            body: {
-              type: 'box',
-              layout: 'vertical',
-              paddingAll: '0px',
-              contents: [
-                {
-                  type: 'image',
-                  url: 'https://romoru.vercel.app/image/uniqlo-logo.jpg',
-                  size: 'full',
-                  aspectMode: 'cover',
-                  aspectRatio: '800:894', // 👈 根據妳提供的尺寸精確比例
-                },
-                {
-                  type: 'box',
-                  layout: 'vertical',
-                  paddingAll: 'md',
-                  backgroundColor: '#FFFFFF',
-                  contents: [
-                    {
-                      type: 'button',
-                      action: {
-                        type: 'uri',
-                        label: '查看商品',
-                        uri: 'https://www.uniqlo.com/jp/ja/',
-                      },
-                      style: 'link', // 👈 用 link 樣式會更像截圖中的簡潔感
-                      color: '#111111',
-                      height: 'sm',
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-          // 3. 品牌卡 RS Taichi — 圖片+按鈕
+          // 2. 品牌卡 RS Taichi — 圖片+按鈕
           {
             type: 'bubble',
             size: 'micro',
@@ -485,19 +446,107 @@ export default defineEventHandler(async (event) => {
                 {
                   type: 'box',
                   layout: 'vertical',
-                  paddingAll: 'md',
+                  paddingAll: '0px',
                   backgroundColor: '#FFFFFF',
+                  height: '68px', // 👈 固定的高度
+                  justifyContent: 'center', // 👈 垂直置中關鍵
+                  alignItems: 'center', // 👈 水平置中關鍵
+                  action: {
+                    type: 'uri',
+                    label: '前往日本官網',
+                    uri: 'https://ec.rs-taichi.com/',
+                  },
                   contents: [
                     {
-                      type: 'button',
-                      action: {
-                        type: 'uri',
-                        label: '查看商品',
-                        uri: 'https://ec.rs-taichi.com/',
-                      },
-                      style: 'link',
-                      color: '#111111',
-                      height: 'sm',
+                      type: 'text',
+                      text: '前往日本官網',
+                      size: 'sm',
+                      color: '#000000',
+                      weight: 'bold',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          // 3. 品牌卡 UNIQLO — 圖片+按鈕
+          {
+            type: 'bubble',
+            size: 'micro',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: '0px',
+              contents: [
+                {
+                  type: 'image',
+                  url: 'https://romoru.vercel.app/image/uniqlo-logo.jpg',
+                  size: 'full',
+                  aspectMode: 'cover',
+                  aspectRatio: '800:894',
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: '0px',
+                  backgroundColor: '#FFFFFF',
+                  height: '68px', // 👈 固定的高度
+                  justifyContent: 'center', // 👈 垂直置中關鍵
+                  alignItems: 'center', // 👈 水平置中關鍵
+                  action: {
+                    type: 'uri',
+                    label: '前往日本官網',
+                    uri: 'https://www.uniqlo.com/jp/ja/',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '前往日本官網',
+                      size: 'sm',
+                      color: '#000000',
+                      weight: 'bold',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          // 4. 敬請期待卡
+          {
+            type: 'bubble',
+            size: 'micro',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: '0px',
+              contents: [
+                {
+                  type: 'image',
+                  url: 'https://romoru.vercel.app/image/customer-service.jpg',
+                  size: 'full',
+                  aspectMode: 'cover',
+                  aspectRatio: '800:894',
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: '0px',
+                  backgroundColor: '#FFFFFF',
+                  height: '68px', // 👈 固定的高度
+                  justifyContent: 'center', // 👈 垂直置中關鍵
+                  alignItems: 'center', // 👈 水平置中關鍵
+                  action: {
+                    type: 'uri',
+                    label: '呼叫真人客服',
+                    uri: 'https://www.uniqlo.com/jp/ja/',
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: '呼叫真人客服',
+                      size: 'sm',
+                      color: '#285748',
+                      weight: 'bold',
                     },
                   ],
                 },
