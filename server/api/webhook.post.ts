@@ -411,7 +411,7 @@ export default defineEventHandler(async (event) => {
           // 1. 教學全圖卡 — 改用 micro 尺寸
           {
             type: 'bubble',
-            size: 'micro',
+            size: 'kilo',
             body: {
               type: 'box',
               layout: 'vertical',
@@ -430,7 +430,7 @@ export default defineEventHandler(async (event) => {
           // 2. 品牌卡 RS Taichi — 圖片+按鈕
           {
             type: 'bubble',
-            size: 'micro',
+            size: 'kilo',
             body: {
               type: 'box',
               layout: 'vertical',
@@ -438,7 +438,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'image',
-                  url: 'https://romoru.vercel.app/image/rstaichi-logo.jpg',
+                  url: 'https://romoru.vercel.app/image/rstaichi.jpg',
                   size: 'full',
                   aspectMode: 'cover',
                   aspectRatio: '800:894',
@@ -454,7 +454,7 @@ export default defineEventHandler(async (event) => {
                   action: {
                     type: 'uri',
                     label: '前往日本官網',
-                    uri: 'https://ec.rs-taichi.com/',
+                    uri: 'https://www.ec.rs-taichi.com/products.html',
                   },
                   contents: [
                     {
@@ -472,7 +472,7 @@ export default defineEventHandler(async (event) => {
           // 3. 品牌卡 UNIQLO — 圖片+按鈕
           {
             type: 'bubble',
-            size: 'micro',
+            size: 'kilo',
             body: {
               type: 'box',
               layout: 'vertical',
@@ -480,7 +480,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'image',
-                  url: 'https://romoru.vercel.app/image/uniqlo-logo.jpg',
+                  url: 'https://romoru.vercel.app/image/uniqlo.jpg',
                   size: 'full',
                   aspectMode: 'cover',
                   aspectRatio: '800:894',
@@ -514,7 +514,7 @@ export default defineEventHandler(async (event) => {
           // 4. 敬請期待卡
           {
             type: 'bubble',
-            size: 'micro',
+            size: 'kilo',
             body: {
               type: 'box',
               layout: 'vertical',
@@ -538,7 +538,7 @@ export default defineEventHandler(async (event) => {
                   action: {
                     type: 'uri',
                     label: '呼叫真人客服',
-                    uri: 'https://www.uniqlo.com/jp/ja/',
+                    uri: 'https://lin.ee/BIvxV5C',
                   },
                   contents: [
                     {
