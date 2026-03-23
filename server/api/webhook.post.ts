@@ -454,7 +454,7 @@ export default defineEventHandler(async (event) => {
                   action: {
                     type: 'uri',
                     label: '前往日本官網',
-                    uri: 'https://www.ec.rs-taichi.com/products.html',
+                    uri: 'https://www.ec.rs-taichi.com/',
                   },
                   contents: [
                     {
@@ -463,6 +463,19 @@ export default defineEventHandler(async (event) => {
                       size: 'sm',
                       color: '#000000',
                       weight: 'bold',
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingStart: 'xl',
+                  paddingEnd: 'xl',
+                  backgroundColor: '#FFFFFF',
+                  contents: [
+                    {
+                      type: 'separator',
+                      color: '#bbbbbb',
                     },
                   ],
                 },
@@ -528,6 +541,19 @@ export default defineEventHandler(async (event) => {
                       size: 'sm',
                       color: '#000000',
                       weight: 'bold',
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingStart: 'xl',
+                  paddingEnd: 'xl',
+                  backgroundColor: '#FFFFFF',
+                  contents: [
+                    {
+                      type: 'separator',
+                      color: '#bbbbbb',
                     },
                   ],
                 },
@@ -615,7 +641,7 @@ export default defineEventHandler(async (event) => {
                       type: 'text',
                       text: '購物須知',
                       size: 'sm',
-                      color: '#689E8D',
+                      color: '#285748',
                       weight: 'bold',
                     },
                   ],
