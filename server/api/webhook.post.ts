@@ -417,7 +417,7 @@ export default defineEventHandler(async (event) => {
             contents: [
               {
                 type: 'image',
-                url: 'https://romoru.vercel.app/assets/image/Line機器人-購買說明.jpg', // 這裡放妳自己設計的教學圖
+                url: 'https://romoru.vercel.app/image/Line機器人-購買說明.jpg', // 這裡放妳自己設計的教學圖
                 size: 'full',
                 aspectMode: 'cover',
                 aspectRatio: '1:1.5', // 窄高型比較好看
@@ -432,7 +432,7 @@ export default defineEventHandler(async (event) => {
           size: 'mega',
           hero: {
             type: 'image',
-            url: 'https://romoru.vercel.app/assets/image/Line機器人-Uniqlo.jpg',
+            url: 'https://romoru.vercel.app/image/Line機器人-Uniqlo.jpg',
             size: 'full',
             aspectRatio: '1:1',
             aspectMode: 'cover',
