@@ -406,80 +406,100 @@ export default defineEventHandler(async (event) => {
       }
 
       // 「開始購物」— 回傳品牌導覽輪播
+      // 「開始購物」— 回傳品牌導覽輪播
       if (userText === '開始購物' || userText.includes('請輸入商品內頁網址')) {
         const shopBubbles: FlexBubble[] = [
-          // 1. 教學全圖卡 — guide.jpg 尺寸 800×1240 (比例 20:31)，純圖無按鈕
+          // 1. 教學全圖卡 — 改用 micro 尺寸
           {
             type: 'bubble',
-            size: 'mega',
-            hero: {
-              type: 'image',
-              url: 'https://romoru.vercel.app/image/guide.jpg',
-              size: 'full',
-              aspectRatio: '20:31',
-              aspectMode: 'cover',
-            },
-          },
-          // 2. 品牌卡 UNIQLO — brand-uniqlo.jpg 尺寸 800×620 (比例 40:31)
-          //    上半圖片 / 下半按鈕
-          {
-            type: 'bubble',
-            size: 'mega',
-            hero: {
-              type: 'image',
-              url: 'https://romoru.vercel.app/image/brand-uniqlo.jpg',
-              size: 'full',
-              aspectRatio: '40:31',
-              aspectMode: 'cover',
-            },
+            size: 'micro', // 👈 關鍵：改成 micro 會立刻變精緻
             body: {
               type: 'box',
               layout: 'vertical',
-              spacing: 'sm',
-              paddingAll: 'lg',
               contents: [
                 {
-                  type: 'button',
-                  action: {
-                    type: 'uri',
-                    label: '前往官網',
-                    uri: 'https://www.uniqlo.com/jp/ja/',
-                  },
-                  style: 'primary',
-                  color: '#749D8E',
-                  height: 'sm',
+                  type: 'image',
+                  url: 'https://romoru.vercel.app/image/guide.jpg',
+                  size: 'full',
+                  aspectMode: 'cover',
+                  aspectRatio: '800:1240', // 👈 根據妳提供的尺寸精確比例
+                },
+              ],
+              paddingAll: '0px',
+            },
+          },
+          // 2. 品牌卡 UNIQLO — 圖片+按鈕
+          {
+            type: 'bubble',
+            size: 'micro', // 👈 關鍵：保持一致
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              paddingAll: '0px',
+              contents: [
+                {
+                  type: 'image',
+                  url: 'https://romoru.vercel.app/image/uniqlo-logo.jpg',
+                  size: 'full',
+                  aspectMode: 'cover',
+                  aspectRatio: '800:894', // 👈 根據妳提供的尺寸精確比例
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: 'md',
+                  backgroundColor: '#FFFFFF',
+                  contents: [
+                    {
+                      type: 'button',
+                      action: {
+                        type: 'uri',
+                        label: '查看商品',
+                        uri: 'https://www.uniqlo.com/jp/ja/',
+                      },
+                      style: 'link', // 👈 用 link 樣式會更像截圖中的簡潔感
+                      color: '#111111',
+                      height: 'sm',
+                    },
+                  ],
                 },
               ],
             },
           },
-          // 3. 品牌卡 RS Taichi — brand-taichi.jpg 尺寸 800×620 (比例 40:31)
-          //    上半圖片 / 下半按鈕
+          // 3. 品牌卡 RS Taichi — 圖片+按鈕
           {
             type: 'bubble',
-            size: 'mega',
-            hero: {
-              type: 'image',
-              url: 'https://romoru.vercel.app/image/brand-taichi.jpg',
-              size: 'full',
-              aspectRatio: '40:31',
-              aspectMode: 'cover',
-            },
+            size: 'micro',
             body: {
               type: 'box',
               layout: 'vertical',
-              spacing: 'sm',
-              paddingAll: 'lg',
+              paddingAll: '0px',
               contents: [
                 {
-                  type: 'button',
-                  action: {
-                    type: 'uri',
-                    label: '前往官網',
-                    uri: 'https://ec.rs-taichi.com/',
-                  },
-                  style: 'primary',
-                  color: '#749D8E',
-                  height: 'sm',
+                  type: 'image',
+                  url: 'https://romoru.vercel.app/image/rstaichi-logo.jpg',
+                  size: 'full',
+                  aspectMode: 'cover',
+                  aspectRatio: '800:894',
+                },
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  paddingAll: 'md',
+                  backgroundColor: '#FFFFFF',
+                  contents: [
+                    {
+                      type: 'button',
+                      action: {
+                        type: 'uri',
+                        label: '查看商品',
+                        uri: 'https://ec.rs-taichi.com/',
+                      },
+                      style: 'link',
+                      color: '#111111',
+                      height: 'sm',
+                    },
+                  ],
                 },
               ],
             },
@@ -493,6 +513,93 @@ export default defineEventHandler(async (event) => {
         } as FlexMessage);
         return;
       }
+      // if (userText === '開始購物' || userText.includes('請輸入商品內頁網址')) {
+      //   const shopBubbles: FlexBubble[] = [
+      //     // 1. 教學全圖卡 — guide.jpg 尺寸 800×1240 (比例 20:31)，純圖無按鈕
+      //     {
+      //       type: 'bubble',
+      //       size: 'mega',
+      //       hero: {
+      //         type: 'image',
+      //         url: 'https://romoru.vercel.app/image/guide.jpg',
+      //         size: 'full',
+      //         aspectRatio: '20:31',
+      //         aspectMode: 'cover',
+      //       },
+      //     },
+      //     // 2. 品牌卡 UNIQLO — brand-uniqlo.jpg 尺寸 800×620 (比例 40:31)
+      //     //    上半圖片 / 下半按鈕
+      //     {
+      //       type: 'bubble',
+      //       size: 'mega',
+      //       hero: {
+      //         type: 'image',
+      //         url: 'https://romoru.vercel.app/image/brand-uniqlo.jpg',
+      //         size: 'full',
+      //         aspectRatio: '40:31',
+      //         aspectMode: 'cover',
+      //       },
+      //       body: {
+      //         type: 'box',
+      //         layout: 'vertical',
+      //         spacing: 'sm',
+      //         paddingAll: 'lg',
+      //         contents: [
+      //           {
+      //             type: 'button',
+      //             action: {
+      //               type: 'uri',
+      //               label: '前往官網',
+      //               uri: 'https://www.uniqlo.com/jp/ja/',
+      //             },
+      //             style: 'primary',
+      //             color: '#749D8E',
+      //             height: 'sm',
+      //           },
+      //         ],
+      //       },
+      //     },
+      //     // 3. 品牌卡 RS Taichi — brand-taichi.jpg 尺寸 800×620 (比例 40:31)
+      //     //    上半圖片 / 下半按鈕
+      //     {
+      //       type: 'bubble',
+      //       size: 'mega',
+      //       hero: {
+      //         type: 'image',
+      //         url: 'https://romoru.vercel.app/image/brand-taichi.jpg',
+      //         size: 'full',
+      //         aspectRatio: '40:31',
+      //         aspectMode: 'cover',
+      //       },
+      //       body: {
+      //         type: 'box',
+      //         layout: 'vertical',
+      //         spacing: 'sm',
+      //         paddingAll: 'lg',
+      //         contents: [
+      //           {
+      //             type: 'button',
+      //             action: {
+      //               type: 'uri',
+      //               label: '前往官網',
+      //               uri: 'https://ec.rs-taichi.com/',
+      //             },
+      //             style: 'primary',
+      //             color: '#749D8E',
+      //             height: 'sm',
+      //           },
+      //         ],
+      //       },
+      //     },
+      //   ];
+
+      //   await sendReplyOrPush({
+      //     type: 'flex',
+      //     altText: '🛍️ 開始購物 — 選擇品牌',
+      //     contents: { type: 'carousel', contents: shopBubbles },
+      //   } as FlexMessage);
+      //   return;
+      // }
 
       // 📖 「購物須知」— FAQ 分類選單
       if (userText === '購物須知' || userText === 'FAQ') {
