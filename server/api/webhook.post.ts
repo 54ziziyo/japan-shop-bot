@@ -522,7 +522,7 @@ export default defineEventHandler(async (event) => {
               contents: [
                 {
                   type: 'image',
-                  url: 'https://romoru.vercel.app/image/comming-soon.jpg',
+                  url: 'https://romoru.vercel.app/image/customer-service.jpg',
                   size: 'full',
                   aspectMode: 'cover',
                   aspectRatio: '800:894',
@@ -531,7 +531,7 @@ export default defineEventHandler(async (event) => {
                   type: 'box',
                   layout: 'vertical',
                   paddingAll: '0px',
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: '#285748',
                   height: '68px', // 👈 固定的高度
                   justifyContent: 'center', // 👈 垂直置中關鍵
                   alignItems: 'center', // 👈 水平置中關鍵
@@ -545,7 +545,7 @@ export default defineEventHandler(async (event) => {
                       type: 'text',
                       text: '呼叫真人客服',
                       size: 'sm',
-                      color: '#285748',
+                      color: '#ffffff',
                       weight: 'bold',
                     },
                   ],
