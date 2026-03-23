@@ -417,7 +417,7 @@ export default defineEventHandler(async (event) => {
             contents: [
               {
                 type: 'image',
-                url: 'https://romoru.vercel.app/image/Line機器人-購買說明.jpg', // 這裡放妳自己設計的教學圖
+                url: 'https://romoru.vercel.app/image/guide.jpg', // 這裡放妳自己設計的教學圖
                 size: 'full',
                 aspectMode: 'cover',
                 aspectRatio: '1:1.5', // 窄高型比較好看
@@ -432,7 +432,7 @@ export default defineEventHandler(async (event) => {
           size: 'mega',
           hero: {
             type: 'image',
-            url: 'https://romoru.vercel.app/image/Line機器人-Uniqlo.jpg',
+            url: 'https://romoru.vercel.app/image/brand-uniqlo.jpg', // 這裡放妳自己設計的品牌圖
             size: 'full',
             aspectRatio: '1:1',
             aspectMode: 'cover',
@@ -472,7 +472,50 @@ export default defineEventHandler(async (event) => {
           },
         },
         // 3. 品牌卡 (RS Taichi)
-        // ...以此類推
+        {
+          type: 'bubble',
+          size: 'mega',
+          hero: {
+            type: 'image',
+            url: 'https://romoru.vercel.app/image/brand-rstaichi.jpg', // 這裡放妳自己設計的品牌圖
+            size: 'full',
+            aspectRatio: '1:1',
+            aspectMode: 'cover',
+          },
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'md',
+            contents: [
+              {
+                type: 'text',
+                text: 'RS Taichi 日本官網',
+                weight: 'bold',
+                size: 'lg',
+                align: 'center',
+              },
+              {
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: '前往網站逛逛',
+                  uri: 'https://www.rs-taichi.com/jp/ja/',
+                },
+                style: 'primary',
+                color: '#000000',
+              },
+              {
+                type: 'button',
+                action: {
+                  type: 'message',
+                  label: '查看推薦商品',
+                  text: '推薦商品_RsTaichi',
+                },
+                style: 'secondary',
+              },
+            ],
+          },
+        },
       ];
       // if (userText === '開始購物' || userText.includes('請輸入商品內頁網址')) {
       //   const shopBubbles: FlexBubble[] = [
