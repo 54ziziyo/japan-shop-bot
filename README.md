@@ -394,7 +394,6 @@ GET http://localhost:3000/api/cancel-expired-orders?secret={CRON_SECRET 值}
 | 自動刪除執行時間          | `vercel.json` → `schedule`                                                                                                                                       |
 | 訂單狀態新增 / 修改       | `server/api/update-order-status.post.ts` → `ALLOWED_STATUSES`、`orders.vue` 的 `STATUS_LABELS`、Google 試算表 H 欄下拉選單                                       |
 | 銀行帳號 / 行名           | `server/api/submit-order.post.ts`、`components/checkout/OrderForm.vue`、`components/checkout/Success.vue`、`pages/orders.vue` 各自的 `BANK_*` 常數（四處都要改） |
-| 管理員 LINE ID            | `server/api/webhook.post.ts` 的 `ADMIN_USER_ID`（同一個值在多個 api 檔案都有，搜尋 `ADMIN_USER_ID` 一起改）                                                      |
 | Email SMTP 設定           | `server/api/submit-order.post.ts` → nodemailer transport                                                                                                         |
 | 截單時間（22:00）         | `server/api/webhook.post.ts` → `promoWarning` 字串、`components/checkout/OrderForm.vue` → 截單提醒文字（兩處都要改）                                             |
 
@@ -535,7 +534,6 @@ if (url.includes('uniqlo.com')) {
 | **更換 Google 帳號（試算表服務帳號）** | ① Google Cloud → 建立新服務帳號，下載 JSON 金鑰<br>② Vercel 環境變數 → `GOOGLE_SERVICE_ACCOUNT_JSON`（整個 JSON 字串）<br>③ 新增服務帳號 email 為試算表的「編輯者」<br>④ Apps Script → 腳本需在相同 Google 帳號的 Google Sheet 內執行                 |
 | **更換 Google 試算表**                 | ① Vercel 環境變數 → `SHEETS_SPREADSHEET_ID`、`SHEETS_SHEET_NAME`<br>② 新試算表需設定 A–J 欄標題<br>③ H 欄資料驗證設為允許的狀態清單<br>④ Apps Script → 重新部署，設定觸發器                                                                           |
 | **更換 Gmail SMTP**                    | ① Vercel 環境變數 → `MAIL_USER`（Gmail 帳號）、`MAIL_PASS`（App Password）<br>② Google 帳號需開啟「兩步驟驗證」才能建立 App Password                                                                                                                  |
-| **更換管理員（接收通知的 LINE 帳號）** | ① `webhook.post.ts` → `ADMIN_USER_ID` 常數<br>② 全域搜尋 `ADMIN_USER_ID`，確認其他 api 檔案也同步更新                                                                                                                                                 |
 | **更新 LIFF Endpoint URL**             | ① LINE Developers → LIFF → Endpoint URL<br>② `nuxt.config.ts` → `public.liffIdCart`、`public.liffIdOrders`（LIFF ID 不變則不需改）                                                                                                                    |
 | **調整 Vercel Cron 排程**              | ① `vercel.json` → `schedule`（UTC cron expression）                                                                                                                                                                                                   |
 | **調整逾期取消天數**                   | ① `cancel-expired-orders.get.ts` → `EXPIRE_MS`                                                                                                                                                                                                        |

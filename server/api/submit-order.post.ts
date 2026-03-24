@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 import { appendOrderRow } from '../utils/googleSheets';
 import nodemailer from 'nodemailer';
 
-const ADMIN_USER_ID = 'Ud2d92728dfaf5241e62b1cb167e6973a';
 const BANK_NAME = '玉山銀行';
 const BANK_CODE = '808';
 const BANK_ACCOUNT = '0624940150560';
@@ -253,25 +252,7 @@ export default defineEventHandler(async (event) => {
     </div>
   </div>`;
 
-  // 5. 發送 LINE 通知（目前是失效的，但還沒有需要此功能先保留）
-  try {
-    await lineClient.pushMessage(userId, { type: 'text', text: customerMsg });
-  } catch (err: any) {
-    console.error('❌ 客戶通知發送失敗:', err.message);
-  }
-
-  if (ADMIN_USER_ID && ADMIN_USER_ID !== userId) {
-    try {
-      await lineClient.pushMessage(ADMIN_USER_ID, {
-        type: 'text',
-        text: adminMsg,
-      });
-    } catch (err: any) {
-      console.error('❌ 管理員通知發送失敗:', err.message);
-    }
-  }
-
-  // 6. 發送電子郵件通知公司信箱
+  // 5. 發送電子郵件通知公司信箱
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
