@@ -155,11 +155,16 @@ export function getCategoryWeight(categoryStr: string): number {
     const cls = lower.slice(0, pipeIdx);
     const rest = lower.slice(pipeIdx + 1);
 
-    // 品牌直接重量格式: "rstaichi|1700"
-    // +500g 為包材（紙箱 / 緩衝材）
+    // 品牌直接重量格式: "rstaichi|1700" / "kushitani|2500"
     if (cls === 'rstaichi') {
+      // +500g 為包材（紙箱 / 緩衝材）
       const grams = parseInt(rest);
       return grams > 0 ? grams + 500 : FALLBACK_WEIGHT;
+    }
+    if (cls === 'kushitani') {
+      // 爬蟲已含包材重量，直接使用；0 表示含運直送，不計重
+      const grams = parseInt(rest);
+      return grams >= 0 ? grams : FALLBACK_WEIGHT;
     }
 
     const classMap = WEIGHT_MAP[cls];
@@ -198,7 +203,7 @@ export function getCategoryLabel(categoryStr: string): string {
   if (!categoryStr) return '其他';
   const lower = categoryStr.toLowerCase();
   const cls = lower.includes('|') ? lower.split('|')[0]! : lower;
-  if (cls === 'rstaichi') return '重機部品';
+  if (cls === 'rstaichi' || cls === 'kushitani') return '重機部品';
   return CLASS_LABELS[cls] || '其他';
 }
 
@@ -349,10 +354,17 @@ export function calculateQuote(
   const categoryCounts: Record<string, number> = {};
 
   for (const item of items) {
-    const priceVal = parseJpy(item.price);
     const qty = item.quantity || 1;
-    subtotalJpy += priceVal * qty;
-    subtotalTwd += jpyToTwd(priceVal, rate) * qty;
+
+    // 自訂台幣售價（Kushitani cp=1）：price 格式 "NT$25000"
+    if (item.price.startsWith('NT$')) {
+      const twd = parseInt(item.price.replace(/[^\d]/g, ''), 10) || 0;
+      subtotalTwd += twd * qty;
+    } else {
+      const priceVal = parseJpy(item.price);
+      subtotalJpy += priceVal * qty;
+      subtotalTwd += jpyToTwd(priceVal, rate) * qty;
+    }
 
     const weight = getCategoryWeight(item.category);
     totalWeight += weight * qty;
@@ -364,8 +376,16 @@ export function calculateQuote(
   const shipping = getShippingTwd(
     totalWeight,
     rate,
-    // 只要有任何 RsTaichi 商品 → 強制國際小包
-    items.some((i) => i.category?.toLowerCase().startsWith('rstaichi|')),
+    // 只要有任何 RsTaichi 或 Kushitani（有重量）商品 → 強制國際小包
+    items.some((i) => {
+      const cat = i.category?.toLowerCase() || '';
+      if (cat.startsWith('rstaichi|')) return true;
+      if (cat.startsWith('kushitani|')) {
+        const w = parseInt(cat.split('|')[1] || '0');
+        return w > 0;
+      }
+      return false;
+    }),
   );
 
   return {

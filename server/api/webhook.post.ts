@@ -2,15 +2,18 @@
 import { Client, WebhookEvent, Message, FlexMessage, FlexBubble } from '@line/bot-sdk';
 import { createClient } from '@supabase/supabase-js';
 
-import { scrapeUniqlo } from '../utils/scrapeUniqlo';
-import { scrapeRstaichi } from '../utils/scrapeRstaichi';
+import { scrapeUniqlo } from '../utils/scrape/uniqlo';
+import { scrapeRstaichi } from '../utils/scrape/rstaichi';
+import { scrapeGu } from '../utils/scrape/gu';
+import { scrapeKushitani } from '../utils/scrape/kushitani';
+import { getKushitaniCustomPrice } from '../utils/kushitaniPricing';
 import { detectBrand, extractRstaichiSku, isRstaichiBlocked } from '../utils/brandConfig';
 import { parseJpy, jpyToTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
 import { showLoadingAnimation } from '../utils/line/helpers';
 import { buildShopCarousel } from '../utils/line/shopCarousel';
 import { FAQ_ANSWERS, buildFaqMenu } from '../utils/line/faq';
-import { buildUniqloCards, buildRstaichiCards } from '../utils/line/productCards';
+import { buildUniqloCards, buildRstaichiCards, buildGuCards, buildKushitaniCards } from '../utils/line/cards';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -102,19 +105,30 @@ export default defineEventHandler(async (event) => {
 
           // 還原圖片網址
           const imgPath = data.get('img') || '';
-          const itemImg =
-            brand === 'rstaichi'
-              ? imgPath.startsWith('RST:')
-                ? `https://media-www.ec.rs-taichi.com/${imgPath.slice(4)}`
-                : imgPath
-              : imgPath
-                ? `https://image.uniqlo.com/${imgPath}`
-                : '';
+          let itemImg = '';
+          if (brand === 'rstaichi') {
+            itemImg = imgPath.startsWith('RST:')
+              ? `https://media-www.ec.rs-taichi.com/${imgPath.slice(4)}`
+              : imgPath;
+          } else if (brand === 'kushitani') {
+            itemImg = imgPath.startsWith('KST:')
+              ? `https://img03.shop-pro.jp/${imgPath.slice(4)}`
+              : imgPath;
+          } else {
+            // uniqlo / gu — 圖片都在 image.uniqlo.com
+            itemImg = imgPath ? `https://image.uniqlo.com/${imgPath}` : '';
+          }
 
-          const productUrl =
-            brand === 'rstaichi'
-              ? `https://www.ec.rs-taichi.com/${productCode.toLowerCase()}.html`
-              : `https://www.uniqlo.com/jp/ja/products/${productCode}/${pg}`;
+          let productUrl = '';
+          if (brand === 'rstaichi') {
+            productUrl = `https://www.ec.rs-taichi.com/${productCode.toLowerCase()}.html`;
+          } else if (brand === 'kushitani') {
+            productUrl = `https://www.kushitanionline.com/?pid=${productCode}`;
+          } else if (brand === 'gu') {
+            productUrl = `https://www.gu-global.com/jp/ja/products/${productCode}/${pg}`;
+          } else {
+            productUrl = `https://www.uniqlo.com/jp/ja/products/${productCode}/${pg}`;
+          }
 
           const promoEnd = data.get('pd') || null;
 
@@ -171,10 +185,14 @@ export default defineEventHandler(async (event) => {
               }
             }
             const jpyRate = await getRate();
-            const twdItemPrice = jpyToTwd(parseJpy(itemPrice), jpyRate);
+            const isCustomPrice = data.get('cp') === '1';
+            const twdItemPrice = isCustomPrice
+              ? parseInt(itemPrice.replace(/[^\d]/g, ''), 10)
+              : jpyToTwd(parseJpy(itemPrice), jpyRate);
+            const customNote = isCustomPrice ? '\n（此商品為自訂售價，含運直送）' : '';
             await sendReplyOrPush({
               type: 'text',
-              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n價格：NT$${twdItemPrice.toLocaleString()}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
+              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n價格：NT$${twdItemPrice.toLocaleString()}${customNote}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
             });
           }
         }
@@ -230,12 +248,17 @@ export default defineEventHandler(async (event) => {
         if (pastedUrl.includes('uniqlo.com') || pastedUrl.includes('gu-global.com')) {
           await sendReplyOrPush({
             type: 'text',
-            text: '⚠️ 請貼上「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.uniqlo.com/jp/ja/products/E469077-000/00\n\n❌ 首頁或分類頁無法使用\n\n💡 在 Uniqlo/GU 官網找到喜歡的商品 → 點進商品頁 → 複製網址 → 貼到這裡即可！',
+            text: '⚠️ 請貼上「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.uniqlo.com/jp/ja/products/E469077-000/00\nhttps://www.gu-global.com/jp/ja/products/E358741-000/00\n\n❌ 首頁或分類頁無法使用\n\n💡 在 Uniqlo/GU 官網找到喜歡的商品 → 點進商品頁 → 複製網址 → 貼到這裡即可！',
           });
         } else if (pastedUrl.includes('ec.rs-taichi.com')) {
           await sendReplyOrPush({
             type: 'text',
             text: '⚠️ 請貼上 RS Taichi「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.ec.rs-taichi.com/rsj334.html\n\n❌ 首頁或分類頁無法使用',
+          });
+        } else if (pastedUrl.includes('kushitanionline.com')) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: '⚠️ 請貼上 Kushitani「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.kushitanionline.com/?pid=165954837\n\n❌ 首頁或分類頁無法使用\n\n💡 在 Kushitani 官網找到喜歡的商品 → 點進商品頁 → 複製網址 → 貼到這裡即可！',
           });
         }
         return;
@@ -280,11 +303,26 @@ export default defineEventHandler(async (event) => {
           bubbles = buildUniqloCards(productData, jpyRate, pastedUrl);
         }
 
+        if (brand === 'gu') {
+          const productData = await scrapeGu(pastedUrl);
+          if (!productData) throw new Error('無法識別的 GU 商品資料');
+          productTitle = productData.title;
+          bubbles = buildGuCards(productData, jpyRate, pastedUrl);
+        }
+
         if (brand === 'rstaichi') {
           const productData = await scrapeRstaichi(pastedUrl);
           if (!productData) throw new Error('無法識別的 RS Taichi 商品資料');
           productTitle = productData.title;
           bubbles = buildRstaichiCards(productData, jpyRate, pastedUrl);
+        }
+
+        if (brand === 'kushitani') {
+          const productData = await scrapeKushitani(pastedUrl);
+          if (!productData) throw new Error('無法識別的 Kushitani 商品資料');
+          productTitle = productData.title;
+          const customPrice = getKushitaniCustomPrice(productData.modelNumber);
+          bubbles = buildKushitaniCards(productData, jpyRate, pastedUrl, customPrice);
         }
 
         if (!bubbles.length) throw new Error('未取得任何商品變體');

@@ -3,7 +3,7 @@
 // ============================================================
 
 /** 品牌識別碼 */
-export type BrandId = 'uniqlo' | 'rstaichi';
+export type BrandId = 'uniqlo' | 'gu' | 'rstaichi' | 'kushitani';
 
 /** 禁止販售的 RsTaichi 商品（含電池、酒精、油類、液體等國際郵寄違禁品） */
 export const RSTAICHI_BLOCKED_SKUS = new Set([
@@ -27,10 +27,20 @@ export function detectBrand(url: string): BrandId | null {
   if (/(?:www\.)?uniqlo\.com\/[^\s]*\/products\/E[^\s]*/i.test(url))
     return 'uniqlo';
   if (/(?:www\.)?gu-global\.com\/[^\s]*\/products\/E[^\s]*/i.test(url))
-    return 'uniqlo';
+    return 'gu';
   if (/(?:www\.)?ec\.rs-taichi\.com\/[a-z0-9]+\.html/i.test(url))
     return 'rstaichi';
+  if (/(?:www\.)?kushitanionline\.com\/.*[?&]pid=\d+/i.test(url))
+    return 'kushitani';
   return null;
+}
+
+/**
+ * 從 URL 提取 Kushitani 商品 PID
+ */
+export function extractKushitaniPid(url: string): string | null {
+  const m = url.match(/[?&]pid=(\d+)/);
+  return m ? m[1] : null;
 }
 
 /**

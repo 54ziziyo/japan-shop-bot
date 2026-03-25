@@ -2,7 +2,8 @@
 // 結帳前同步檢查：重新驗證每個購物車商品的「價格」和「庫存」
 import axios from 'axios';
 import https from 'node:https';
-import { scrapeRstaichi } from '../utils/scrapeRstaichi';
+import { scrapeRstaichi } from '../utils/scrape/rstaichi';
+import { scrapeKushitani } from '../utils/scrape/kushitani';
 import { detectBrand } from '../utils/brandConfig';
 
 const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
@@ -45,11 +46,17 @@ export default defineEventHandler(async (event) => {
 
   // 按品牌分流
   const uniqloItems: CartItem[] = [];
+  const guItems: CartItem[] = [];
   const rstaichiItems: CartItem[] = [];
+  const kushitaniItems: CartItem[] = [];
   for (const item of items) {
     const brand = item.product_url ? detectBrand(item.product_url) : 'uniqlo';
     if (brand === 'rstaichi') {
       rstaichiItems.push(item);
+    } else if (brand === 'kushitani') {
+      kushitaniItems.push(item);
+    } else if (brand === 'gu') {
+      guItems.push(item);
     } else {
       uniqloItems.push(item);
     }
@@ -121,8 +128,70 @@ export default defineEventHandler(async (event) => {
     allResults.push(...rstResults.flat());
   }
 
-  // ── UNIQLO 同步 ──
-  if (!uniqloItems.length) {
+  // ── KUSHITANI 同步：重新抓取商品頁驗證價格和庫存 ──
+  if (kushitaniItems.length) {
+    const byUrl = new Map<string, CartItem[]>();
+    for (const item of kushitaniItems) {
+      const url = item.product_url || '';
+      if (!byUrl.has(url)) byUrl.set(url, []);
+      byUrl.get(url)!.push(item);
+    }
+
+    const kstResults = await Promise.all(
+      [...byUrl.entries()].map(async ([url, cartItems]) => {
+        try {
+          const product = await scrapeKushitani(url);
+          if (!product) throw new Error('scrape failed');
+
+          const results: SyncResult[] = [];
+          for (const item of cartItems) {
+            const variant = product.variants.find(
+              (v: any) => v.color === item.color,
+            );
+            const sizeInfo = variant?.sizes.find(
+              (s: any) => s.name === item.size,
+            );
+
+            const currentPrice = variant ? variant.price : item.price;
+            const inStock = sizeInfo?.isStock ?? false;
+            const priceChanged = currentPrice !== item.price;
+
+            results.push({
+              product_code: item.product_code,
+              color: item.color,
+              size: item.size,
+              currentPrice,
+              inStock,
+              isPromo: false,
+              promoEndTs: null,
+              priceChanged,
+              stockChanged: !inStock,
+            });
+          }
+          return results;
+        } catch (err: any) {
+          console.error(`❌ sync-cart Kushitani: ${url} 失敗:`, err.message);
+          return cartItems.map((item) => ({
+            product_code: item.product_code,
+            color: item.color,
+            size: item.size,
+            currentPrice: item.price,
+            inStock: false,
+            isPromo: false,
+            promoEndTs: null,
+            priceChanged: false,
+            stockChanged: true,
+          }));
+        }
+      }),
+    );
+
+    allResults.push(...kstResults.flat());
+  }
+
+  // ── UNIQLO / GU 同步（共用 Fast Retailing v5 API） ──
+  const frItems = [...uniqloItems, ...guItems];
+  if (!frItems.length) {
     const hasChanges = allResults.some((r) => r.priceChanged || r.stockChanged);
     console.log(
       `🔄 sync-cart: ${items.length} 項檢查完成, hasChanges=${hasChanges}`,
@@ -130,7 +199,8 @@ export default defineEventHandler(async (event) => {
     return { results: allResults, hasChanges };
   }
 
-  const BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
+  const UNIQLO_BASE = 'https://www.uniqlo.com/jp/api/commerce/v5/ja';
+  const GU_BASE = 'https://www.gu-global.com/jp/api/commerce/v5/ja';
 
   // 從 product_url 提取 price group（e.g. ".../E481040-000/02" → "02"）
   function extractPG(url?: string): string {
@@ -139,37 +209,50 @@ export default defineEventHandler(async (event) => {
     return m?.[1] || '00';
   }
 
+  // 判斷 API base：GU 用 GU_BASE，其餘用 UNIQLO_BASE
+  function getApiBase(url?: string): string {
+    return url && /gu-global\.com/i.test(url) ? GU_BASE : UNIQLO_BASE;
+  }
+
   // 1. 按 「商品代碼 + price group」 分組（同商品同 PG 只查一次 API）
-  const grouped = new Map<string, { pg: string; items: CartItem[] }>();
-  for (const item of uniqloItems) {
+  const grouped = new Map<
+    string,
+    { pg: string; apiBase: string; items: CartItem[] }
+  >();
+  for (const item of frItems) {
     const code = item.product_code;
     if (!code) continue;
     const pg = extractPG(item.product_url);
     const key = `${code}|${pg}`;
-    if (!grouped.has(key)) grouped.set(key, { pg, items: [] });
+    if (!grouped.has(key))
+      grouped.set(key, {
+        pg,
+        apiBase: getApiBase(item.product_url),
+        items: [],
+      });
     grouped.get(key)!.items.push(item);
   }
 
   // 2. 並行取得所有不重複商品的「詳情 + 庫存 + L2s」
   const groupEntries = [...grouped.entries()];
   const fetchResults = await Promise.all(
-    groupEntries.map(async ([key, { pg }]) => {
+    groupEntries.map(async ([key, { pg, apiBase }]) => {
       const rawCode = key.split('|')[0]!;
       try {
         const [detailRes, stockRes, l2sRes] = await Promise.all([
           api
             .get(
-              `${BASE}/products/${rawCode}/price-groups/${pg}/details?httpFailure=true`,
+              `${apiBase}/products/${rawCode}/price-groups/${pg}/details?httpFailure=true`,
             )
             .catch(() => null),
           api
             .get(
-              `${BASE}/products/${rawCode}/price-groups/${pg}/stock?httpFailure=true`,
+              `${apiBase}/products/${rawCode}/price-groups/${pg}/stock?httpFailure=true`,
             )
             .catch(() => null),
           api
             .get(
-              `${BASE}/products/${rawCode}/price-groups/${pg}/l2s?httpFailure=true`,
+              `${apiBase}/products/${rawCode}/price-groups/${pg}/l2s?httpFailure=true`,
             )
             .catch(() => null),
         ]);
