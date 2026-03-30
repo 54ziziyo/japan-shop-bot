@@ -1,6 +1,6 @@
 // server/api/cancel-expired-orders.get.ts
 // Vercel Cron Job：自動將逾期未轉帳的 pending 訂單標記為 cancelled（DB + Google 試算表）
-import { createClient } from '@supabase/supabase-js';
+import { useSupabase } from '../utils/supabase';
 import { updateOrderStatusInSheet } from '../utils/googleSheets';
 
 // ⏱️ 逾期門檻（毫秒）
@@ -22,10 +22,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: '未授權' });
   }
 
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseKey,
-  );
+  const supabase = useSupabase();
 
   const cutoff = new Date(Date.now() - EXPIRE_MS).toISOString();
   const { data: expiredOrders, error: fetchError } = await supabase

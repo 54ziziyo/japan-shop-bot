@@ -1,6 +1,6 @@
 // server/api/update-order-status.post.ts
 // 接收 Google Apps Script 的狀態更新，只允許修改 orders.status
-import { createClient } from '@supabase/supabase-js';
+import { useSupabase } from '../utils/supabase';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -32,10 +32,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '不合法的狀態值' });
   }
 
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseKey,
-  );
+  const supabase = useSupabase();
 
   const updatePayload: Record<string, string> = { status };
   if (trackingCode) {

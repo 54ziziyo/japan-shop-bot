@@ -1,11 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { useSupabase } from '../utils/supabase';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseKey,
-  );
+  const supabase = useSupabase();
 
   const { orderId, address, userId } = await readBody(event);
 

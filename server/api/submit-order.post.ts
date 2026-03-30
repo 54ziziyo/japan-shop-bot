@@ -1,7 +1,7 @@
 // server/api/submit-order.post.ts
 // 提交訂單：儲存至 DB → 清空購物車 → LINE 通知客戶與管理員
 import { Client } from '@line/bot-sdk';
-import { createClient } from '@supabase/supabase-js';
+import { useSupabase } from '../utils/supabase';
 import { appendOrderRow } from '../utils/googleSheets';
 import nodemailer from 'nodemailer';
 
@@ -53,10 +53,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '手機號碼格式不正確' });
   }
 
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.public.supabaseKey,
-  );
+  const supabase = useSupabase();
   const lineClient = new Client({
     channelAccessToken: config.line.channelAccessToken,
     channelSecret: config.line.channelSecret,

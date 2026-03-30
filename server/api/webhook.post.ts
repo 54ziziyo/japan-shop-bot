@@ -1,6 +1,6 @@
 // server/api/webhook.post.ts
 import { Client, WebhookEvent, Message, FlexMessage, FlexBubble } from '@line/bot-sdk';
-import { createClient } from '@supabase/supabase-js';
+import { useSupabase } from '../utils/supabase';
 
 import { scrapeUniqlo } from '../utils/scrape/uniqlo';
 import { scrapeRstaichi } from '../utils/scrape/rstaichi';
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     channelSecret: config.line.channelSecret,
   });
 
-  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseKey);
+  const supabase = useSupabase();
 
   const body = await readRawBody(event);
   if (!body) return 'No Body';
