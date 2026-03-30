@@ -1,6 +1,6 @@
 # 囉姆嚕日貨代購機器人（Japan Shop Bot）
 
-LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**RS Taichi（重機齒輪）** 等多品牌商品查詢、購物車、結帳、訂單管理、Google 試算表同步及自動化運維。
+LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**GU**、**RS Taichi（重機齒輪）**、**Kushitani（重機皮衣）** 等多品牌商品查詢、購物車、結帳、訂單管理、Google 試算表同步及自動化運維。
 
 ---
 
@@ -58,13 +58,25 @@ japan-shop-bot/
 │   │   └── cancel-expired-orders.get.ts
 │   │
 │   └── utils/                 # 後端共用工具
-│       ├── scrapeUniqlo.ts    # 刮取 Uniqlo 商品資訊（價格、庫存、圖片）
-│       ├── scrapeRstaichi.ts  # 刮取 RS Taichi 商品資訊（Magento 2 jsonConfig 解析）
-│       ├── brandConfig.ts     # 多品牌路由工具（detectBrand / extractRstaichiSku / isRstaichiBlocked）
+│       ├── scrape/
+│       │   ├── uniqlo.ts      # 刮取 Uniqlo 商品資訊（價格、庫存、圖片）
+│       │   ├── gu.ts          # 刮取 GU 商品資訊（與 Uniqlo 同 v5 API 結構）
+│       │   ├── rstaichi.ts    # 刮取 RS Taichi 商品資訊（Magento 2 jsonConfig 解析）
+│       │   └── kushitani.ts   # 刮取 Kushitani 商品資訊（Color Me Shop 平台）
+│       ├── line/
+│       │   ├── cards/         # 各品牌 LINE Flex Message 卡片產生器（uniqlo / gu / rstaichi / kushitani）
+│       │   ├── shopCarousel.ts# 開始購物品牌導覽輪播
+│       │   ├── faq.ts         # 購物須知 FAQ 內容
+│       │   └── helpers.ts     # LINE API 工具（showLoadingAnimation 等）
+│       ├── brandConfig.ts     # 多品牌路由工具（detectBrand / extractRstaichiSku / extractKushitaniPid / isRstaichiBlocked）
+│       ├── kushitaniPricing.ts# 讀取 server/data/kushitani-pricing.json 自訂售價查表
 │       ├── exchangeRate.ts    # 從玉山銀行網站抓 JPY 現金賣出匯率
 │       ├── googleSheets.ts    # Google Sheets 讀寫（appendOrderRow / deleteOrderRows）
 │       ├── pricing.ts         # re-export shared/pricing
 │       └── shippingConfig.ts  # re-export shared/shipping
+│
+└── data/
+    └── kushitani-pricing.json  # Kushitani 自訂台幣售價設定（型號 → 台幣價格）
 │
 ├── shared/                    # Server + Client 共用邏輯（唯一來源）
 │   ├── pricing.ts             # 匯率換算公式、加碼表
@@ -95,6 +107,14 @@ LINE 官方帳號
     │       ↓
     │   選好後加入購物車（寫入 Supabase cart_items）
     │
+    ├─ 傳送 GU 商品網址（gu-global.com）
+    │       ↓
+    │   webhook.post.ts detectBrand() 辨識品牌 → scrapeGu 呼叫 GU v5 API
+    │       ↓
+    │   回傳 LINE Flex Message（與 Uniqlo 相同卡片格式）
+    │       ↓
+    │   選好後加入購物車
+    │
     ├─ 傳送 RS Taichi 商品網址（ec.rs-taichi.com）
     │       ↓
     │   webhook.post.ts detectBrand() 辨識品牌 → scrapeRstaichi 讀 Magento jsonConfig
@@ -102,6 +122,16 @@ LINE 官方帳號
     │   回傳 LINE Flex Message（Overlay 設計 + 動態 aspectRatio）
     │       ↓
     │   選好後加入購物車（category 儲存為 rstaichi|{grams} 格式）
+    │
+    ├─ 傳送 Kushitani 商品網址（kushitanionline.com）
+    │       ↓
+    │   webhook.post.ts detectBrand() 辨識品牌 → scrapeKushitani 解析 Color Me Shop HTML
+    │       ↓
+    │   查詢 kushitaniPricing（若型號有自訂台幣售價，直接顯示；否則用匯率換算）
+    │       ↓
+    │   回傳 LINE Flex Message（與 RS Taichi 相同 Overlay 設計）
+    │       ↓
+    │   選好後加入購物車（category 儲存為 kushitani|{grams} 格式）
     │
     ├─ 開啟購物車 LIFF（cart.vue）
     │       ↓
@@ -155,6 +185,8 @@ pending  → 【自動刪除】（3 天未付款，見下方）
 
 ### 定價規則
 
+> **注意**：此規則僅適用於 Uniqlo、GU、RS Taichi，以及**沒有**在 `kushitani-pricing.json` 設定自訂售價的 Kushitani 商品。
+
 - 商品售價 = 日幣原價 × （玉山銀行現金賣出匯率 + 階級加碼）
 - 加碼比例按商品日幣定價分段：
   - ≤ ¥990：+7%
@@ -189,6 +221,25 @@ pending  → 【自動刪除】（3 天未付款，見下方）
 - RS Taichi 商品重量 = 爬蟲抓到的實際重量（公克）**+ 500g 包材緩衝**
 - RS Taichi 商品 category 欄位格式：`rstaichi|{grams}`（e.g. `rstaichi|1700`）
 - 部分商品（如頭盔）為禁購品，在 `server/utils/brandConfig.ts` 的 `BLOCKED_SKUS` 管理
+
+#### Kushitani 運費特殊規則
+
+- 只要購物車含有 Kushitani 商品（且有重量），**一律強制使用國際小包**計算運費
+- Kushitani 商品重量由爬蟲從商品描述解析，**已含 500g 包材緩衝**
+- Kushitani 商品 category 欄位格式：`kushitani|{grams}`（e.g. `kushitani|2500`）
+- **`skipShipping: true`（含運直送）的商品 → category 存為 `kushitani|0`，重量計為 0，不計入運費**
+- 安全帽類型號以前綴識別，系統會提示聯繫專人客服，無法線上加購
+
+### Kushitani 自訂售價規則
+
+- Kushitani 部分商品有**事先談好的台幣含運直送報價**，不走匯率換算公式
+- 設定方式：編輯 `server/data/kushitani-pricing.json`，填入型號與售價
+- 格式範例：`{ "K-5381": { "priceTwd": 7920, "skipShipping": true } }`
+- `skipShipping: true` 表示含運直送，結帳時這件商品不計算國際運費
+- `skipShipping: false`（或不填）表示還是要另外加運費
+- **該商品在 LINE 輪播、購物車、結帳頁，全程都顯示台幣售價，不受匯率影響**
+- 不在 JSON 中的 Kushitani 商品 → 照正常匯率換算公式計算
+- **要新增或修改自訂售價 → 改 `server/data/kushitani-pricing.json`**
 
 ### 銀行轉帳優惠
 
@@ -320,6 +371,50 @@ Google 試算表有一個觸發器 `handleStatusEdit`，監聽 H 欄（貨物狀
 
 ## 更新紀錄
 
+### 2026-03-26
+
+**新增 GU 商品支援（`server/utils/scrape/gu.ts`）**
+
+- 新增 GU（gu-global.com）品牌爬蟲，與 Uniqlo 共用 Fast Retailing v5 API 架構
+- `detectBrand()` 同時支援辨識 GU 網址，回傳 `'gu'` 品牌識別碼
+- `sync-cart.post.ts` 新增 GU 商品同步分流邏輯
+
+**新增 Kushitani 商品支援（`server/utils/scrape/kushitani.ts`）**
+
+- 新增 Kushitani（kushitanionline.com）品牌爬蟲，解析 Color Me Shop 平台的 HTML 商品資料
+- 自動提取顏色、尺寸、庫存狀態、商品重量（用於運費估算）
+- `detectBrand()` 支援辨識 Kushitani 網址（`?pid=xxx` 格式），回傳 `'kushitani'`
+- `extractKushitaniPid()` 從網址提取商品 PID
+- 安全帽等特殊商品會提示聯繫客服，無法線上加購
+
+**新增 Kushitani 自訂售價系統**
+
+- 新增 `server/data/kushitani-pricing.json`：管理員可在 JSON 中設定特定型號的台幣含運直送售價
+- 新增 `server/utils/kushitaniPricing.ts`：讀取 JSON 並提供 `getKushitaniCustomPrice(modelNumber)` 查詢函式
+- `skipShipping: true` 的商品，結帳時不計算國際運費（`category` 儲存為 `kushitani|0`）
+- `sync-cart.post.ts` 修正：購物車裡 `NT$` 開頭的自訂台幣售價，同步時不會被爬蟲日幣價覆蓋
+
+**scraper 目錄重構**
+
+- `server/utils/scrape/` 新目錄，統一放各品牌爬蟲（`uniqlo.ts` / `gu.ts` / `rstaichi.ts` / `kushitani.ts`）
+- LINE 卡片產生器移至 `server/utils/line/cards/`（`uniqlo.ts` / `gu.ts` / `rstaichi.ts` / `kushitani.ts` / `index.ts`）
+
+**`shared/pricing.ts` 新增 `parsePriceTwd()`**
+
+- 新增智慧解析函式：`NT$` 開頭直接回傳台幣數字，其餘走正常日幣 × 匯率換算
+- `cart.vue`、`checkout.vue`（ItemCard、PriceSummary）全面改用此函式，確保 Kushitani 自訂台幣售價全程顯示正確
+
+**結帳頁費用明細更新（`components/checkout/PriceSummary.vue`）**
+
+- 費用明細新增「營業稅（5%）」獨立顯示列，位於運費下方
+- 訂單總計含稅邏輯不變
+
+**`shared/shipping.ts` 新增 Kushitani 運費支援**
+
+- `getCategoryWeight()` 新增 `kushitani|{grams}` 格式解析（`kushitani|0` 表示含運直送，重量為 0）
+- `calculateQuote()` 更新：含 Kushitani 有重量商品時，強制使用國際小包
+- `getCategoryLabel()` 新增 `kushitani` 對應中文標籤「重機部品」
+
 ### 2026-03-23
 
 **RS Taichi 庫存狀態解析修正（`server/utils/scrapeRstaichi.ts`）**
@@ -395,6 +490,7 @@ GET http://localhost:3000/api/cancel-expired-orders?secret={CRON_SECRET 值}
 | 訂單狀態新增 / 修改       | `server/api/update-order-status.post.ts` → `ALLOWED_STATUSES`、`orders.vue` 的 `STATUS_LABELS`、Google 試算表 H 欄下拉選單                                       |
 | 銀行帳號 / 行名           | `server/api/submit-order.post.ts`、`components/checkout/OrderForm.vue`、`components/checkout/Success.vue`、`pages/orders.vue` 各自的 `BANK_*` 常數（四處都要改） |
 | Email SMTP 設定           | `server/api/submit-order.post.ts` → nodemailer transport                                                                                                         |
+| Kushitani 自訂售價        | `server/data/kushitani-pricing.json`                                                                                                                             |
 | 截單時間（22:00）         | `server/api/webhook.post.ts` → `promoWarning` 字串、`components/checkout/OrderForm.vue` → 截單提醒文字（兩處都要改）                                             |
 
 ---
@@ -472,51 +568,33 @@ API 層二次驗證，防止繞過前端直接呼叫 API：
 
 ---
 
-## 擴充支援非 Uniqlo 網站
+## 擴充支援新品牌
 
-目前系統僅支援 Uniqlo 。若要擴充至其他日本購物網站（如 GU），需修改以下部分：
+目前支援 **Uniqlo、GU、RS Taichi、Kushitani** 四個品牌。若要新增第五個品牌，需修改以下部分：
 
-### 1. 新增 scraper（`server/utils/scrapeXxx.ts`）
+### 1. 新增 scraper（`server/utils/scrape/xxx.ts`）
 
-仿照 `scrapeUniqlo.ts` 的結構，實作 `scrapeXxx(url)` 函式，需解析目標網站 API 或 HTML，回傳統一格式：
+仿照現有 scraper，實作 `scrapeXxx(url)` 函式，解析目標網站 API 或 HTML，回傳統一的商品資料格式。
 
-```ts
-{
-  name: string,
-  imageUrl: string,
-  priceJpy: number,
-  isLimitedOffer: boolean,
-  promoEndTs: number | null,  // Unix ms，日本時間
-  colorName?: string,
-  sizeName?: string,
-  inStock: boolean,
-}
-```
+### 2. 新增 LINE 卡片產生器（`server/utils/line/cards/xxx.ts`）
 
-### 2. 修改 `server/api/webhook.post.ts`
+仿照 `uniqlo.ts` 或 `kushitani.ts`（Overlay 設計），實作 `buildXxxCards()` 函式，並在 `cards/index.ts` 重新匯出。
 
-在收到商品 URL 後，依 domain 分流至對應的 scraper：
+### 3. 更新 `server/utils/brandConfig.ts`
 
-```ts
-let product;
-if (url.includes('uniqlo.com')) {
-  product = await scrapeUniqlo(url);
-} else if (url.includes('gu-global.com')) {
-  product = await scrapeGu(url);
-} else {
-  // 不支援的網站
-  await replyText(replyToken, '目前僅支援 Uniqlo 商品連結');
-  return;
-}
-```
+在 `BrandId` 型別加入新品牌，並在 `detectBrand()` 新增網址匹配規則。
 
-### 3. 更新重量估算（`shared/shipping.ts`）
+### 4. 更新 `server/api/webhook.post.ts`
 
-若新網站的商品分類不同，需在 `WEIGHT_MAP` 補上對應的品類與估重（單位：公克）。
+在 URL 路由區塊新增分流，呼叫對應的 scraper 和卡片產生器。
 
-### 4. 更新 `server/api/sync-cart.post.ts`（若有）
+### 5. 更新重量估算（`shared/shipping.ts`）
 
-購物車商品資訊同步（例如即時刷新價格）需呼叫對應網站的 scraper，需一併加入分流邏輯。
+在 `getCategoryWeight()` 新增品牌格式解析，在 `calculateQuote()` 更新是否強制國際小包的條件。
+
+### 6. 更新 `server/api/sync-cart.post.ts`
+
+新增品牌的購物車同步分流（重新抓取價格和庫存）。
 
 ---
 

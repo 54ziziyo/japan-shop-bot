@@ -23,17 +23,27 @@ export function buildShopCarousel(): FlexBubble[] {
         ],
       },
     },
-    // 2. 品牌卡 RS Taichi
+    // 2. 品牌卡 Kushitani
     buildBrandBubble(
-      'https://romoru.vercel.app/image/logo-rstaichi.jpg',
+      'https://romoru.vercel.app/image/kushitani.jpg',
+      'https://www.kushitanionline.com/',
+    ),
+    // 3. 品牌卡 RS Taichi
+    buildBrandBubble(
+      'https://romoru.vercel.app/image/rstaichi.jpg',
       'https://www.ec.rs-taichi.com/',
     ),
-    // 3. 品牌卡 UNIQLO
+    // 4. 品牌卡 UNIQLO
     buildBrandBubble(
-      'https://romoru.vercel.app/image/logo-uniqlo.jpg',
+      'https://romoru.vercel.app/image/uniqlo.jpg',
       'https://www.uniqlo.com/jp/ja/',
     ),
-    // 4. 客服卡
+    // 5. 品牌卡 Gu
+    buildBrandBubble(
+      'https://romoru.vercel.app/image/gu.jpg',
+      'https://www.gu-global.com/jp/ja/',
+    ),
+    // 6. 客服卡
     {
       type: 'bubble',
       size: 'kilo',

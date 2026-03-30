@@ -10,6 +10,7 @@ export {
   parseJpy,
   jpyToTwd,
   formatTwd,
+  parsePriceTwd,
 } from '#shared/pricing';
 
 // 運費 & 重量
