@@ -3,6 +3,68 @@ import type { FlexBubble, FlexComponent } from '@line/bot-sdk';
 import { ensureLineImageUrl } from '../helpers';
 import { parseJpy, jpyToTwd, formatTwd } from '#shared/pricing';
 
+/**
+ * 日文顏色 → 中文翻譯對照表
+ * 找不到時回傳原文（日文）
+ */
+const JP_COLOR_MAP: Record<string, string> = {
+  // 基礎顏色
+  ブラック: '黑色',
+  ホワイト: '白色',
+  レッド: '紅色',
+  ブルー: '藍色',
+  グレー: '灰色',
+  ブラウン: '棕色',
+  ベージュ: '米色',
+  ネイビー: '深藍',
+  イエロー: '黃色',
+  グリーン: '綠色',
+  オレンジ: '橘色',
+  ピンク: '粉紅',
+  シルバー: '銀色',
+  ゴールド: '金色',
+  カーキ: '卡其',
+  
+  // 變化色與組合色
+  オリーブ: '橄欖綠',
+  アイスグレー: '冰灰色',
+  ダークレッド: '深紅色',
+  ライトグレー: '淺灰色',
+  サンドベージュ: '沙色米',
+  ボルドー: '酒紅色',
+  オリーブグリーン: '橄欖綠',
+  タン: '棕褐色',
+  サックス: '淡藍色',
+  ダークブラウン: '深棕色',
+  
+  // 雙色組合
+  'ブルー/ブラック': '藍黑雙色',
+  'ホワイト/ブラック': '黑白雙色',
+  'ホワイトネイビー': '白深藍',
+  'シルバー/ブラック': '銀黑雙色',
+  'オレンジ/ブラック': '橘黑雙色',
+  'ホワイト/ブルー': '白藍雙色',
+  'ブラック/イエロー': '黑黃雙色',
+  'サックス/ブラック': '淡藍黑雙色',
+  'ライトグレー/ブラック': '淺灰黑雙色',
+  'オリーブ/ブラック': '橄欖黑雙色',
+  'ブラック/シルバー': '黑銀雙色',
+  'ブラック/オレンジ': '黑橘雙色',
+};
+
+/** 嘗試翻譯日文顏色名，支援組合色（例: ホワイトネイビー → 白色深藍） */
+function translateColor(jpColor: string): string {
+  // 完全比對
+  if (JP_COLOR_MAP[jpColor]) return JP_COLOR_MAP[jpColor];
+  // 組合色：逐一比對已知色彩關鍵字
+  let translated = jpColor;
+  for (const [jp, zh] of Object.entries(JP_COLOR_MAP)) {
+    translated = translated.replaceAll(jp, zh);
+  }
+  // 若有任何置換就回傳（否則回傳空字串表示無翻譯）
+  return translated !== jpColor ? translated : '';
+}
+
 export function buildKushitaniCards(
   productData: any,
   jpyRate: number,
@@ -117,11 +179,22 @@ export function buildKushitaniCards(
               },
               {
                 type: 'text',
-                text: hasCustom
-                  ? `顏色：${v.color}（含運直送）`
-                  : `顏色：${v.color} ¥${parseJpy(v.price).toLocaleString()}`,
+                text: (() => {
+                  const zhColor = translateColor(v.color);
+                  const colorLabel = zhColor
+                    ? `${zhColor} (${v.color})`
+                    : v.color;
+                  return `顏色：${colorLabel} ¥${parseJpy(v.price).toLocaleString()}`;
+                })(),
                 size: 'xs',
                 color: '#dddddd',
+                margin: 'xs',
+              },
+              {
+                type: 'text',
+                text: '※官網同步偶有誤差，請依選購顏色為準',
+                size: 'xxs',
+                color: '#cccccc',
                 margin: 'xs',
               },
               {

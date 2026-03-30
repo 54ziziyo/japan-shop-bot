@@ -47,10 +47,10 @@ const CATEGORY_WEIGHT_MAP: Record<number, number> = {
 
   // ── 紡織類 ──
   8446: 2000, // テキスタイルジャケット（夏季/網眼防摔外套）
-  8449: 1500, // テキスタイルパンツ（紡織防摔褲）
+  8449: 1200, // テキスタイルパンツ（紡織防摔褲）
 
   // ── 手套 ──
-  8450: 400, // ツーリンググローブ（旅行手套）
+  8450: 500, // ツーリンググローブ（旅行手套）
 
   // ── 靴 ──
   8457: 2000, // ツーリングブーツ（車靴）
@@ -79,8 +79,8 @@ const CATEGORY_WEIGHT_MAP: Record<number, number> = {
   2866639: 2200, // オフロードウェア（越野裝備）
 
   // ── 防寒系列 ──
-  415378: 2500, // 防寒テキスタイルジャケット（冬季防摔外套）
-  415402: 1800, // 防寒テキスタイルパンツ（冬季防摔褲）
+  415378: 2000, // 防寒テキスタイルジャケット（冬季防摔外套）
+  415402: 1500, // 防寒テキスタイルパンツ（冬季防摔褲）
   415371: 500, // 防寒グローブ（冬季手套）
 
   // ── 女裝（參考對應男裝減 20%）──
@@ -96,7 +96,6 @@ const CATEGORY_WEIGHT_MAP: Record<number, number> = {
  * 用於 CATEGORY_WEIGHT_MAP 查不到的情況（例如 508580 レーシングギア）。
  * 由上往下依序比對，第一個 match 就採用。
  *
- * 💡 想新增/修改？直接在這裡加規則即可。
  */
 const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] =
   [
@@ -142,10 +141,10 @@ const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] =
       label: '雨傘（アンブレラ）',
     },
 
-    // ── 皮衣 / スーツ（兩件式含上下）──
+    // ── 連身皮衣 / スーツ──
     {
       pattern: /スーツ|レーシングスーツ|suit/i,
-      weight: 5000,
+      weight: 5600,
       label: '連身皮衣（レーシングスーツ）',
     },
 
@@ -210,7 +209,10 @@ export const scrapeKushitani = async (
       product.sales_price_including_tax || product.sales_price || 0;
     const price = `¥${priceIncTax}`;
 
-    // 5. 商品圖片：從 HTML 縮圖列表依序提取，第 1 張 = 第 1 色，第 2 張 = 第 2 色...
+    // 5. 商品圖片：從 HTML 縮圖列表提取
+    //    Kushitani 每個顏色可能有多張圖片（正面、背面等），
+    //    所以用 ceil(總圖數 / 顏色數) 作為步進間隔，
+    //    第 i 個顏色取第 i * step 張縮圖。
     const mainImage = `https://img03.shop-pro.jp/PA01002/054/product/${pid}.jpg`;
     const thumbMatches = [
       ...html.matchAll(
@@ -301,10 +303,12 @@ export const scrapeKushitani = async (
     weightGrams += PACKAGING_EXTRA_GRAMS;
 
     // 8. 組裝結果
+    //    圖片步進：每個顏色可能佔多張縮圖（正面+背面），取第一張作為代表
+    const photosPerColor = Math.ceil(thumbUrls.length / colorOrder.length);
     const resultVariants = colorOrder.slice(0, 10).map((color, idx) => {
       const data = colorMap.get(color)!;
-      // 依序對應縮圖：第 0 色 → thumbUrls[0], 第 1 色 → thumbUrls[1]...
-      const colorImage = thumbUrls[idx] || thumbUrls[0] || mainImage;
+      const colorImage =
+        thumbUrls[idx * photosPerColor] || thumbUrls[0] || mainImage;
       return {
         color,
         image: colorImage,
