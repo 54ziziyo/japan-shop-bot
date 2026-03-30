@@ -152,9 +152,17 @@ export default defineEventHandler(async (event) => {
               (s: any) => s.name === item.size,
             );
 
-            const currentPrice = variant ? variant.price : item.price;
+            // 自訂台幣售價（NT$ 開頭）→ 保留原價，不與爬蟲日幣價比較
+            const isCustomPrice = item.price.startsWith('NT$');
+            const currentPrice = isCustomPrice
+              ? item.price
+              : variant
+                ? variant.price
+                : item.price;
             const inStock = sizeInfo?.isStock ?? false;
-            const priceChanged = currentPrice !== item.price;
+            const priceChanged = isCustomPrice
+              ? false
+              : currentPrice !== item.price;
 
             results.push({
               product_code: item.product_code,

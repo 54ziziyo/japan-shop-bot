@@ -180,16 +180,18 @@ const earliestPromoDeadline = computed(() => {
 // JPY 小計（用於 DB 存儲）
 const subtotalJpy = computed(() => {
   return validItems.value.reduce((sum, item) => {
-    const price = parseJpy(item.displayPrice || '');
-    return sum + price * (item.quantity || 1);
+    // NT$ 自訂價格的商品沒有日幣價，不列入 JPY 小計
+    const price = item.displayPrice || '';
+    if (price.startsWith('NT$')) return sum;
+    return sum + parseJpy(price) * (item.quantity || 1);
   }, 0);
 });
 
 // TWD 商品小計
 const subtotalTwd = computed(() => {
   return validItems.value.reduce((sum, item) => {
-    const jpy = parseJpy(item.displayPrice || '');
-    return sum + jpyToTwd(jpy, jpyRate.value) * (item.quantity || 1);
+    const twd = parsePriceTwd(item.displayPrice || '', jpyRate.value);
+    return sum + twd * (item.quantity || 1);
   }, 0);
 });
 
@@ -386,7 +388,7 @@ const submitOrder = async () => {
       color: item.color,
       size: item.size,
       price: item.displayPrice,
-      priceTwd: jpyToTwd(parseJpy(item.displayPrice), jpyRate.value),
+      priceTwd: parsePriceTwd(item.displayPrice, jpyRate.value),
       quantity: item.quantity || 1,
       image_url: item.image_url || '',
       product_url: item.product_url || '',
@@ -651,6 +653,7 @@ onMounted(async () => {
               :total-weight="totalWeight"
               :display-service-fee="displayServiceFee"
               :hidden-surcharge="hiddenSurcharge"
+              :tax-amount="taxAmount"
               :display-total="displayTotal"
               :payment-method="form.paymentMethod"
               :valid-item-count="
@@ -673,7 +676,7 @@ onMounted(async () => {
       <AppBottomBar
         v-if="!pageLoading && !orderSubmitted && validItems.length > 0"
         label="訂單總計"
-        sublabel="含稅"
+        sublabel=""
         :amount="displayTotal"
         :button-text="submitting ? '送出中' : '下一步'"
         :disabled="submitting"

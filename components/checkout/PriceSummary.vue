@@ -5,6 +5,7 @@ defineProps({
   totalWeight: { type: Number, default: 0 },
   displayServiceFee: { type: Number, default: 0 },
   hiddenSurcharge: { type: Number, default: 0 },
+  taxAmount: { type: Number, default: 0 },
   displayTotal: { type: Number, default: 0 },
   paymentMethod: { type: String, default: '' },
   validItemCount: { type: Number, default: 0 },
@@ -32,9 +33,23 @@ defineProps({
       <div class="flex justify-between items-center">
         <span class="text-[11px] text-[#749D8E] font-semibold">
           運費
+          <span class="text-[9px] text-[#A4B8B0] ml-1"
+            >{{ shippingInfo.method }} ·
+            {{ totalWeight.toLocaleString() }}g</span
+          >
         </span>
+
         <span class="text-sm font-bold text-[#5A746B]"
           >NT${{ shippingInfo.costTwd.toLocaleString() }}</span
+        >
+      </div>
+      <!-- 5% 營業稅 -->
+      <div class="flex justify-between items-center">
+        <span class="text-[11px] text-[#749D8E] font-semibold"
+          >營業稅（5%）</span
+        >
+        <span class="text-sm font-bold text-[#5A746B]"
+          >NT${{ taxAmount.toLocaleString() }}</span
         >
       </div>
       <!-- 服務費 -->
@@ -58,7 +73,9 @@ defineProps({
       <div
         class="flex justify-between items-end pt-3 mt-1 border-t border-[#E8F0E9]"
       >
-        <span class="text-sm font-black text-[#5A746B]">訂單總計（含稅）</span>
+        <div class="flex gap-2 items-baseline">
+          <div class="text-sm font-black text-[#5A746B]">訂單總計</div>
+        </div>
         <span
           class="text-3xl font-black tracking-tighter leading-none text-[#5A746B]"
         >

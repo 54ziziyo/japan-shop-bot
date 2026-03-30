@@ -48,3 +48,15 @@ export function jpyToTwd(jpyPrice: number, rate?: number): number {
 export function formatTwd(amount: number): string {
   return `NT$${amount.toLocaleString()}`;
 }
+
+/**
+ * 智慧解析商品價格 → 台幣數字
+ * - "NT$7920"  → 直接回傳 7920（自訂台幣售價，不做匯率換算）
+ * - "¥1,990"  → jpyToTwd(1990, rate)（日幣，正常換算）
+ */
+export function parsePriceTwd(priceStr: string, rate?: number): number {
+  if ((priceStr || '').startsWith('NT$')) {
+    return parseInt(priceStr.replace(/[^\d]/g, ''), 10) || 0;
+  }
+  return jpyToTwd(parseJpy(priceStr), rate);
+}

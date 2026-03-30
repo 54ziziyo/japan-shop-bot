@@ -55,15 +55,11 @@ defineProps({
       <div v-else>
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-[#5A746B] font-black text-base tracking-tighter">
-            NT${{
-              jpyToTwd(parseJpy(item.displayPrice), jpyRate).toLocaleString()
-            }}
+            NT${{ parsePriceTwd(item.displayPrice, jpyRate).toLocaleString() }}
           </span>
           <template v-if="item.priceChanged">
             <span class="text-[9px] text-[#A4B8B0] line-through">
-              NT${{
-                jpyToTwd(parseJpy(item.oldPrice), jpyRate).toLocaleString()
-              }}
+              NT${{ parsePriceTwd(item.oldPrice, jpyRate).toLocaleString() }}
             </span>
             <span
               class="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full"

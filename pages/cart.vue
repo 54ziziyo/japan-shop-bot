@@ -15,8 +15,7 @@ const { rate: jpyRate, fetchRate } = useExchangeRate(); // 動態匯率
 // 自動加總邏輯（台幣）
 const totalAmount = computed(() => {
   return items.value.reduce((sum, item) => {
-    const jpy = parseJpy(item.price);
-    const twd = jpyToTwd(jpy, jpyRate.value);
+    const twd = parsePriceTwd(item.price, jpyRate.value);
     const qty = item.quantity || 1;
     return sum + twd * qty;
   }, 0);
@@ -286,9 +285,7 @@ const handleReload = () => {
               <div class="flex items-center justify-between">
                 <p class="font-black text-xl tracking-tighter text-[#5A746B]">
                   <span class="text-xs mr-0.5">NT$</span
-                  >{{
-                    jpyToTwd(parseJpy(item.price), jpyRate).toLocaleString()
-                  }}
+                  >{{ parsePriceTwd(item.price, jpyRate).toLocaleString() }}
                 </p>
 
                 <div
