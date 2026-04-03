@@ -3,7 +3,7 @@
 // ============================================================
 
 /** 品牌識別碼 */
-export type BrandId = 'uniqlo' | 'gu' | 'rstaichi' | 'kushitani';
+export type BrandId = 'uniqlo' | 'gu' | 'rstaichi' | 'kushitani' | 'fr2' | 'bape';
 
 /** 禁止販售的 RsTaichi 商品（含電池、酒精、油類、液體等國際郵寄違禁品） */
 export const RSTAICHI_BLOCKED_SKUS = new Set([
@@ -38,6 +38,10 @@ export function detectBrand(url: string): BrandId | null {
     return 'rstaichi';
   if (/(?:www\.)?kushitanionline\.com\/.*[?&]pid=\d+/i.test(url))
     return 'kushitani';
+  if (/(?:www\.)?fr2\.tokyo\/.*products\/[a-z0-9-]+/i.test(url))
+    return 'fr2';
+  if (/(?:www\.)?jp\.bape\.com\/.*products\/[a-z0-9-]+/i.test(url))
+    return 'bape';
   return null;
 }
 
@@ -46,7 +50,7 @@ export function detectBrand(url: string): BrandId | null {
  */
 export function extractKushitaniPid(url: string): string | null {
   const m = url.match(/[?&]pid=(\d+)/);
-  return m ? m[1] : null;
+  return m ? m[1]! : null;
 }
 
 /**
@@ -55,6 +59,25 @@ export function extractKushitaniPid(url: string): string | null {
 export function extractRstaichiSku(url: string): string | null {
   const m = url.match(/ec\.rs-taichi\.com\/([a-z0-9]+)\.html/i);
   return m ? m[1]!.toLowerCase() : null;
+}
+
+/**
+ * 檢查 RsTaichi 商品是否為禁售品
+ */
+/**
+ * 從 URL 提取 FR2 商品 handle
+ */
+export function extractFr2Handle(url: string): string | null {
+  const m = url.match(/fr2\.tokyo\/.*products\/([a-z0-9-]+)/i);
+  return m ? m[1]! : null;
+}
+
+/**
+ * 從 URL 提取 BAPE 商品 handle
+ */
+export function extractBapeHandle(url: string): string | null {
+  const m = url.match(/jp\.bape\.com\/.*products\/([a-z0-9-]+)/i);
+  return m ? m[1]! : null;
 }
 
 /**

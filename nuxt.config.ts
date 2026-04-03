@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
   // 啟用開發者工具
-  devtools: { enabled: true },
+  devtools: { enabled: false },
 
   // ── HTML head：viewport ──
   app: {

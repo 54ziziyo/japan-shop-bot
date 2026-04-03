@@ -43,7 +43,17 @@ export function buildShopCarousel(): FlexBubble[] {
       'https://romoru.vercel.app/image/gu.jpg',
       'https://www.gu-global.com/jp/ja/',
     ),
-    // 6. 客服卡
+    // 6. 品牌卡 FR2
+    buildBrandBubble(
+      'https://romoru.vercel.app/image/fr2.jpg',
+      'https://fr2.tokyo/',
+    ),
+    // 7. 品牌卡 BAPE
+    buildBrandBubble(
+      'https://romoru.vercel.app/image/bape.jpg',
+      'https://jp.bape.com/',
+    ),
+    // 8. 客服卡
     {
       type: 'bubble',
       size: 'kilo',

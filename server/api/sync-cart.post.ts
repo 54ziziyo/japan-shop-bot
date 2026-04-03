@@ -4,6 +4,8 @@ import axios from 'axios';
 import https from 'node:https';
 import { scrapeRstaichi } from '../utils/scrape/rstaichi';
 import { scrapeKushitani } from '../utils/scrape/kushitani';
+import { scrapeFr2 } from '../utils/scrape/fr2';
+import { scrapeBape } from '../utils/scrape/bape';
 import { detectBrand } from '../utils/brandConfig';
 
 const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
@@ -49,12 +51,18 @@ export default defineEventHandler(async (event) => {
   const guItems: CartItem[] = [];
   const rstaichiItems: CartItem[] = [];
   const kushitaniItems: CartItem[] = [];
+  const fr2Items: CartItem[] = [];
+  const bapeItems: CartItem[] = [];
   for (const item of items) {
     const brand = item.product_url ? detectBrand(item.product_url) : 'uniqlo';
     if (brand === 'rstaichi') {
       rstaichiItems.push(item);
     } else if (brand === 'kushitani') {
       kushitaniItems.push(item);
+    } else if (brand === 'fr2') {
+      fr2Items.push(item);
+    } else if (brand === 'bape') {
+      bapeItems.push(item);
     } else if (brand === 'gu') {
       guItems.push(item);
     } else {
@@ -195,6 +203,126 @@ export default defineEventHandler(async (event) => {
     );
 
     allResults.push(...kstResults.flat());
+  }
+
+  // ── FR2 同步：重新抓取商品頁驗證價格和庫存 ──
+  if (fr2Items.length) {
+    const byUrl = new Map<string, CartItem[]>();
+    for (const item of fr2Items) {
+      const url = item.product_url || '';
+      if (!byUrl.has(url)) byUrl.set(url, []);
+      byUrl.get(url)!.push(item);
+    }
+
+    const fr2Results = await Promise.all(
+      [...byUrl.entries()].map(async ([url, cartItems]) => {
+        try {
+          const product = await scrapeFr2(url);
+          if (!product) throw new Error('scrape failed');
+
+          const results: SyncResult[] = [];
+          for (const item of cartItems) {
+            const variant = product.variants.find(
+              (v: any) => v.color === item.color,
+            );
+            const sizeInfo = variant?.sizes.find(
+              (s: any) => s.name === item.size,
+            );
+            const currentPrice = variant ? variant.price : item.price;
+            const inStock = sizeInfo?.isStock ?? false;
+            const priceChanged = currentPrice !== item.price;
+
+            results.push({
+              product_code: item.product_code,
+              color: item.color,
+              size: item.size,
+              currentPrice,
+              inStock,
+              isPromo: false,
+              promoEndTs: null,
+              priceChanged,
+              stockChanged: !inStock,
+            });
+          }
+          return results;
+        } catch (err: any) {
+          console.error(`❌ sync-cart FR2: ${url} 失敗:`, err.message);
+          return cartItems.map((item) => ({
+            product_code: item.product_code,
+            color: item.color,
+            size: item.size,
+            currentPrice: item.price,
+            inStock: false,
+            isPromo: false,
+            promoEndTs: null,
+            priceChanged: false,
+            stockChanged: true,
+          }));
+        }
+      }),
+    );
+
+    allResults.push(...fr2Results.flat());
+  }
+
+  // ── BAPE 同步：重新抓取商品頁驗證價格和庫存 ──
+  if (bapeItems.length) {
+    const byUrl = new Map<string, CartItem[]>();
+    for (const item of bapeItems) {
+      const url = item.product_url || '';
+      if (!byUrl.has(url)) byUrl.set(url, []);
+      byUrl.get(url)!.push(item);
+    }
+
+    const bapeResults = await Promise.all(
+      [...byUrl.entries()].map(async ([url, cartItems]) => {
+        try {
+          const product = await scrapeBape(url);
+          if (!product) throw new Error('scrape failed');
+
+          const results: SyncResult[] = [];
+          for (const item of cartItems) {
+            const variant = product.variants.find(
+              (v: any) => v.color === item.color,
+            );
+            const sizeInfo = variant?.sizes.find(
+              (s: any) => s.name === item.size,
+            );
+            const currentPrice = variant ? variant.price : item.price;
+            const inStock = sizeInfo?.isStock ?? false;
+            const priceChanged = currentPrice !== item.price;
+
+            results.push({
+              product_code: item.product_code,
+              color: item.color,
+              size: item.size,
+              currentPrice,
+              inStock,
+              isPromo: false,
+              promoEndTs: null,
+              priceChanged,
+              stockChanged: !inStock,
+            });
+          }
+          return results;
+        } catch (err: any) {
+          console.error(`❌ sync-cart BAPE: ${url} 失敗:`, err.message);
+          return cartItems.map((item) => ({
+            product_code: item.product_code,
+            color: item.color,
+            size: item.size,
+            currentPrice: item.price,
+            inStock: false,
+            isPromo: false,
+            promoEndTs: null,
+            priceChanged: false,
+            stockChanged: true,
+          }));
+        }
+      }),
+    );
+
+    allResults.push(...bapeResults.flat());
   }
 
   // ── UNIQLO / GU 同步（共用 Fast Retailing v5 API） ──

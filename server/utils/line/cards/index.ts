@@ -4,3 +4,5 @@ export { buildUniqloCards } from './uniqlo';
 export { buildRstaichiCards } from './rstaichi';
 export { buildGuCards } from './gu';
 export { buildKushitaniCards } from './kushitani';
+export { buildFr2Cards } from './fr2';
+export { buildBapeCards } from './bape';

@@ -166,6 +166,16 @@ export function getCategoryWeight(categoryStr: string): number {
       const grams = parseInt(rest);
       return grams >= 0 ? grams : FALLBACK_WEIGHT;
     }
+    if (cls === 'fr2') {
+      // FR2 爬蟲已含包材重量，直接使用
+      const grams = parseInt(rest);
+      return grams > 0 ? grams : FALLBACK_WEIGHT;
+    }
+    if (cls === 'bape') {
+      // BAPE 爬蟲已含包材重量（估算值），直接使用
+      const grams = parseInt(rest);
+      return grams > 0 ? grams : FALLBACK_WEIGHT;
+    }
 
     const classMap = WEIGHT_MAP[cls];
     if (classMap) return classMap[rest] ?? classMap._default ?? FALLBACK_WEIGHT;
@@ -204,6 +214,7 @@ export function getCategoryLabel(categoryStr: string): string {
   const lower = categoryStr.toLowerCase();
   const cls = lower.includes('|') ? lower.split('|')[0]! : lower;
   if (cls === 'rstaichi' || cls === 'kushitani') return '重機部品';
+  if (cls === 'fr2' || cls === 'bape') return '潮流精品';
   return CLASS_LABELS[cls] || '其他';
 }
 

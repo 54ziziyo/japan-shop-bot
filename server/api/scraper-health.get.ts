@@ -1,5 +1,5 @@
 // server/api/scraper-health.get.ts
-// Vercel Cron Job：每日檢查四個品牌爬蟲是否正常運作
+// Vercel Cron Job：每日檢查所有品牌爬蟲是否正常運作
 // 若有任一品牌失敗，寄送 Email 通知管理員
 
 import nodemailer from 'nodemailer';
@@ -7,6 +7,8 @@ import { scrapeUniqlo } from '../utils/scrape/uniqlo';
 import { scrapeGu } from '../utils/scrape/gu';
 import { scrapeRstaichi } from '../utils/scrape/rstaichi';
 import { scrapeKushitani } from '../utils/scrape/kushitani';
+import { scrapeFr2 } from '../utils/scrape/fr2';
+import { scrapeBape } from '../utils/scrape/bape';
 
 /** 每個品牌的測試商品 URL（選用長期穩定的基本款商品） */
 const TEST_URLS: Record<
@@ -28,6 +30,14 @@ const TEST_URLS: Record<
   kushitani: {
     url: 'https://www.kushitanionline.com/shopdetail/000000001191/?pid=1721203975',
     scraper: scrapeKushitani,
+  },
+  fr2: {
+    url: 'https://fr2.tokyo/products/1080000003180',
+    scraper: scrapeFr2,
+  },
+  bape: {
+    url: 'https://jp.bape.com/products/1l70-150-001',
+    scraper: scrapeBape,
   },
 };
 
