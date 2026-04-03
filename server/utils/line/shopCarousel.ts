@@ -33,25 +33,27 @@ export function buildShopCarousel(): FlexBubble[] {
       'https://romoru.vercel.app/image/rstaichi.jpg',
       'https://www.ec.rs-taichi.com/',
     ),
-    // 4. 品牌卡 UNIQLO
+    // 4. 品牌卡 BAPE
+    buildBrandBubble(
+      'https://i.ibb.co/997gfrrJ/Group-842.jpg',
+      // 'https://romoru.vercel.app/image/bape.jpg',
+      'https://jp.bape.com/',
+    ),
+    // 5. 品牌卡 FR2
+    buildBrandBubble(
+      'https://i.ibb.co/jvx45c99/Group-843.jpg',
+      // 'https://romoru.vercel.app/image/fr2.jpg',
+      'https://fr2.tokyo/',
+    ),
+    // 6. 品牌卡 UNIQLO
     buildBrandBubble(
       'https://romoru.vercel.app/image/uniqlo.jpg',
       'https://www.uniqlo.com/jp/ja/',
     ),
-    // 5. 品牌卡 Gu
+    // 7. 品牌卡 Gu
     buildBrandBubble(
       'https://romoru.vercel.app/image/gu.jpg',
       'https://www.gu-global.com/jp/ja/',
-    ),
-    // 6. 品牌卡 FR2
-    buildBrandBubble(
-      'https://romoru.vercel.app/image/fr2.jpg',
-      'https://fr2.tokyo/',
-    ),
-    // 7. 品牌卡 BAPE
-    buildBrandBubble(
-      'https://romoru.vercel.app/image/bape.jpg',
-      'https://jp.bape.com/',
     ),
     // 8. 客服卡
     {
