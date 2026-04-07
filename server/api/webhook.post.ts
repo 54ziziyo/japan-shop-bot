@@ -23,9 +23,19 @@ import {
 import { parseJpy, jpyToTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
 import { showLoadingAnimation } from '../utils/line/helpers';
-import { buildShopCarousel } from '../utils/line/shopCarousel';
+import {
+  buildShopCarousel,
+  buildCategorySelector,
+} from '../utils/line/shopCarousel';
 import { FAQ_ANSWERS, buildFaqMenu } from '../utils/line/faq';
-import { buildUniqloCards, buildRstaichiCards, buildGuCards, buildKushitaniCards, buildFr2Cards, buildBapeCards } from '../utils/line/cards';
+import {
+  buildUniqloCards,
+  buildRstaichiCards,
+  buildGuCards,
+  buildKushitaniCards,
+  buildFr2Cards,
+  buildBapeCards,
+} from '../utils/line/cards';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -255,6 +265,22 @@ export default defineEventHandler(async (event) => {
           await sendReplyOrPush({ type: 'text', text: FAQ_ANSWERS[action] });
         }
 
+        // 開始購物 — 分類選擇後，回傳對應品牌輪播
+        if (action === 'shop_category') {
+          const category = data.get('category') as 'fashion' | 'motogear';
+          await sendReplyOrPush({
+            type: 'flex',
+            altText:
+              category === 'fashion'
+                ? '👕 潮牌服飾 — 選擇品牌'
+                : '🏍️ 重機部品 — 選擇品牌',
+            contents: {
+              type: 'carousel',
+              contents: buildShopCarousel(category),
+            },
+          } as FlexMessage);
+        }
+
         return;
       }
 
@@ -275,13 +301,9 @@ export default defineEventHandler(async (event) => {
         return;
       }
 
-      // 開始購物 — 品牌導覽輪播（不需匯率，秒回）
+      // 開始購物 — 分類選擇（不需匯率，秒回）
       if (userText === '開始購物' || userText.includes('請輸入商品內頁網址')) {
-        await sendReplyOrPush({
-          type: 'flex',
-          altText: '🛍️ 開始購物 — 選擇品牌',
-          contents: { type: 'carousel', contents: buildShopCarousel() },
-        } as FlexMessage);
+        await sendReplyOrPush(buildCategorySelector());
         return;
       }
 
@@ -390,19 +412,26 @@ export default defineEventHandler(async (event) => {
           if (!productData) throw new Error('無法識別的 Kushitani 商品資料');
           productTitle = productData.title;
           const customPrice = getKushitaniCustomPrice(productData.modelNumber);
-          bubbles = buildKushitaniCards(productData, jpyRate, pastedUrl, customPrice);
+          bubbles = buildKushitaniCards(
+            productData,
+            jpyRate,
+            pastedUrl,
+            customPrice,
+          );
         }
 
         if (brand === 'fr2') {
           const productData = await scrapeFr2(pastedUrl);
-          if (!productData) throw new Error('無法識別的 FR2 商品資料（可能為禁運品）');
+          if (!productData)
+            throw new Error('無法識別的 FR2 商品資料（可能為禁運品）');
           productTitle = productData.title;
           bubbles = buildFr2Cards(productData, jpyRate, pastedUrl);
         }
 
         if (brand === 'bape') {
           const productData = await scrapeBape(pastedUrl);
-          if (!productData) throw new Error('無法識別的 BAPE 商品資料（可能為禁運品）');
+          if (!productData)
+            throw new Error('無法識別的 BAPE 商品資料（可能為禁運品）');
           productTitle = productData.title;
           bubbles = buildBapeCards(productData, jpyRate, pastedUrl);
         }
