@@ -1,4 +1,4 @@
-# 囉姆嚕日貨代購機器人（Japan Shop Bot）
+# 洛姆日貨代購機器人（Japan Shop Bot）
 
 LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**GU**、**RS Taichi（重機齒輪）**、**Kushitani（重機皮衣）** 等多品牌商品查詢、購物車、結帳、訂單管理、Google 試算表同步及自動化運維。
 
@@ -461,13 +461,13 @@ Google 試算表有一個觸發器 `handleStatusEdit`，監聽 H 欄（貨物狀
 
 本系統設有自動爬蟲健康檢查機制（[`server/api/scraper-health.get.ts`](server/api/scraper-health.get.ts)），每日自動偵測各品牌爬蟲是否正常。
 
-| 項目 | 說明 |
-| ---- | ---- |
-| 觸發時機 | 每天台灣時間早上 09:00（Vercel Cron）|
+| 項目     | 說明                                                                   |
+| -------- | ---------------------------------------------------------------------- |
+| 觸發時機 | 每天台灣時間早上 09:00（Vercel Cron）                                  |
 | 測試方式 | 對 Uniqlo、GU、RS Taichi、Kushitani 各抓一件穩定商品，確認回傳有效資料 |
-| 失敗通知 | 任一品牌失敗，自動寄送警報 Email 至管理員信箱 |
-| 回傳格式 | `{ ok, timestamp, results[] }` – 每個品牌帶 ok/error/durationMs |
-| 測試 URL | 在 `TEST_URLS` 常數中設定，應選**長期不下架**的基本款商品 |
+| 失敗通知 | 任一品牌失敗，自動寄送警報 Email 至管理員信箱                          |
+| 回傳格式 | `{ ok, timestamp, results[] }` – 每個品牌帶 ok/error/durationMs        |
+| 測試 URL | 在 `TEST_URLS` 常數中設定，應選**長期不下架**的基本款商品              |
 
 **⚠️ 注意**：若測試商品下架，爬蟲健康檢查會誤報警報。建議定期確認測試商品仍在架。
 
@@ -477,12 +477,12 @@ Google 試算表有一個觸發器 `handleStatusEdit`，監聽 H 欄（貨物狀
 
 #### 已有的效能設計
 
-| 機制 | 說明 |
-| ---- | ---- |
-| `sync-cart` 並行抓取 | 同一次結帳，多件商品同時發出請求（`Promise.all`），且同一商品只抓一次 |
-| 匯率雙層快取 | Supabase 24 小時快取 + 前端 localStorage 24 小時，避免重複打外部 API |
-| `keepAlive` Agent | 所有爬蟲 axios 實例使用 HTTP keep-alive，減少 TLS handshake 耗時 |
-| Supabase 單例 | [`server/utils/supabase.ts`](server/utils/supabase.ts) 在同一容器暖啟動期間共用同一個 client |
+| 機制                 | 說明                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| `sync-cart` 並行抓取 | 同一次結帳，多件商品同時發出請求（`Promise.all`），且同一商品只抓一次                        |
+| 匯率雙層快取         | Supabase 24 小時快取 + 前端 localStorage 24 小時，避免重複打外部 API                         |
+| `keepAlive` Agent    | 所有爬蟲 axios 實例使用 HTTP keep-alive，減少 TLS handshake 耗時                             |
+| Supabase 單例        | [`server/utils/supabase.ts`](server/utils/supabase.ts) 在同一容器暖啟動期間共用同一個 client |
 
 #### 不需要擔心的地方
 
@@ -497,18 +497,18 @@ Google 試算表有一個觸發器 `handleStatusEdit`，監聽 H 欄（貨物狀
 
 Vercel Hobby（免費）方案明確禁止商業用途：
 
-> *"Commercial usage of Hobby projects is not allowed."*  
+> _"Commercial usage of Hobby projects is not allowed."_  
 > — [Vercel Fair Use Policy](https://vercel.com/docs/limits/fair-use-policy)
 
 只要網站有代購收費行為，即屬商業用途，使用 Hobby 方案違反服務條款。
 
-| 項目 | Hobby（免費） | Pro（$20/月 ≈ NT$650） |
-| ---- | ------------ | ---------------------- |
-| **商業使用** | ❌ 禁止 | ✅ 允許 |
-| Serverless 執行時間 | 10 秒/次 | 60 秒/次 |
-| Cron Jobs 數量 | 2 個（每日） | 40 個 |
-| 每月頻寬 | 100 GB | 1 TB |
-| Serverless 調用次數 | 100,000 次/月 | 1,000,000 次/月 |
+| 項目                | Hobby（免費） | Pro（$20/月 ≈ NT$650） |
+| ------------------- | ------------- | ---------------------- |
+| **商業使用**        | ❌ 禁止       | ✅ 允許                |
+| Serverless 執行時間 | 10 秒/次      | 60 秒/次               |
+| Cron Jobs 數量      | 2 個（每日）  | 40 個                  |
+| 每月頻寬            | 100 GB        | 1 TB                   |
+| Serverless 調用次數 | 100,000 次/月 | 1,000,000 次/月        |
 
 > 爬蟲有時會接近 10 秒上限，Pro 的 60 秒可有效防止超時。
 
@@ -518,20 +518,20 @@ Vercel Hobby（免費）方案明確禁止商業用途：
 
 **結論：Supabase Free plan 允許商業使用，個人代購規模數年內不會超額。**
 
-| 資源 | 免費額度 | 預估用量（個人代購） |
-| ---- | -------- | ------------------- |
-| 資料庫容量 | 500 MB | 超低（見下表） |
-| 資料列數 | 無限制（僅看容量） | — |
-| API 請求 | 無限制 | — |
-| Auth 用戶 | 50,000 MAU | — |
+| 資源       | 免費額度           | 預估用量（個人代購） |
+| ---------- | ------------------ | -------------------- |
+| 資料庫容量 | 500 MB             | 超低（見下表）       |
+| 資料列數   | 無限制（僅看容量） | —                    |
+| API 請求   | 無限制             | —                    |
+| Auth 用戶  | 50,000 MAU         | —                    |
 
 **資料量估算（500 MB 免費額度）**
 
-| 資料表 | 每筆大小 | 10,000 筆佔用 |
-| ------ | ------- | ------------ |
-| `orders` | ~1 KB（含 jsonb items） | ~10 MB |
-| `cart_items` | ~0.5 KB | ~5 MB（50,000 筆） |
-| `exchange_rate_cache` | 可忽略 | < 1 KB |
+| 資料表                | 每筆大小                | 10,000 筆佔用      |
+| --------------------- | ----------------------- | ------------------ |
+| `orders`              | ~1 KB（含 jsonb items） | ~10 MB             |
+| `cart_items`          | ~0.5 KB                 | ~5 MB（50,000 筆） |
+| `exchange_rate_cache` | 可忽略                  | < 1 KB             |
 
 **10,000 筆訂單僅佔 10 MB，500 MB 夠用數年。**
 
@@ -541,20 +541,20 @@ Vercel Hobby（免費）方案明確禁止商業用途：
 
 #### 目前每月固定支出
 
-| 服務 | 方案 | 月費 |
-| ---- | ---- | ---- |
-| Supabase | Free | $0 |
-| LINE Official Account | 免費方案（200 則推播/月） | $0 |
-| Gmail SMTP（寄信） | 個人帳號 | $0 |
-| Google Sheets API | 免費 | $0 |
+| 服務                  | 方案                      | 月費 |
+| --------------------- | ------------------------- | ---- |
+| Supabase              | Free                      | $0   |
+| LINE Official Account | 免費方案（200 則推播/月） | $0   |
+| Gmail SMTP（寄信）    | 個人帳號                  | $0   |
+| Google Sheets API     | 免費                      | $0   |
 
 #### 建議升級項目
 
-| 服務 | 方案 | 月費 |
-| ---- | ---- | ---- |
-| **Vercel Pro**（商業合規必須） | Pro | **$20/月（≈ NT$650）** |
-| LINE 加值（如需更多推播） | Light（800 則） | NT$200/月 起 |
-| 自訂網域（選配） | 年費 | ~$10–15/年 |
+| 服務                           | 方案            | 月費                   |
+| ------------------------------ | --------------- | ---------------------- |
+| **Vercel Pro**（商業合規必須） | Pro             | **$20/月（≈ NT$650）** |
+| LINE 加值（如需更多推播）      | Light（800 則） | NT$200/月 起           |
+| 自訂網域（選配）               | 年費            | ~$10–15/年             |
 
 #### 最低合規運營成本
 

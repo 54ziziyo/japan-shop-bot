@@ -185,14 +185,14 @@ const handleReload = () => {
 
 <template>
   <ClientOnly>
-    <div class="h-dvh flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased overflow-hidden">
+    <div class="flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans">
       <AppNavbar title="購物清單">
         <template #subtitle>
           <div class="flex items-center gap-2 mb-2 h-6">
             <span
               class="px-2 py-0.5 bg-[#749D8E]/10 text-[#749D8E] text-[9px] font-black rounded-full tracking-widest uppercase"
             >
-              ROMURUMU JP
+              ROMU JP
             </span>
           </div>
         </template>
@@ -212,7 +212,7 @@ const handleReload = () => {
         </template>
       </AppNavbar>
 
-      <main class="flex-1 overflow-y-auto overscroll-contain">
+      <main class="flex-1">
       <div class="max-w-md mx-auto px-6 pb-6">
         <div
           v-if="!loading && items.length > 0"

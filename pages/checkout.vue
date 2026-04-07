@@ -545,7 +545,7 @@ onMounted(async () => {
 
 <template>
   <ClientOnly>
-    <div class="h-dvh flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased overflow-hidden">
+    <div class="flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans">
       <!-- Navigation -->
       <AppNavbar title="訂單確認">
         <template #subtitle>
@@ -579,7 +579,7 @@ onMounted(async () => {
         </template>
       </AppNavbar>
 
-      <main class="flex-1 overflow-y-auto overscroll-contain">
+      <main class="flex-1">
       <div class="max-w-md mx-auto px-6 pb-6">
         <!-- Loading -->
         <AppLoading v-if="pageLoading" />
@@ -695,7 +695,7 @@ onMounted(async () => {
       <div
         class="max-h-[50vh] overflow-y-auto text-sm text-[#4A5D59] leading-relaxed space-y-4 bg-[#f4f7f7] p-4 rounded-lg"
       >
-        <p class="font-bold text-base">囉姆嚕日貨代購：服務條款與隱私聲明</p>
+        <p class="font-bold text-base">洛姆日貨代購：服務條款與隱私聲明</p>
 
         <div>
           <p class="font-bold mb-1">一、訂購與缺貨處理</p>

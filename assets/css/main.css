@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Safe Area Insets（底部橫條 / Home Indicator）── */
+/* ── Safe Area（iPhone Home Indicator）── */
 @layer utilities {
   .pb-safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -18,15 +18,8 @@
   }
 }
 
-/* ── 全域行動端修正 ── */
 ::-webkit-scrollbar {
   display: none;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
 }
 
 body {

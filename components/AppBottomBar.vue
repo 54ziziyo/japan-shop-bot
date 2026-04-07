@@ -12,7 +12,7 @@ defineEmits(['submit']);
 
 <template>
   <footer
-    class="flex-shrink-0 z-40 px-6 pb-safe-bottom bg-[#FDFCF8]"
+    class="px-6 pb-safe-bottom bg-[#FDFCF8]"
   >
     <div class="my-4">
       <div

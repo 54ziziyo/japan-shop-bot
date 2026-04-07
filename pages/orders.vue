@@ -181,7 +181,9 @@ function closeLiff() {
 
 <template>
   <ClientOnly>
-    <div class="h-dvh flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased overflow-hidden">
+    <div
+      class="flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans"
+    >
       <!-- ── Navbar ── -->
       <AppNavbar title="訂單查詢">
         <template #subtitle>
@@ -189,7 +191,7 @@ function closeLiff() {
             <span
               class="px-2 py-0.5 bg-[#749D8E]/10 text-[#749D8E] text-[9px] font-black rounded-full tracking-widest uppercase"
             >
-              ROMURUMU JP
+              ROMU JP
             </span>
           </div>
         </template>
@@ -203,78 +205,78 @@ function closeLiff() {
         </template>
       </AppNavbar>
 
-      <main class="flex-1 overflow-y-auto overscroll-contain">
-      <div class="max-w-md mx-auto px-6 pb-6">
-        <!-- ── 載入中 ── -->
-        <AppLoading v-if="loading" />
+      <main class="flex-1">
+        <div class="max-w-md mx-auto px-6 pb-6">
+          <!-- ── 載入中 ── -->
+          <AppLoading v-if="loading" />
 
-        <!-- ── 無訂單 ── -->
-        <div v-else-if="orders.length === 0" class="text-center py-32">
-          <p class="text-2xl font-black mb-3 text-[#5A746B]">
-            目前無進行中訂單
-          </p>
-          <p class="text-sm text-[#A4B8B0] leading-relaxed mb-6">
-            尚無進行中的訂單記錄<br />
-            已完成的歷史訂單暫不顯示
-          </p>
-          <button
-            class="text-[10px] font-bold text-[#749D8E] hover:text-[#5A746B] transition-colors border-b-2 border-[#749D8E] pb-1 uppercase tracking-widest"
-            @click="closeLiff()"
-          >
-            返回官方帳號
-          </button>
-        </div>
+          <!-- ── 無訂單 ── -->
+          <div v-else-if="orders.length === 0" class="text-center py-32">
+            <p class="text-2xl font-black mb-3 text-[#5A746B]">
+              目前無進行中訂單
+            </p>
+            <p class="text-sm text-[#A4B8B0] leading-relaxed mb-6">
+              尚無進行中的訂單記錄<br />
+              已完成的歷史訂單暫不顯示
+            </p>
+            <button
+              class="text-[10px] font-bold text-[#749D8E] hover:text-[#5A746B] transition-colors border-b-2 border-[#749D8E] pb-1 uppercase tracking-widest"
+              @click="closeLiff()"
+            >
+              返回官方帳號
+            </button>
+          </div>
 
-        <!-- ── 訂單卡片列表 ── -->
-        <div v-else class="space-y-6 mt-6">
-          <div
-            v-for="order in orders"
-            :key="order.id"
-            class="bg-white rounded-[1.75rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.08)] border border-[#E8F0E9]"
-          >
-            <!-- 狀態標頭 -->
-            <div class="px-5 py-4 flex justify-between items-center">
-              <div>
-                <p
-                  class="text-[10px] font-bold tracking-widest uppercase text-[#A4B8B0] mb-1"
+          <!-- ── 訂單卡片列表 ── -->
+          <div v-else class="space-y-6 mt-6">
+            <div
+              v-for="order in orders"
+              :key="order.id"
+              class="bg-white rounded-[1.75rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.08)] border border-[#E8F0E9]"
+            >
+              <!-- 狀態標頭 -->
+              <div class="px-5 py-4 flex justify-between items-center">
+                <div>
+                  <p
+                    class="text-[10px] font-bold tracking-widest uppercase text-[#A4B8B0] mb-1"
+                  >
+                    {{ formatDate(order.created_at) }}
+                  </p>
+                  <p class="font-black text-lg leading-tight text-[#5A746B]">
+                    {{ statusLabel(order.status) }}
+                  </p>
+                </div>
+                <span
+                  class="text-xs font-black px-3 py-1.5 rounded-full"
+                  :class="statusBadgeClass(order.status)"
                 >
-                  {{ formatDate(order.created_at) }}
-                </p>
-                <p class="font-black text-lg leading-tight text-[#5A746B]">
-                  {{ statusLabel(order.status) }}
-                </p>
+                  {{ statusEmoji(order.status) }}
+                </span>
               </div>
-              <span
-                class="text-xs font-black px-3 py-1.5 rounded-full"
-                :class="statusBadgeClass(order.status)"
-              >
-                {{ statusEmoji(order.status) }}
-              </span>
-            </div>
 
-            <!-- 收件人資訊 -->
-            <div class="px-5 pb-3 border-b border-[#E8F0E9] space-y-1.5">
-              <p class="text-xs text-[#A4B8B0]">
-                <span class="font-bold text-[#5A746B]">{{
-                  order.customer_name
-                }}</span>
-                &nbsp;&nbsp;{{ order.phone }}
-              </p>
-              <!-- 地址列 -->
-              <div class="flex items-center gap-1">
-                <p class="text-xs text-[#A4B8B0] flex items-center gap-1">
-                  <span>📍</span>
-                  <template v-if="editingAddressId === order.id">
-                    <input
-                      v-model="editAddress"
-                      type="text"
-                      class="border border-[#D1E2D5] rounded-xl px-2 py-0.5 text-xs w-full mt-1 focus:outline-none focus:border-[#749D8E] text-[#4A5D59] bg-white"
-                    />
-                  </template>
-                  <template v-else>{{ order.address }}</template>
+              <!-- 收件人資訊 -->
+              <div class="px-5 pb-3 border-b border-[#E8F0E9] space-y-1.5">
+                <p class="text-xs text-[#A4B8B0]">
+                  <span class="font-bold text-[#5A746B]">{{
+                    order.customer_name
+                  }}</span>
+                  &nbsp;&nbsp;{{ order.phone }}
                 </p>
-                <!-- 編輯 / 儲存 / 取消 -->
-                <!-- <template v-if="canEditAddress(order.status)">
+                <!-- 地址列 -->
+                <div class="flex items-center gap-1">
+                  <p class="text-xs text-[#A4B8B0] flex items-center gap-1">
+                    <span>📍</span>
+                    <template v-if="editingAddressId === order.id">
+                      <input
+                        v-model="editAddress"
+                        type="text"
+                        class="border border-[#D1E2D5] rounded-xl px-2 py-0.5 text-xs w-full mt-1 focus:outline-none focus:border-[#749D8E] text-[#4A5D59] bg-white"
+                      />
+                    </template>
+                    <template v-else>{{ order.address }}</template>
+                  </p>
+                  <!-- 編輯 / 儲存 / 取消 -->
+                  <!-- <template v-if="canEditAddress(order.status)">
                   <template v-if="editingAddressId === order.id">
                     <button
                       class="text-[#749D8E] p-0.5 shrink-0"
@@ -345,198 +347,198 @@ function closeLiff() {
                     >🔒 已鎖定</span
                   >
                 </template> -->
-              </div>
-              <p class="text-xs text-[#A4B8B0]">
-                💳
-                {{
-                  order.payment_method === 'bank_transfer'
-                    ? '銀行轉帳'
-                    : '綠界付款'
-                }}
-                <span
-                  v-if="
-                    order.payment_method === 'bank_transfer' &&
-                    order.account_last5
-                  "
-                >
-                  &middot; 末五碼 {{ order.account_last5 }}
-                </span>
-              </p>
-              <!-- 我要轉帳按鈕 -->
-              <div
-                v-if="
-                  order.status === 'pending' &&
-                  order.payment_method === 'bank_transfer'
-                "
-                class="pt-2"
-              >
-                <button
-                  @click="copyBankInfo(order)"
-                  class="w-full text-center text-[11px] font-black bg-[#749D8E] hover:bg-[#63897B] text-white rounded-2xl py-3 active:scale-[0.97] transition-all shadow-[0_4px_15px_rgba(116,157,142,0.25)] uppercase tracking-[0.2em]"
-                >
-                  🏦 我要轉帳
-                </button>
-              </div>
-            </div>
-
-            <!-- 商品列表 -->
-            <div class="px-5 py-4 space-y-4">
-              <div
-                v-for="(item, i) in order.items"
-                :key="i"
-                class="flex gap-3 items-start"
-              >
-                <!-- 商品圖片 -->
+                </div>
+                <p class="text-xs text-[#A4B8B0]">
+                  💳
+                  {{
+                    order.payment_method === 'bank_transfer'
+                      ? '銀行轉帳'
+                      : '綠界付款'
+                  }}
+                  <span
+                    v-if="
+                      order.payment_method === 'bank_transfer' &&
+                      order.account_last5
+                    "
+                  >
+                    &middot; 末五碼 {{ order.account_last5 }}
+                  </span>
+                </p>
+                <!-- 我要轉帳按鈕 -->
                 <div
-                  class="w-16 h-16 rounded-[1.1rem] overflow-hidden bg-[#F4F9F5] flex-shrink-0 border border-[#E8F0E9] shadow-[0_2px_8px_rgb(116,157,142,0.08)]"
+                  v-if="
+                    order.status === 'pending' &&
+                    order.payment_method === 'bank_transfer'
+                  "
+                  class="pt-2"
                 >
-                  <img
-                    v-if="item.image_url"
-                    :src="item.image_url"
-                    :alt="item.product_title"
-                    class="w-full h-full object-cover"
-                  />
-                </div>
-                <!-- 商品資訊 -->
-                <div class="flex-1 min-w-0">
-                  <p
-                    class="text-xs font-bold leading-snug line-clamp-2 text-[#4A5D59]"
+                  <button
+                    @click="copyBankInfo(order)"
+                    class="w-full text-center text-[11px] font-black bg-[#749D8E] hover:bg-[#63897B] text-white rounded-2xl py-3 active:scale-[0.97] transition-all shadow-[0_4px_15px_rgba(116,157,142,0.25)] uppercase tracking-[0.2em]"
                   >
-                    {{ item.product_title }}
-                  </p>
-                  <p
-                    class="text-[10px] font-semibold text-[#749D8E]/60 uppercase tracking-wide mt-0.5"
-                  >
-                    {{ item.color }} <span class="opacity-40 mx-0.5">/</span>
-                    {{ item.size }}
-                  </p>
-                  <p class="text-[10px] text-[#A4B8B0] mt-0.5">
-                    × {{ item.quantity }} 件
-                  </p>
-                </div>
-                <!-- 價格 -->
-                <div class="text-right flex-shrink-0">
-                  <p class="text-sm font-black text-[#5A746B]">
-                    NT${{ (item.priceTwd || 0).toLocaleString() }}
-                  </p>
+                    🏦 我要轉帳
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <!-- 訂單總計 -->
-            <div
-              v-if="order.grand_total_twd"
-              class="px-5 py-3 bg-[#F4F9F5]/50 border-t border-[#E8F0E9] flex justify-between items-center"
-            >
-              <p
-                class="text-[10px] text-[#A4B8B0] font-black uppercase tracking-widest"
+              <!-- 商品列表 -->
+              <div class="px-5 py-4 space-y-4">
+                <div
+                  v-for="(item, i) in order.items"
+                  :key="i"
+                  class="flex gap-3 items-start"
+                >
+                  <!-- 商品圖片 -->
+                  <div
+                    class="w-16 h-16 rounded-[1.1rem] overflow-hidden bg-[#F4F9F5] flex-shrink-0 border border-[#E8F0E9] shadow-[0_2px_8px_rgb(116,157,142,0.08)]"
+                  >
+                    <img
+                      v-if="item.image_url"
+                      :src="item.image_url"
+                      :alt="item.product_title"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <!-- 商品資訊 -->
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-xs font-bold leading-snug line-clamp-2 text-[#4A5D59]"
+                    >
+                      {{ item.product_title }}
+                    </p>
+                    <p
+                      class="text-[10px] font-semibold text-[#749D8E]/60 uppercase tracking-wide mt-0.5"
+                    >
+                      {{ item.color }} <span class="opacity-40 mx-0.5">/</span>
+                      {{ item.size }}
+                    </p>
+                    <p class="text-[10px] text-[#A4B8B0] mt-0.5">
+                      × {{ item.quantity }} 件
+                    </p>
+                  </div>
+                  <!-- 價格 -->
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-sm font-black text-[#5A746B]">
+                      NT${{ (item.priceTwd || 0).toLocaleString() }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 訂單總計 -->
+              <div
+                v-if="order.grand_total_twd"
+                class="px-5 py-3 bg-[#F4F9F5]/50 border-t border-[#E8F0E9] flex justify-between items-center"
               >
-                訂單總計
-              </p>
-              <p class="font-black text-xl text-[#5A746B]">
-                <span class="text-xs">NT$</span
-                >{{ Number(order.grand_total_twd).toLocaleString() }}
-              </p>
-            </div>
-
-            <!-- 追蹤碼（已出貨時顯示） -->
-            <div
-              v-if="order.status === 'packing' && order.tracking_code"
-              class="px-5 pt-4 pb-5 border-t border-[#E8F0E9]"
-            >
-              <div class="flex items-center gap-1.5 mb-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#A4B8B0"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"
-                  />
-                  <circle cx="18.5" cy="15.5" r="2.5" />
-                  <path d="M20.27 17.22 22 19" />
-                </svg>
                 <p
-                  class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest"
+                  class="text-[10px] text-[#A4B8B0] font-black uppercase tracking-widest"
                 >
-                  國際包裹追蹤碼
+                  訂單總計
+                </p>
+                <p class="font-black text-xl text-[#5A746B]">
+                  <span class="text-xs">NT$</span
+                  >{{ Number(order.grand_total_twd).toLocaleString() }}
                 </p>
               </div>
 
-              <!-- 追蹤碼卡片 -->
-              <div class="mb-2.5">
-                <p
-                  class="text-xl font-black font-mono tracking-wider text-[#5A746B] mb-4"
-                >
-                  {{ order.tracking_code }}
-                </p>
-                <button
-                  @click="copyTrackingCode(order.tracking_code)"
-                  class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white rounded-[0.875rem] py-2.5 text-[11px] font-black uppercase tracking-[0.2em] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
-                >
-                  複製追蹤碼
+              <!-- 追蹤碼（已出貨時顯示） -->
+              <div
+                v-if="order.status === 'packing' && order.tracking_code"
+                class="px-5 pt-4 pb-5 border-t border-[#E8F0E9]"
+              >
+                <div class="flex items-center gap-1.5 mb-3">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="13"
-                    height="13"
+                    width="12"
+                    height="12"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="currentColor"
+                    stroke="#A4B8B0"
                     stroke-width="2.5"
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   >
-                    <rect
-                      x="9"
-                      y="9"
+                    <path
+                      d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"
+                    />
+                    <circle cx="18.5" cy="15.5" r="2.5" />
+                    <path d="M20.27 17.22 22 19" />
+                  </svg>
+                  <p
+                    class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest"
+                  >
+                    國際包裹追蹤碼
+                  </p>
+                </div>
+
+                <!-- 追蹤碼卡片 -->
+                <div class="mb-2.5">
+                  <p
+                    class="text-xl font-black font-mono tracking-wider text-[#5A746B] mb-4"
+                  >
+                    {{ order.tracking_code }}
+                  </p>
+                  <button
+                    @click="copyTrackingCode(order.tracking_code)"
+                    class="w-full bg-[#749D8E] hover:bg-[#63897B] text-white rounded-[0.875rem] py-2.5 text-[11px] font-black uppercase tracking-[0.2em] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                  >
+                    複製追蹤碼
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
                       width="13"
                       height="13"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <path
-                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect
+                        x="9"
+                        y="9"
+                        width="13"
+                        height="13"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <path
+                        d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
 
-              <!-- 郵局查詢連結 -->
-              <a
-                href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500200"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex items-center justify-center gap-1.5 py-2.5 border border-[#D1E2D5] rounded-[0.875rem] bg-[#F4F9F5] hover:bg-[#E8F0E9] active:scale-[0.97] transition-all"
-              >
-                <span class="text-[11px] font-bold text-[#5A746B]"
-                  >前往郵局官網查詢包裹</span
+                <!-- 郵局查詢連結 -->
+                <a
+                  href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500200"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-center gap-1.5 py-2.5 border border-[#D1E2D5] rounded-[0.875rem] bg-[#F4F9F5] hover:bg-[#E8F0E9] active:scale-[0.97] transition-all"
                 >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#749D8E"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path
-                    d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                  />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-              </a>
-            </div>
-            <!-- <div
+                  <span class="text-[11px] font-bold text-[#5A746B]"
+                    >前往郵局官網查詢包裹</span
+                  >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#749D8E"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              </div>
+              <!-- <div
               v-if="order.status === 'packing' && order.tracking_code"
               class="px-5 py-4 bg-[#EFF6FF]/60 border-t border-[#D6E4F0]"
             >
@@ -586,9 +588,9 @@ function closeLiff() {
                 前往郵局查詢包裹 →
               </a>
             </div> -->
+            </div>
           </div>
         </div>
-      </div>
       </main>
     </div>
   </ClientOnly>

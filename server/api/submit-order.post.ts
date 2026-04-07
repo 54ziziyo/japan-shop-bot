@@ -264,7 +264,7 @@ export default defineEventHandler(async (event) => {
     await transporter.verify();
 
     const mailOptions = {
-      from: `"囉姆嚕代購" <${config.mailUser}>`,
+      from: `"洛姆代購" <${config.mailUser}>`,
       to: config.adminEmail,
       subject: `🔔 新訂單通知：${orderNo} - ${customerName}`,
       text: adminMsg,

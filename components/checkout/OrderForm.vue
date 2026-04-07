@@ -216,7 +216,11 @@ const copyAccount = () => {
       </div>
 
       <!-- 銀行轉帳：帳號末五碼 -->
-      <div v-if="form.paymentMethod === 'bank_transfer'" id="field-accountLast5" class="space-y-2">
+      <div
+        v-if="form.paymentMethod === 'bank_transfer'"
+        id="field-accountLast5"
+        class="space-y-2"
+      >
         <label
           class="text-[10px] font-bold text-[#A4B8B0] uppercase tracking-wider block"
         >
@@ -242,97 +246,94 @@ const copyAccount = () => {
         >
           {{ errors.accountLast5 }}
         </p>
-
-        <!-- 銀行轉帳資訊框 -->
-        <div
-          class="relative bg-red-50/80 border border-red-100 rounded-[2rem] p-5 cursor-pointer hover:bg-white hover:shadow-xl hover:shadow-red-500/5 transition-all duration-500 group overflow-hidden mt-5"
-          @click="copyAccount"
-        >
-          <div
-            class="absolute -top-10 -right-10 w-32 h-32 bg-red-100/40 rounded-full blur-3xl"
-          ></div>
-
-          <div
-            class="absolute top-4 right-4 flex items-center justify-center bg-white border border-red-100 w-9 h-9 rounded-xl text-red-500 shadow-sm group-hover:bg-red-500 group-hover:text-white group-hover:border-red-500 transition-all duration-300"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path
-                d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-              ></path>
-            </svg>
-          </div>
-
-          <div class="flex items-center gap-2 mb-3">
-            <p
-              class="text-sm font-black uppercase tracking-[0.2em] text-red-500"
-            >
-              ▍匯款資訊
-            </p>
-          </div>
-
-          <div class="space-y-4">
-            <div class="flex flex-col gap-2">
-              <span class="text-[10px] font-black text-red-300 tracking-wider"
-                >銀行名稱</span
-              >
-              <p
-                class="text-[14px] font-black text-red-800 tracking-tight leading-tight"
-              >
-                {{ BANK_NAME }} ({{ BANK_CODE }})
-              </p>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <span class="text-[10px] font-black text-red-300 tracking-wider"
-                >銀行戶名</span
-              >
-              <p
-                class="text-[14px] font-black text-red-800 tracking-tight leading-tight"
-              >
-                {{ BANK_ACCOUNT_NAME }}
-              </p>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <span class="text-[10px] font-black text-red-300 tracking-wider"
-                >匯款帳號</span
-              >
-              <div
-                class="w-full bg-white/60 border border-red-100 rounded-2xl py-3 flex flex-col items-center justify-center shadow-inner group-hover:border-red-300 transition-colors"
-              >
-                <span
-                  class="text-[20px] font-black font-mono tracking-[0.05em] text-red-800"
-                >
-                  {{ BANK_ACCOUNT }}
-                </span>
-                <span class="text-[9px] font-bold text-red-300"
-                  >點擊區域即可自動複製</span
-                >
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-red-100/50">
-            <p
-              class="text-[12px] font-bold text-red-600 text-center leading-relaxed"
-            >
-              ⚡ 訂單依據『匯款先後順序』安排出貨
-            </p>
-          </div>
-        </div>
       </div>
 
+      <!-- 銀行轉帳資訊框 -->
+      <div
+        class="relative bg-red-50/80 border border-red-100 rounded-[2rem] p-5 cursor-pointer hover:bg-white hover:shadow-xl hover:shadow-red-500/5 transition-all duration-500 group overflow-hidden mt-5"
+        @click="copyAccount"
+      >
+        <div
+          class="absolute -top-10 -right-10 w-32 h-32 bg-red-100/40 rounded-full blur-3xl"
+        ></div>
+
+        <div
+          class="absolute top-4 right-4 flex items-center justify-center bg-white border border-red-100 w-9 h-9 rounded-xl text-red-500 shadow-sm group-hover:bg-red-500 group-hover:text-white group-hover:border-red-500 transition-all duration-300"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path
+              d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+            ></path>
+          </svg>
+        </div>
+
+        <div class="flex items-center gap-2 mb-3">
+          <p class="text-sm font-black uppercase tracking-[0.2em] text-red-500">
+            ▍匯款資訊
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex flex-col gap-2">
+            <span class="text-[10px] font-black text-red-300 tracking-wider"
+              >銀行名稱</span
+            >
+            <p
+              class="text-[14px] font-black text-red-800 tracking-tight leading-tight"
+            >
+              {{ BANK_NAME }} ({{ BANK_CODE }})
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[10px] font-black text-red-300 tracking-wider"
+              >銀行戶名</span
+            >
+            <p
+              class="text-[14px] font-black text-red-800 tracking-tight leading-tight"
+            >
+              {{ BANK_ACCOUNT_NAME }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <span class="text-[10px] font-black text-red-300 tracking-wider"
+              >匯款帳號</span
+            >
+            <div
+              class="w-full bg-white/60 border border-red-100 rounded-2xl py-3 flex flex-col items-center justify-center shadow-inner group-hover:border-red-300 transition-colors"
+            >
+              <span
+                class="text-[20px] font-black font-mono tracking-[0.05em] text-red-800"
+              >
+                {{ BANK_ACCOUNT }}
+              </span>
+              <span class="text-[9px] font-bold text-red-300"
+                >點擊區域即可自動複製</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-red-100/50">
+          <p
+            class="text-[12px] font-bold text-red-600 text-center leading-relaxed"
+          >
+            ⚡ 訂單依據『匯款先後順序』安排出貨
+          </p>
+        </div>
+      </div>
       <div
         v-if="hasPromoItems"
         class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3"
