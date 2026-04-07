@@ -14,6 +14,12 @@ export const RSTAICHI_BLOCKED_SKUS = new Set([
   'rsp064',
   'rsp065',
   'rsa070',
+  'tsv001',
+  'nxp001',
+  'nxp007',
+  'rso012',
+  'rso013',
+  'rso016',
 ]);
 
 /** RsTaichi 安全帽型號前綴（需專人報價，不提供線上加購） */

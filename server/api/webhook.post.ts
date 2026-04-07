@@ -1,5 +1,11 @@
 // server/api/webhook.post.ts
-import { Client, WebhookEvent, Message, FlexMessage, FlexBubble } from '@line/bot-sdk';
+import {
+  Client,
+  WebhookEvent,
+  Message,
+  FlexMessage,
+  FlexBubble,
+} from '@line/bot-sdk';
 import { useSupabase } from '../utils/supabase';
 
 import { scrapeUniqlo } from '../utils/scrape/uniqlo';
@@ -7,13 +13,22 @@ import { scrapeRstaichi } from '../utils/scrape/rstaichi';
 import { scrapeGu } from '../utils/scrape/gu';
 import { scrapeKushitani } from '../utils/scrape/kushitani';
 import { getKushitaniCustomPrice } from '../utils/kushitaniPricing';
-import { detectBrand, extractRstaichiSku, isRstaichiBlocked } from '../utils/brandConfig';
+import {
+  detectBrand,
+  extractRstaichiSku,
+  isRstaichiBlocked,
+} from '../utils/brandConfig';
 import { parseJpy, jpyToTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
 import { showLoadingAnimation } from '../utils/line/helpers';
 import { buildShopCarousel } from '../utils/line/shopCarousel';
 import { FAQ_ANSWERS, buildFaqMenu } from '../utils/line/faq';
-import { buildUniqloCards, buildRstaichiCards, buildGuCards, buildKushitaniCards } from '../utils/line/cards';
+import {
+  buildUniqloCards,
+  buildRstaichiCards,
+  buildGuCards,
+  buildKushitaniCards,
+} from '../utils/line/cards';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -62,11 +77,16 @@ export default defineEventHandler(async (event) => {
             replyTokenUsed = true;
             return;
           } catch (err: any) {
-            const d = err?.originalError?.response?.data || err?.response?.data || {};
+            const d =
+              err?.originalError?.response?.data || err?.response?.data || {};
             const msg = [
               typeof d?.message === 'string' ? d.message : '',
-              ...(Array.isArray(d?.details) ? d.details.map((x: any) => x?.message || '') : []),
-            ].join(' ').toLowerCase();
+              ...(Array.isArray(d?.details)
+                ? d.details.map((x: any) => x?.message || '')
+                : []),
+            ]
+              .join(' ')
+              .toLowerCase();
             if (!msg.includes('invalid reply token')) throw err;
             replyTokenUsed = true;
             console.warn('⚠️ replyToken 無效，改用 pushMessage 發送');
@@ -86,7 +106,10 @@ export default defineEventHandler(async (event) => {
 
           // 檢查輪播是否過期（2 小時）
           const createdTs = data.get('ts');
-          if (createdTs && Date.now() - Number(createdTs) * 1000 > 2 * 60 * 60 * 1000) {
+          if (
+            createdTs &&
+            Date.now() - Number(createdTs) * 1000 > 2 * 60 * 60 * 1000
+          ) {
             await sendReplyOrPush({
               type: 'text',
               text: '⚠️ 此商品輪播已超過 2 小時，為確保價格與庫存是最新狀況，請重新貼上商品網址以取得最新資訊再加入購物車喔！',
@@ -136,7 +159,12 @@ export default defineEventHandler(async (event) => {
           const { data: existingItem } = await supabase
             .from('cart_items')
             .select('id, quantity')
-            .match({ user_id: userId, product_title: itemTitle, color: itemColor, size: itemSize })
+            .match({
+              user_id: userId,
+              product_title: itemTitle,
+              color: itemColor,
+              size: itemSize,
+            })
             .maybeSingle();
 
           let cartError = null;
@@ -169,19 +197,27 @@ export default defineEventHandler(async (event) => {
 
           if (cartError) {
             console.error('❌ Supabase 錯誤:', cartError.message);
-            await sendReplyOrPush({ type: 'text', text: `抱歉，加入失敗。原因：${cartError.message}` });
+            await sendReplyOrPush({
+              type: 'text',
+              text: `抱歉，加入失敗。原因：${cartError.message}`,
+            });
           } else {
-            const qtyText = existingItem ? `（已累計 ${(existingItem.quantity || 1) + 1} 件）` : '';
+            const qtyText = existingItem
+              ? `（已累計 ${(existingItem.quantity || 1) + 1} 件）`
+              : '';
             const codeText = productCode ? `\n代號：${productCode}` : '';
             let promoWarning = '';
             if (data.get('pm') === '1') {
               const pdTs = data.get('pd');
               if (pdTs) {
-                const twDate = new Date(Number(pdTs) * 1000 + 7 * 60 * 60 * 1000);
+                const twDate = new Date(
+                  Number(pdTs) * 1000 + 7 * 60 * 60 * 1000,
+                );
                 const twTimeStr = `${twDate.getUTCMonth() + 1}/${twDate.getUTCDate()} ${String(twDate.getUTCHours()).padStart(2, '0')}:${String(twDate.getUTCMinutes()).padStart(2, '0')}`;
                 promoWarning = `\n\n⏰ 此商品為期間限定特價，台灣截止時間為 ${twTimeStr}。\n系統每日採購時間約為 22:00，請盡早提交訂單以確保特價。如遇價格變動或庫存完售，將另行通知。`;
               } else {
-                promoWarning = '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。';
+                promoWarning =
+                  '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。';
               }
             }
             const jpyRate = await getRate();
@@ -189,7 +225,9 @@ export default defineEventHandler(async (event) => {
             const twdItemPrice = isCustomPrice
               ? parseInt(itemPrice.replace(/[^\d]/g, ''), 10)
               : jpyToTwd(parseJpy(itemPrice), jpyRate);
-            const customNote = isCustomPrice ? '\n（此商品為自訂售價，含運直送）' : '';
+            const customNote = isCustomPrice
+              ? '\n（此商品為自訂售價，含運直送）'
+              : '';
             await sendReplyOrPush({
               type: 'text',
               text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n價格：NT$${twdItemPrice.toLocaleString()}${customNote}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
@@ -212,12 +250,19 @@ export default defineEventHandler(async (event) => {
       }
 
       // ── 2. 文字訊息路由 ──
-      if (webhookEvent.type !== 'message' || webhookEvent.message.type !== 'text') return;
+      if (
+        webhookEvent.type !== 'message' ||
+        webhookEvent.message.type !== 'text'
+      )
+        return;
       const userText = webhookEvent.message.text.trim();
 
       // 查 ID
       if (userText === '查ID') {
-        await sendReplyOrPush({ type: 'text', text: `您的 User ID 是：\n${userId}` });
+        await sendReplyOrPush({
+          type: 'text',
+          text: `您的 User ID 是：\n${userId}`,
+        });
         return;
       }
 
@@ -245,7 +290,10 @@ export default defineEventHandler(async (event) => {
       const brand = detectBrand(pastedUrl);
 
       if (!brand) {
-        if (pastedUrl.includes('uniqlo.com') || pastedUrl.includes('gu-global.com')) {
+        if (
+          pastedUrl.includes('uniqlo.com') ||
+          pastedUrl.includes('gu-global.com')
+        ) {
           await sendReplyOrPush({
             type: 'text',
             text: '⚠️ 請貼上「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://www.uniqlo.com/jp/ja/products/E469077-000/00\nhttps://www.gu-global.com/jp/ja/products/E358741-000/00\n\n❌ 首頁或分類頁無法使用\n\n💡 在 Uniqlo/GU 官網找到喜歡的商品 → 點進商品頁 → 複製網址 → 貼到這裡即可！',
@@ -279,7 +327,7 @@ export default defineEventHandler(async (event) => {
           if (blocked === 'helmet') {
             await sendReplyOrPush({
               type: 'text',
-              text: '🪖 安全帽類商品因規格與尺寸較為特殊，目前不提供線上直接加入購物車。\n\n如需購買安全帽，請直接聯繫專人客服為您報價與處理！\n\n👉 請在聊天室輸入「🙋‍♂️」+想要的型號，專員會儘速回覆您 😊',
+              text: '安全帽類商品因規格與尺寸較為特殊，目前不提供線上直接加入購物車。\n\n如需購買安全帽，請直接聯繫專人客服為您報價與處理！\n\n專人客服 👉 https://lin.ee/BIvxV5C \n\n專員會儘速回覆您 😊',
             });
             return;
           }
@@ -287,7 +335,8 @@ export default defineEventHandler(async (event) => {
       }
 
       // Loading animation + 抓取商品
-      if (userId) await showLoadingAnimation(userId, config.line.channelAccessToken, 20);
+      if (userId)
+        await showLoadingAnimation(userId, config.line.channelAccessToken, 20);
 
       try {
         console.log(`🕷️ [${brand}] 收到網址：${pastedUrl}`);
@@ -322,7 +371,12 @@ export default defineEventHandler(async (event) => {
           if (!productData) throw new Error('無法識別的 Kushitani 商品資料');
           productTitle = productData.title;
           const customPrice = getKushitaniCustomPrice(productData.modelNumber);
-          bubbles = buildKushitaniCards(productData, jpyRate, pastedUrl, customPrice);
+          bubbles = buildKushitaniCards(
+            productData,
+            jpyRate,
+            pastedUrl,
+            customPrice,
+          );
         }
 
         if (!bubbles.length) throw new Error('未取得任何商品變體');
@@ -339,7 +393,10 @@ export default defineEventHandler(async (event) => {
         if (d) console.error('📌 LINE API 錯誤細節:', JSON.stringify(d));
 
         try {
-          await sendReplyOrPush({ type: 'text', text: '抱歉，讀取網頁發生錯誤 > <' });
+          await sendReplyOrPush({
+            type: 'text',
+            text: '抱歉，讀取網頁發生錯誤 > <',
+          });
         } catch (replyErr: any) {
           console.error('❌ 錯誤回覆也失敗:', replyErr?.message || replyErr);
         }

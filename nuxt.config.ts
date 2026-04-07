@@ -10,6 +10,18 @@ export default defineNuxtConfig({
   // 啟用開發者工具
   devtools: { enabled: true },
 
+  // ── HTML head：viewport ──
+  app: {
+    head: {
+      meta: [
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1',
+        },
+      ],
+    },
+  },
+
   // 環境變數與全域設定
   runtimeConfig: {
     // ✅ 這裡直接對應 Vercel 上的 Key 名稱

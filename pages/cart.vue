@@ -185,7 +185,7 @@ const handleReload = () => {
 
 <template>
   <ClientOnly>
-    <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
+    <div class="h-dvh flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased overflow-hidden">
       <AppNavbar title="購物清單">
         <template #subtitle>
           <div class="flex items-center gap-2 mb-2 h-6">
@@ -212,7 +212,8 @@ const handleReload = () => {
         </template>
       </AppNavbar>
 
-      <div class="max-w-md mx-auto px-6 pb-60">
+      <main class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="max-w-md mx-auto px-6 pb-6">
         <div
           v-if="!loading && items.length > 0"
           class="bg-[#E8F0E9] border border-[#D1E2D5] rounded-3xl px-5 py-3 mb-8 mt-6"
@@ -330,6 +331,7 @@ const handleReload = () => {
           </button>
         </div>
       </div>
+      </main>
 
       <AppBottomBar
         v-if="items.length > 0"

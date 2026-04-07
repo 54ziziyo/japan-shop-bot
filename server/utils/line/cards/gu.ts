@@ -14,16 +14,20 @@ export function buildGuCards(
       .replace(/^https?:\/\/image\.uniqlo\.com\//, '')
       .split('?')[0];
 
-    const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
+    const sizeCount = v.sizes.length;
+    const useTwoCol = sizeCount > 8;
+
+    const makeSizeBtn = (s: any): FlexComponent => {
       const compactData = `action=buy&brand=gu&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}&ts=${Math.floor(Date.now() / 1000)}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
       const themeColor = s.isStock ? '#ffffff' : '#888888';
       return {
         type: 'box',
         layout: 'vertical',
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         height: '32px',
-        margin: 'sm',
+        ...(useTwoCol ? {} : { margin: 'sm' }),
         cornerRadius: 'sm',
         borderWidth: '1px',
         borderColor: s.isStock ? themeColor : '#00000000',
@@ -45,8 +49,51 @@ export function buildGuCards(
             size: 'xxs',
           },
         ],
-      };
-    });
+      } as FlexComponent;
+    };
+
+    const sizesBox: FlexComponent = useTwoCol
+      ? {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          contents: Array.from(
+            { length: Math.ceil(v.sizes.length / 2) },
+            (_, i): FlexComponent => ({
+              type: 'box',
+              layout: 'horizontal',
+              spacing: 'xs',
+              margin: 'xs',
+              contents: [
+                makeSizeBtn(v.sizes[i * 2]),
+                i * 2 + 1 < v.sizes.length
+                  ? makeSizeBtn(v.sizes[i * 2 + 1])
+                  : ({
+                      type: 'box',
+                      layout: 'vertical',
+                      flex: 1,
+                      contents: [],
+                    } as FlexComponent),
+              ],
+            }),
+          ),
+        }
+      : {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          contents: v.sizes.map(makeSizeBtn),
+        };
+
+    const aspectRatio = useTwoCol
+      ? sizeCount <= 16
+        ? '9:16'
+        : '1:2'
+      : sizeCount <= 7
+        ? '3:4'
+        : sizeCount <= 11
+          ? '9:16'
+          : '1:2';
 
     return {
       type: 'bubble',
@@ -60,7 +107,7 @@ export function buildGuCards(
             type: 'image',
             url: safeImageUrl,
             size: 'full',
-            aspectRatio: '3:4',
+            aspectRatio,
             aspectMode: 'cover',
           },
           {
@@ -96,12 +143,7 @@ export function buildGuCards(
                 color: '#dddddd',
                 margin: 'xs',
               },
-              {
-                type: 'box',
-                layout: 'vertical',
-                margin: 'md',
-                contents: sizeButtons.slice(0, 7),
-              },
+              sizesBox,
             ],
           },
         ],

@@ -181,7 +181,7 @@ function closeLiff() {
 
 <template>
   <ClientOnly>
-    <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
+    <div class="h-dvh flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased overflow-hidden">
       <!-- ── Navbar ── -->
       <AppNavbar title="訂單查詢">
         <template #subtitle>
@@ -203,7 +203,8 @@ function closeLiff() {
         </template>
       </AppNavbar>
 
-      <div class="max-w-md mx-auto px-6 pb-24">
+      <main class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="max-w-md mx-auto px-6 pb-6">
         <!-- ── 載入中 ── -->
         <AppLoading v-if="loading" />
 
@@ -588,6 +589,7 @@ function closeLiff() {
           </div>
         </div>
       </div>
+      </main>
     </div>
   </ClientOnly>
 </template>

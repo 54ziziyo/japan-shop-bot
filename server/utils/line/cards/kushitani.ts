@@ -24,7 +24,7 @@ const JP_COLOR_MAP: Record<string, string> = {
   シルバー: '銀色',
   ゴールド: '金色',
   カーキ: '卡其',
-  
+
   // 變化色與組合色
   オリーブ: '橄欖綠',
   アイスグレー: '冰灰色',
@@ -36,11 +36,11 @@ const JP_COLOR_MAP: Record<string, string> = {
   タン: '棕褐色',
   サックス: '淡藍色',
   ダークブラウン: '深棕色',
-  
+
   // 雙色組合
   'ブルー/ブラック': '藍黑雙色',
   'ホワイト/ブラック': '黑白雙色',
-  'ホワイトネイビー': '白深藍',
+  ホワイトネイビー: '白深藍',
   'シルバー/ブラック': '銀黑雙色',
   'オレンジ/ブラック': '橘黑雙色',
   'ホワイト/ブルー': '白藍雙色',
@@ -90,7 +90,10 @@ export function buildKushitaniCards(
         ? `kushitani|0`
         : `kushitani|${productData.weightGrams}`;
 
-    const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
+    const sizeCount = v.sizes.length;
+    const useTwoCol = sizeCount > 8;
+
+    const makeSizeBtn = (s: any): FlexComponent => {
       const baseData = `action=buy&brand=kushitani&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(postbackPrice)}&code=${productData.pid}&img=${encodeURIComponent(imgCompact)}&cat=${catValue}&ts=${Math.floor(Date.now() / 1000)}${hasCustom ? '&cp=1' : ''}`;
       // LINE postback 上限 300 字元 — 先組完整版，超長就逐字截短（含省略號）
       let titleSlice = productData.title;
@@ -104,10 +107,11 @@ export function buildKushitaniCards(
       return {
         type: 'box',
         layout: 'vertical',
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         height: '32px',
-        margin: 'sm',
+        ...(useTwoCol ? {} : { margin: 'sm' }),
         cornerRadius: 'sm',
         borderWidth: '1px',
         borderColor: s.isStock ? themeColor : '#00000000',
@@ -129,12 +133,51 @@ export function buildKushitaniCards(
             size: 'xxs',
           },
         ],
-      };
-    });
+      } as FlexComponent;
+    };
 
-    const sizeCount = v.sizes.length;
-    const aspectRatio =
-      sizeCount <= 7 ? '3:4' : sizeCount <= 11 ? '9:16' : '1:2';
+    const sizesBox: FlexComponent = useTwoCol
+      ? {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          contents: Array.from(
+            { length: Math.ceil(v.sizes.length / 2) },
+            (_, i): FlexComponent => ({
+              type: 'box',
+              layout: 'horizontal',
+              spacing: 'xs',
+              margin: 'xs',
+              contents: [
+                makeSizeBtn(v.sizes[i * 2]),
+                i * 2 + 1 < v.sizes.length
+                  ? makeSizeBtn(v.sizes[i * 2 + 1])
+                  : ({
+                      type: 'box',
+                      layout: 'vertical',
+                      flex: 1,
+                      contents: [],
+                    } as FlexComponent),
+              ],
+            }),
+          ),
+        }
+      : {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'md',
+          contents: v.sizes.map(makeSizeBtn),
+        };
+
+    const aspectRatio = useTwoCol
+      ? sizeCount <= 16
+        ? '9:16'
+        : '1:2'
+      : sizeCount <= 7
+        ? '3:4'
+        : sizeCount <= 11
+          ? '9:16'
+          : '1:2';
 
     return {
       type: 'bubble',
@@ -197,12 +240,7 @@ export function buildKushitaniCards(
                 color: '#cccccc',
                 margin: 'xs',
               },
-              {
-                type: 'box',
-                layout: 'vertical',
-                margin: 'md',
-                contents: sizeButtons,
-              },
+              sizesBox,
             ],
           },
         ],

@@ -545,7 +545,7 @@ onMounted(async () => {
 
 <template>
   <ClientOnly>
-    <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
+    <div class="h-dvh flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased overflow-hidden">
       <!-- Navigation -->
       <AppNavbar title="訂單確認">
         <template #subtitle>
@@ -579,7 +579,8 @@ onMounted(async () => {
         </template>
       </AppNavbar>
 
-      <div class="max-w-md mx-auto px-6 pb-52">
+      <main class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="max-w-md mx-auto px-6 pb-6">
         <!-- Loading -->
         <AppLoading v-if="pageLoading" />
 
@@ -671,6 +672,7 @@ onMounted(async () => {
           </template>
         </template>
       </div>
+      </main>
 
       <!-- Fixed submit button -->
       <AppBottomBar
@@ -710,7 +712,7 @@ onMounted(async () => {
             <li>
               物流時效：商品皆由日本空運回台，正常現貨狀況約 7-14
               個工作天抵台，若遇海關查驗或物流突發狀況，最長需等候 30
-              個工作天，急單請斟酌下單。
+              個工作天，急單請聯繫專人客服 👉 https://lin.ee/BIvxV5C
             </li>
             <li>
               代購性質：本服務屬「客製化給付」，下單後即進入採購流程，不適用 7

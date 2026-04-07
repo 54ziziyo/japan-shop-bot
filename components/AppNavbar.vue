@@ -6,7 +6,7 @@ defineProps({
 
 <template>
   <nav
-    class="sticky top-0 z-30 bg-[#F4F9F5]/70 backdrop-blur-xl p-6 flex items-end justify-between border-b border-[#E8F0E9]"
+    class="flex-shrink-0 z-30 bg-[#F4F9F5]/70 backdrop-blur-xl p-6 flex items-end justify-between border-b border-[#E8F0E9]"
   >
     <div>
       <slot name="subtitle" />
