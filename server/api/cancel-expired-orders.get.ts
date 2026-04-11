@@ -4,8 +4,8 @@ import { useSupabase } from '../utils/supabase';
 import { updateOrderStatusInSheet } from '../utils/googleSheets';
 
 // ⏱️ 逾期門檻（毫秒）
-// const EXPIRE_MS = 3 * 24 * 60 * 60 * 1000; // ✅ 正式：3 天
-const EXPIRE_MS = 1 * 60 * 1000; // 🔧 測試中：1 分鐘
+const EXPIRE_MS = 3 * 24 * 60 * 60 * 1000; // ✅ 正式：3 天
+// const EXPIRE_MS = 1 * 60 * 1000; // 🔧 測試中：1 分鐘
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
