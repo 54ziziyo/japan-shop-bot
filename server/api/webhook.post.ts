@@ -19,6 +19,8 @@ import {
   detectBrand,
   extractRstaichiSku,
   isRstaichiBlocked,
+  isKushitaniBlocked,
+  extractKushitaniPid,
 } from '../utils/brandConfig';
 import { parseJpy, jpyToTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
@@ -372,6 +374,18 @@ export default defineEventHandler(async (event) => {
             });
             return;
           }
+        }
+      }
+
+      // Kushitani 禁售品檢查
+      if (brand === 'kushitani') {
+        const pid = extractKushitaniPid(pastedUrl);
+        if (pid && isKushitaniBlocked(pid)) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: '🚫 很抱歉，此商品屬於國際郵寄運送禁止品項（含滑塊、護具配件等），無法提供代購服務。\n\n如有疑問，歡迎聯繫專人客服 🙏',
+          });
+          return;
         }
       }
 

@@ -332,6 +332,87 @@ export function getShippingTwd(
 /** 固定代購服務費（台幣） */
 export const SERVICE_FEE_TWD = 0;
 
+// ── 日本國內運費 ──
+
+/** BAPE / FR2：每個品牌固定收 ¥400 日本國內運費 */
+const DOMESTIC_FLAT_FEE_JPY = 400;
+/** UNIQLO / GU：品牌訂單未滿此門檻(日幣)時，加收日本國內運費 */
+const DOMESTIC_FREE_THRESHOLD_JPY = 4990;
+/** UNIQLO / GU：未達門檻時的日本國內運費 */
+const DOMESTIC_THRESHOLD_FEE_JPY = 500;
+
+export interface DomesticShippingResult {
+  totalJpy: number;
+  totalTwd: number;
+  /** 逐品牌明細（方便 debug / 顯示） */
+  details: { brand: string; feeJpy: number }[];
+}
+
+/**
+ * 計算日本國內運費
+ * - BAPE / FR2：不論金額，每個有買到的品牌固定 ¥400
+ * - UNIQLO / GU：該品牌日幣商品總額 < ¥4990 時才收 ¥500
+ */
+export function getDomesticShippingJpy(
+  items: CartItemForQuote[],
+  rate?: number,
+): DomesticShippingResult {
+  // 按品牌分組統計日幣總額
+  const brandJpyTotals: Record<string, number> = {};
+  const brandPresent = new Set<string>();
+
+  for (const item of items) {
+    const cat = (item.category || '').toLowerCase();
+    const brand = cat.split('|')[0] || '';
+    if (!brand) continue;
+
+    brandPresent.add(brand);
+
+    // 統計日幣總額（用於 Uniqlo/GU 門檻判斷）
+    if (!item.price.startsWith('NT$')) {
+      const jpy = parseJpy(item.price) * (item.quantity || 1);
+      brandJpyTotals[brand] = (brandJpyTotals[brand] || 0) + jpy;
+    }
+  }
+
+  const details: { brand: string; feeJpy: number }[] = [];
+  let totalJpy = 0;
+
+  // BAPE：有買就收 ¥400
+  if (brandPresent.has('bape')) {
+    details.push({ brand: 'bape', feeJpy: DOMESTIC_FLAT_FEE_JPY });
+    totalJpy += DOMESTIC_FLAT_FEE_JPY;
+  }
+  // FR2：有買就收 ¥400
+  if (brandPresent.has('fr2')) {
+    details.push({ brand: 'fr2', feeJpy: DOMESTIC_FLAT_FEE_JPY });
+    totalJpy += DOMESTIC_FLAT_FEE_JPY;
+  }
+  // UNIQLO：未滿 ¥4990 收 ¥500
+  if (brandPresent.has('uniqlo')) {
+    const jpyTotal = brandJpyTotals['uniqlo'] || 0;
+    if (jpyTotal < DOMESTIC_FREE_THRESHOLD_JPY) {
+      details.push({ brand: 'uniqlo', feeJpy: DOMESTIC_THRESHOLD_FEE_JPY });
+      totalJpy += DOMESTIC_THRESHOLD_FEE_JPY;
+    }
+  }
+  // GU：未滿 ¥4990 收 ¥500
+  if (brandPresent.has('gu')) {
+    const jpyTotal = brandJpyTotals['gu'] || 0;
+    if (jpyTotal < DOMESTIC_FREE_THRESHOLD_JPY) {
+      details.push({ brand: 'gu', feeJpy: DOMESTIC_THRESHOLD_FEE_JPY });
+      totalJpy += DOMESTIC_THRESHOLD_FEE_JPY;
+    }
+  }
+
+  const baseRate = rate ?? JPY_SELL_RATE;
+  return {
+    totalJpy,
+    totalTwd: Math.round(totalJpy * baseRate),
+    details,
+  };
+}
+
 // ── 完整報價 ──
 
 export interface CartItemForQuote {
@@ -347,6 +428,8 @@ export interface QuoteResult {
   shippingJpy: number;
   shippingTwd: number;
   shippingMethod: string;
+  domesticShippingJpy: number;
+  domesticShippingTwd: number;
   serviceFeeTwd: number;
   grandTotalTwd: number;
   categoryCounts: Record<string, number>;
@@ -399,6 +482,8 @@ export function calculateQuote(
     }),
   );
 
+  const domestic = getDomesticShippingJpy(items, rate);
+
   return {
     subtotalTwd,
     subtotalJpy,
@@ -406,8 +491,11 @@ export function calculateQuote(
     shippingJpy: shipping.costJpy,
     shippingTwd: shipping.costTwd,
     shippingMethod: shipping.method,
+    domesticShippingJpy: domestic.totalJpy,
+    domesticShippingTwd: domestic.totalTwd,
     serviceFeeTwd: SERVICE_FEE_TWD,
-    grandTotalTwd: subtotalTwd + shipping.costTwd + SERVICE_FEE_TWD,
+    grandTotalTwd:
+      subtotalTwd + shipping.costTwd + domestic.totalTwd + SERVICE_FEE_TWD,
     categoryCounts,
   };
 }

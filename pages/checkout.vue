@@ -215,9 +215,24 @@ const shippingInfo = computed(() =>
   getShippingTwd(totalWeight.value, jpyRate.value, hasRstaichiItems.value),
 );
 
+// 日本國內運費
+const domesticShipping = computed(() => {
+  const itemsForCalc = validItems.value.map((item) => ({
+    price: item.displayPrice || '',
+    quantity: item.quantity || 1,
+    category: item.category || '',
+  }));
+  return getDomesticShippingJpy(itemsForCalc, jpyRate.value);
+});
+
+// 國際運費 + 日本國內運費
+const totalShippingTwd = computed(
+  () => shippingInfo.value.costTwd + domesticShipping.value.totalTwd,
+);
+
 // 基礎金額（商品 + 運費 + 基本服務費）
 const baseSubtotal = computed(
-  () => subtotalTwd.value + shippingInfo.value.costTwd + SERVICE_FEE_TWD,
+  () => subtotalTwd.value + totalShippingTwd.value + SERVICE_FEE_TWD,
 );
 
 // 隱含 3% 手續費（不明文，預設加在服務費）
@@ -230,8 +245,7 @@ const displayServiceFee = computed(
 
 // 稅前小計（含隱含 3%）
 const preTaxWithSurcharge = computed(
-  () =>
-    subtotalTwd.value + shippingInfo.value.costTwd + displayServiceFee.value,
+  () => subtotalTwd.value + totalShippingTwd.value + displayServiceFee.value,
 );
 
 // 銀行轉帳時，稅前小計需扣掉 3% 優惠
@@ -412,7 +426,7 @@ const submitOrder = async () => {
         items: orderItems,
         totalJpy: subtotalJpy.value,
         subtotalTwd: subtotalTwd.value,
-        shippingTwd: shippingInfo.value.costTwd,
+        shippingTwd: totalShippingTwd.value,
         shippingMethod: shippingInfo.value.method,
         serviceFeeTwd: displayServiceFee.value,
         discountTwd:
@@ -580,98 +594,100 @@ onMounted(async () => {
       </AppNavbar>
 
       <main class="flex-1">
-      <div class="max-w-md mx-auto px-6 pb-6">
-        <!-- Loading -->
-        <AppLoading v-if="pageLoading" />
+        <div class="max-w-md mx-auto px-6 pb-6">
+          <!-- Loading -->
+          <AppLoading v-if="pageLoading" />
 
-        <!-- ✅ Success screen -->
-        <CheckoutSuccess
-          v-else-if="orderSubmitted"
-          :order-no="orderNo"
-          :payment-method="submittedPaymentMethod"
-          :total="submittedTotal"
-          @close="closeLiff"
-        />
+          <!-- ✅ Success screen -->
+          <CheckoutSuccess
+            v-else-if="orderSubmitted"
+            :order-no="orderNo"
+            :payment-method="submittedPaymentMethod"
+            :total="submittedTotal"
+            @close="closeLiff"
+          />
 
-        <!-- Main content -->
-        <template v-else>
-          <!-- 🔄 Sync banner -->
-          <div
-            v-if="syncBanner"
-            class="bg-[#E8F0E9] border border-[#D1E2D5] rounded-3xl px-5 py-3 mb-6 mt-6"
-          >
+          <!-- Main content -->
+          <template v-else>
+            <!-- 🔄 Sync banner -->
+            <div
+              v-if="syncBanner"
+              class="bg-[#E8F0E9] border border-[#D1E2D5] rounded-3xl px-5 py-3 mb-6 mt-6"
+            >
+              <p
+                class="text-[11px] text-[#5A746B] font-medium leading-relaxed whitespace-pre-line flex items-start gap-2"
+              >
+                <span>{{ syncBanner }}</span>
+              </p>
+            </div>
+
+            <!-- ⚠️ Sync failed warning -->
+            <div
+              v-if="syncFailed"
+              class="bg-amber-50 border border-amber-200 rounded-3xl px-5 py-3 mb-6 mt-6"
+            >
+              <p class="text-[11px] text-amber-700 font-medium leading-relaxed">
+                ⚠️
+                商品同步失敗，顯示的價格可能不是最新的。提交後我們會再次確認。
+              </p>
+            </div>
+
+            <!-- Items section header -->
             <p
-              class="text-[11px] text-[#5A746B] font-medium leading-relaxed whitespace-pre-line flex items-start gap-2"
+              class="text-[10px] font-black tracking-[0.3em] text-right text-[#A4B8B0] uppercase mb-3 mt-6"
             >
-              <span>{{ syncBanner }}</span>
+              總共 {{ validItems.reduce((s, i) => s + (i.quantity || 1), 0)
+              }}{{ soldOutCount > 0 ? ` · ${soldOutCount} 已售完` : '' }} 件商品
             </p>
-          </div>
 
-          <!-- ⚠️ Sync failed warning -->
-          <div
-            v-if="syncFailed"
-            class="bg-amber-50 border border-amber-200 rounded-3xl px-5 py-3 mb-6 mt-6"
-          >
-            <p class="text-[11px] text-amber-700 font-medium leading-relaxed">
-              ⚠️ 商品同步失敗，顯示的價格可能不是最新的。提交後我們會再次確認。
-            </p>
-          </div>
+            <!-- Item cards -->
+            <div class="space-y-3 mb-8">
+              <CheckoutItemCard
+                v-for="item in annotatedItems"
+                :key="item.id"
+                :item="item"
+                :jpy-rate="jpyRate"
+              />
+            </div>
 
-          <!-- Items section header -->
-          <p
-            class="text-[10px] font-black tracking-[0.3em] text-right text-[#A4B8B0] uppercase mb-3 mt-6"
-          >
-            總共 {{ validItems.reduce((s, i) => s + (i.quantity || 1), 0)
-            }}{{ soldOutCount > 0 ? ` · ${soldOutCount} 已售完` : '' }} 件商品
-          </p>
+            <!-- Empty state: all sold out -->
+            <div v-if="validItems.length === 0" class="text-center py-8">
+              <p class="text-[#A4B8B0] text-sm mb-4">沒有訂單唷～</p>
+              <button
+                class="text-xs font-bold text-[#749D8E] hover:text-[#5A746B] transition-colors border-b-2 border-[#749D8E] pb-1 uppercase tracking-widest"
+                @click="closeLiff()"
+              >
+                返回官方帳號
+              </button>
+            </div>
 
-          <!-- Item cards -->
-          <div class="space-y-3 mb-8">
-            <CheckoutItemCard
-              v-for="item in annotatedItems"
-              :key="item.id"
-              :item="item"
-              :jpy-rate="jpyRate"
-            />
-          </div>
+            <!-- Subtotal & Form -->
+            <template v-if="validItems.length > 0">
+              <CheckoutPriceSummary
+                :subtotal-twd="subtotalTwd"
+                :shipping-info="shippingInfo"
+                :total-weight="totalWeight"
+                :domestic-shipping="domesticShipping"
+                :display-service-fee="displayServiceFee"
+                :hidden-surcharge="hiddenSurcharge"
+                :tax-amount="taxAmount"
+                :display-total="displayTotal"
+                :payment-method="form.paymentMethod"
+                :valid-item-count="
+                  validItems.reduce((s, i) => s + (i.quantity || 1), 0)
+                "
+              />
 
-          <!-- Empty state: all sold out -->
-          <div v-if="validItems.length === 0" class="text-center py-8">
-            <p class="text-[#A4B8B0] text-sm mb-4">沒有訂單唷～</p>
-            <button
-              class="text-xs font-bold text-[#749D8E] hover:text-[#5A746B] transition-colors border-b-2 border-[#749D8E] pb-1 uppercase tracking-widest"
-              @click="closeLiff()"
-            >
-              返回官方帳號
-            </button>
-          </div>
-
-          <!-- Subtotal & Form -->
-          <template v-if="validItems.length > 0">
-            <CheckoutPriceSummary
-              :subtotal-twd="subtotalTwd"
-              :shipping-info="shippingInfo"
-              :total-weight="totalWeight"
-              :display-service-fee="displayServiceFee"
-              :hidden-surcharge="hiddenSurcharge"
-              :tax-amount="taxAmount"
-              :display-total="displayTotal"
-              :payment-method="form.paymentMethod"
-              :valid-item-count="
-                validItems.reduce((s, i) => s + (i.quantity || 1), 0)
-              "
-            />
-
-            <CheckoutOrderForm
-              :form="form"
-              :errors="errors"
-              :line-name="lineName"
-              :hidden-surcharge="hiddenSurcharge"
-              :has-promo-items="hasPromoItems"
-            />
+              <CheckoutOrderForm
+                :form="form"
+                :errors="errors"
+                :line-name="lineName"
+                :hidden-surcharge="hiddenSurcharge"
+                :has-promo-items="hasPromoItems"
+              />
+            </template>
           </template>
-        </template>
-      </div>
+        </div>
       </main>
 
       <!-- Fixed submit button -->
