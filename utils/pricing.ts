@@ -18,9 +18,14 @@ export {
   getCategoryWeight,
   getCategoryLabel,
   getShippingTwd,
+  getDomesticShippingJpy,
   SERVICE_FEE_TWD,
   calculateQuote,
 } from '#shared/shipping';
 
 // 型別
-export type { CartItemForQuote, QuoteResult } from '#shared/shipping';
+export type {
+  CartItemForQuote,
+  QuoteResult,
+  DomesticShippingResult,
+} from '#shared/shipping';

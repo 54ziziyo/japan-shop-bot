@@ -3,6 +3,10 @@ defineProps({
   subtotalTwd: { type: Number, default: 0 },
   shippingInfo: { type: Object, required: true },
   totalWeight: { type: Number, default: 0 },
+  domesticShipping: {
+    type: Object,
+    default: () => ({ totalJpy: 0, totalTwd: 0, details: [] }),
+  },
   displayServiceFee: { type: Number, default: 0 },
   hiddenSurcharge: { type: Number, default: 0 },
   taxAmount: { type: Number, default: 0 },
@@ -10,6 +14,13 @@ defineProps({
   paymentMethod: { type: String, default: '' },
   validItemCount: { type: Number, default: 0 },
 });
+
+const BRAND_LABELS = {
+  bape: 'BAPE',
+  fr2: 'FR2',
+  uniqlo: 'UNIQLO',
+  gu: 'GU',
+};
 </script>
 
 <template>
@@ -32,7 +43,7 @@ defineProps({
       <!-- 運費 -->
       <div class="flex justify-between items-center">
         <span class="text-[11px] text-[#749D8E] font-semibold">
-          運費
+          國際運費
           <span class="text-[9px] text-[#A4B8B0] ml-1"
             >{{ shippingInfo.method }} ·
             {{ totalWeight.toLocaleString() }}g</span
@@ -41,6 +52,23 @@ defineProps({
 
         <span class="text-sm font-bold text-[#5A746B]"
           >NT${{ shippingInfo.costTwd.toLocaleString() }}</span
+        >
+      </div>
+      <!-- 日本國內運費 -->
+      <div
+        v-if="domesticShipping.totalTwd > 0"
+        class="flex justify-between items-center"
+      >
+        <span class="text-[11px] text-[#749D8E] font-semibold">
+          日本國內運費
+          <span class="text-[9px] text-[#A4B8B0] ml-1">{{
+            domesticShipping.details
+              .map((d) => BRAND_LABELS[d.brand] || d.brand)
+              .join('＋')
+          }}</span>
+        </span>
+        <span class="text-sm font-bold text-[#5A746B]"
+          >NT${{ domesticShipping.totalTwd.toLocaleString() }}</span
         >
       </div>
       <!-- 5% 營業稅 -->

@@ -3,7 +3,13 @@
 // ============================================================
 
 /** 品牌識別碼 */
-export type BrandId = 'uniqlo' | 'gu' | 'rstaichi' | 'kushitani' | 'fr2' | 'bape';
+export type BrandId =
+  | 'uniqlo'
+  | 'gu'
+  | 'rstaichi'
+  | 'kushitani'
+  | 'fr2'
+  | 'bape';
 
 /** 禁止販售的 RsTaichi 商品（含電池、酒精、油類、液體等國際郵寄違禁品） */
 export const RSTAICHI_BLOCKED_SKUS = new Set([
@@ -25,6 +31,18 @@ export const RSTAICHI_BLOCKED_SKUS = new Set([
 /** RsTaichi 安全帽型號前綴（需專人報價，不提供線上加購） */
 export const RSTAICHI_HELMET_PREFIXES = ['hjh', 'hja', 'hjp'];
 
+/** 禁止販售的 Kushitani 商品（含電池、酒精、油類、液體等國際郵寄違禁品） */
+export const KUSHITANI_BLOCKED_PIDS = new Set([
+  'k-8226',
+  'k-8227',
+  'k-8228',
+  'k-8229',
+  'k-8230',
+  'k-8231',
+  'k-8232',
+  'ex-4233',
+]);
+
 /**
  * 從 URL 辨識品牌
  * @returns BrandId 或 null（不支援的品牌）
@@ -38,8 +56,7 @@ export function detectBrand(url: string): BrandId | null {
     return 'rstaichi';
   if (/(?:www\.)?kushitanionline\.com\/.*[?&]pid=\d+/i.test(url))
     return 'kushitani';
-  if (/(?:www\.)?fr2\.tokyo\/.*products\/[a-z0-9-]+/i.test(url))
-    return 'fr2';
+  if (/(?:www\.)?fr2\.tokyo\/.*products\/[a-z0-9-]+/i.test(url)) return 'fr2';
   if (/(?:www\.)?jp\.bape\.com\/.*products\/[a-z0-9-]+/i.test(url))
     return 'bape';
   return null;
@@ -90,4 +107,11 @@ export function isRstaichiBlocked(sku: string): 'prohibited' | 'helmet' | null {
     if (lower.startsWith(prefix)) return 'helmet';
   }
   return null;
+}
+
+/**
+ * 檢查 Kushitani 商品是否為禁售品
+ */
+export function isKushitaniBlocked(pid: string): boolean {
+  return KUSHITANI_BLOCKED_PIDS.has(pid.toLowerCase());
 }
