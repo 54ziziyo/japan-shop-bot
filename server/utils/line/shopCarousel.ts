@@ -239,36 +239,36 @@ export function buildShopCarousel(category?: ShopCategory): FlexBubble[] {
   // ── 品牌卡定義 ──
   const fashionBrands: FlexBubble[] = [
     buildBrandBubble(
-      'https://i.ibb.co/kgy2pBKq/bape.jpg',
-      // 'https://romoru.vercel.app/image/bape.jpg',
+      'https://romoru.vercel.app/image/bape.jpg',
+      // 'https://i.ibb.co/kgy2pBKq/bape.jpg',
       'https://jp.bape.com/',
     ),
     buildBrandBubble(
-      'https://i.ibb.co/nqfCW4CC/fr2.jpg',
-      // 'https://romoru.vercel.app/image/fr2.jpg',
+      'https://romoru.vercel.app/image/fr2.jpg',
+      // 'https://i.ibb.co/nqfCW4CC/fr2.jpg',
       'https://fr2.tokyo/',
     ),
     buildBrandBubble(
-      'https://i.ibb.co/v6FCwdgD/Uniqlo.jpg',
-      // 'https://romoru.vercel.app/image/uniqlo.jpg',
+      'https://romoru.vercel.app/image/uniqlo.jpg',
+      // 'https://i.ibb.co/v6FCwdgD/Uniqlo.jpg',
       'https://www.uniqlo.com/jp/ja/',
     ),
     buildBrandBubble(
-      'https://i.ibb.co/qYX1DYYh/Gu.jpg',
-      // 'https://romoru.vercel.app/image/gu.jpg',
+      'https://romoru.vercel.app/image/gu.jpg',
+      // 'https://i.ibb.co/qYX1DYYh/Gu.jpg',
       'https://www.gu-global.com/jp/ja/',
     ),
   ];
 
   const motogearBrands: FlexBubble[] = [
     buildBrandBubble(
-      'https://i.ibb.co/wZQny8Kf/Kushitani.jpg',
-      // 'https://romoru.vercel.app/image/kushitani.jpg',
+      // 'https://i.ibb.co/wZQny8Kf/Kushitani.jpg',
+      'https://romoru.vercel.app/image/kushitani.jpg',
       'https://www.kushitanionline.com/',
     ),
     buildBrandBubble(
-      'https://i.ibb.co/pBz91654/Rs-Taichi.jpg',
-      // 'https://romoru.vercel.app/image/rstaichi.jpg',
+      'https://romoru.vercel.app/image/rstaichi.jpg',
+      // 'https://i.ibb.co/pBz91654/Rs-Taichi.jpg',
       'https://www.ec.rs-taichi.com/',
     ),
   ];
