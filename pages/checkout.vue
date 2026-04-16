@@ -464,7 +464,7 @@ onMounted(async () => {
   const [liffModule, { createClient }] = await Promise.all([
     import('@line/liff'),
     import('@supabase/supabase-js'),
-    fetchRate(),
+    fetchRate({ skipCache: true }),
   ]);
   liff = liffModule.default;
   supabase = createClient(config.public.supabaseUrl, config.public.supabaseKey);

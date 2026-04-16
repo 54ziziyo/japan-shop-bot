@@ -1,6 +1,7 @@
 // server/utils/exchangeRate.ts
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
+import { MIN_JPY_RATE } from '#shared/pricing';
 
 const CACHE_KEY = 'jpy_sell_rate';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 小時
@@ -79,10 +80,13 @@ export async function getJpyRate(config: {
     const freshRate = await fetchRateFromEsun();
     console.log(`💱 玉山即時匯率（現金賣出）：${freshRate}`);
 
+    // 強制最低匯率下限
+    const safeRate = Math.max(freshRate, MIN_JPY_RATE);
+
     const { error } = await supabase.from('exchange_rates').upsert(
       {
         currency: CACHE_KEY,
-        rate: freshRate,
+        rate: safeRate,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'currency' },
@@ -92,7 +96,7 @@ export async function getJpyRate(config: {
       console.error('❌ 資料庫更新失敗 (請檢查 RLS Policy):', error.message);
     }
 
-    return freshRate;
+    return safeRate;
   } catch (err: any) {
     console.error('❌ 玉山匯率爬取失敗:', err.message);
   }
@@ -104,7 +108,7 @@ export async function getJpyRate(config: {
       .select('rate')
       .eq('currency', CACHE_KEY)
       .single();
-    
+
     if (data?.rate) {
       console.warn(`⚠️ 爬蟲失敗，暫時沿用資料庫舊紀錄：${data.rate}`);
       return data.rate;

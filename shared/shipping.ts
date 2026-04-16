@@ -4,6 +4,7 @@
 // 匯率相關從 #shared/pricing 取得
 import {
   JPY_SELL_RATE,
+  MIN_JPY_RATE,
   parseJpy,
   jpyToTwd,
   getRateMarkup,
@@ -299,7 +300,7 @@ export function getShippingTwd(
 } {
   if (totalWeightGrams <= 0) return { method: '-', costJpy: 0, costTwd: 0 };
 
-  const baseRate = rate ?? JPY_SELL_RATE;
+  const baseRate = Math.max(rate ?? JPY_SELL_RATE, MIN_JPY_RATE);
   let costJpy = 0;
   let method = '';
 
@@ -405,7 +406,7 @@ export function getDomesticShippingJpy(
     }
   }
 
-  const baseRate = rate ?? JPY_SELL_RATE;
+  const baseRate = Math.max(rate ?? JPY_SELL_RATE, MIN_JPY_RATE);
   return {
     totalJpy,
     totalTwd: Math.round(totalJpy * baseRate),

@@ -7,6 +7,7 @@
 // 定價
 export {
   JPY_SELL_RATE,
+  MIN_JPY_RATE,
   parseJpy,
   jpyToTwd,
   formatTwd,

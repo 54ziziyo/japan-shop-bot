@@ -1,298 +1,265 @@
-<script setup>
-const jpPrice = ref(null);
-const type = ref('2kg');
-const result = ref(null);
-const currentExchangeRate = 0.2;
+<script setup lang="ts">
+import { getShippingTwd } from '#shared/shipping';
+import { getRateMarkup } from '#shared/pricing';
 
-const shippingTable = {
-  '1kg': {
-    fee: 2050 * currentExchangeRate - 170,
-    jpFee: 2050,
-    desc: '不超過 1.0kg',
-  },
-  '2kg': {
-    fee: 2750 * currentExchangeRate - 170,
-    jpFee: 2750,
-    desc: '不超過 2.0kg',
-  },
-  '3kg': {
-    fee: 3450 * currentExchangeRate - 170,
-    jpFee: 3450,
-    desc: '不超過 3.0kg',
-  },
-  '4kg': {
-    fee: 4150 * currentExchangeRate - 170,
-    jpFee: 4150,
-    desc: '不超過 4.0kg',
-  },
-  '5kg': {
-    fee: 4850 * currentExchangeRate - 170,
-    jpFee: 4850,
-    desc: '不超過 5.0kg',
-  },
-  '6kg': {
-    fee: 5550 * currentExchangeRate - 170,
-    jpFee: 5550,
-    desc: '不超過 6.0kg',
-  },
-  '7kg': {
-    fee: 6250 * currentExchangeRate - 170,
-    jpFee: 6250,
-    desc: '不超過 7.0kg',
-  },
-  '8kg': {
-    fee: 6950 * currentExchangeRate - 170,
-    jpFee: 6950,
-    desc: '不超過 8.0kg',
-  },
-  '9kg': {
-    fee: 7650 * currentExchangeRate - 170,
-    jpFee: 7650,
-    desc: '不超過 9.0kg',
-  },
-  '10kg': {
-    fee: 8350 * currentExchangeRate - 170,
-    jpFee: 8350,
-    desc: '不超過 10.0kg',
-  },
-  '11kg': {
-    fee: 8850 * currentExchangeRate - 170,
-    jpFee: 8850,
-    desc: '不超過 11.0kg',
-  },
-  '12kg': {
-    fee: 9350 * currentExchangeRate - 170,
-    jpFee: 9350,
-    desc: '不超過 12.0kg',
-  },
-  '13kg': {
-    fee: 9850 * currentExchangeRate - 170,
-    jpFee: 9850,
-    desc: '不超過 13.0kg',
-  },
-  '14kg': {
-    fee: 10350 * currentExchangeRate - 170,
-    jpFee: 10350,
-    desc: '不超過 14.0kg',
-  },
-  '15kg': {
-    fee: 10850 * currentExchangeRate - 170,
-    jpFee: 10850,
-    desc: '不超過 15.0kg',
-  },
-  '16kg': {
-    fee: 11350 * currentExchangeRate - 170,
-    jpFee: 11350,
-    desc: '不超過 16.0kg',
-  },
-  '17kg': {
-    fee: 11850 * currentExchangeRate - 170,
-    jpFee: 11850,
-    desc: '不超過 17.0kg',
-  },
-  '18kg': {
-    fee: 12350 * currentExchangeRate - 170,
-    jpFee: 12350,
-    desc: '不超過 18.0kg',
-  },
-  '19kg': {
-    fee: 12850 * currentExchangeRate - 170,
-    jpFee: 12850,
-    desc: '不超過 19.0kg',
-  },
-  '20kg': {
-    fee: 13350 * currentExchangeRate - 170,
-    jpFee: 13350,
-    desc: '不超過 20.0kg',
-  },
-  '21kg': {
-    fee: 13850 * currentExchangeRate - 170,
-    jpFee: 13850,
-    desc: '不超過 21.0kg',
-  },
-  '22kg': {
-    fee: 14350 * currentExchangeRate - 170,
-    jpFee: 14350,
-    desc: '不超過 22.0kg',
-  },
-  '23kg': {
-    fee: 14850 * currentExchangeRate - 170,
-    jpFee: 14850,
-    desc: '不超過 23.0kg',
-  },
-  '24kg': {
-    fee: 15350 * currentExchangeRate - 170,
-    jpFee: 15350,
-    desc: '不超過 24.0kg',
-  },
-  '25kg': {
-    fee: 15850 * currentExchangeRate - 170,
-    jpFee: 15850,
-    desc: '不超過 25.0kg',
-  },
-  '26kg': {
-    fee: 16350 * currentExchangeRate - 170,
-    jpFee: 16350,
-    desc: '不超過 26.0kg',
-  },
-  '27kg': {
-    fee: 16850 * currentExchangeRate - 170,
-    jpFee: 16850,
-    desc: '不超過 27.0kg',
-  },
-  '28kg': {
-    fee: 17350 * currentExchangeRate - 170,
-    jpFee: 17350,
-    desc: '不超過 28.0kg',
-  },
-  '29kg': {
-    fee: 17850 * currentExchangeRate - 170,
-    jpFee: 17850,
-    desc: '不超過 29.0kg',
-  },
-  '30kg': {
-    fee: 18350 * currentExchangeRate - 170,
-    jpFee: 18350,
-    desc: '不超過 30.0kg',
-  },
-};
+const { rate: jpyRate, loading: rateLoading, fetchRate } = useExchangeRate();
 
-// 服務費規則配置
-const serviceFeeRules = [
-  { max: 12000, baseFee: 200, rate: 0, desc: '¥12,000以下：固定服務費 NT$200' },
-  { max: 40000, baseFee: 0, rate: 0.07, desc: '¥12,001-40,000：服務費 7%' },
-  { max: 80000, baseFee: 0, rate: 0.06, desc: '¥40,001-80,000：服務費 6%' },
-  { max: Infinity, baseFee: 0, rate: 0.05, desc: '¥80,001以上：服務費 5%' },
+const jpyPrice = ref<number | null>(null);
+const weightGrams = ref(2000);
+const domesticShippingJpy = ref<number | null>(null);
+
+// ── 重量選項 ──
+const ePacketWeights = [500, 1000, 1500, 2000];
+const intlWeights = [
+  3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000,
 ];
 
-const rate = currentExchangeRate + 0.01; // 換匯 1% 的海外交易手續費
-const calculateAllInPrice = (jpPrice, type) => {
-  // 根據規則查找對應的服務費
-  const rule = serviceFeeRules.find((r) => jpPrice <= r.max);
-  const serviceRate = rule.rate;
-  const baseFee = rule.baseFee;
+const kgLabel = (g: number) => {
+  const kg = g / 1000;
+  return kg % 1 === 0 ? `${kg} kg` : `${kg.toFixed(1)} kg`;
+};
 
-  const shipping = shippingTable[type].fee;
-  const twdBeforeService = jpPrice * rate;
-  const serviceCharge = jpPrice * currentExchangeRate * serviceRate + baseFee; // 這裡先按照日幣價格計算服務費
-  // const serviceCharge = twdBeforeService * serviceRate + baseFee; // 可考慮服務費是否包含匯率手續費
-  const total = twdBeforeService + serviceCharge + shipping;
+const shippingForWeight = (grams: number) =>
+  getShippingTwd(grams, jpyRate.value);
+
+// ── 即時試算結果 ──
+const result = computed(() => {
+  if (!jpyPrice.value || jpyPrice.value <= 0) return null;
+
+  const jpy = jpyPrice.value;
+  const rate = jpyRate.value;
+  const markup = getRateMarkup(jpy);
+  const markupPct = +(markup * 100).toFixed(2);
+  const finalRate = rate + markup;
+  const productTwd = Math.round(jpy * finalRate);
+
+  const shipping = getShippingTwd(weightGrams.value, rate);
+  const domesticJpy = domesticShippingJpy.value ?? 0;
+  const domesticTwd = Math.round(domesticJpy * rate);
+
+  const subtotal = productTwd + shipping.costTwd + domesticTwd;
+  const serviceFee = Math.round(subtotal * 0.05); // 服務費 5%
+  const preTax = subtotal + serviceFee;
+  const tax = Math.round(preTax * 0.05); // 消費稅 5%
+  const total = preTax + tax;
 
   return {
-    total: Math.ceil(total),
-    breakdown: {
-      twdBeforeService: Math.ceil(twdBeforeService),
-      serviceCharge: Math.ceil(serviceCharge),
-      shipping: shipping,
-      serviceRate: serviceRate,
-      baseFee: baseFee,
-    },
+    rate,
+    markup,
+    markupPct,
+    finalRate,
+    productTwd,
+    shippingMethod: shipping.method,
+    shippingJpy: shipping.costJpy,
+    shippingTwd: shipping.costTwd,
+    domesticJpy,
+    domesticTwd,
+    subtotal,
+    serviceFee,
+    preTax,
+    tax,
+    total,
   };
-};
+});
 
-const handleCalculate = () => {
-  const price = parseFloat(jpPrice.value);
-  if (isNaN(price) || price <= 0) {
-    alert('請輸入有效的日幣價格');
-    return;
-  }
-  result.value = calculateAllInPrice(price, type.value);
-};
+onMounted(() => fetchRate({ skipCache: true }));
 </script>
 
 <template>
-  <div class="app-container">
-    <div class="calculator-wrapper">
-      <div class="calculator-card">
-        <h1 class="title">🛍️ 代購價格計算器</h1>
+  <div class="min-h-screen bg-[#FDFCF8] text-[#4A5D59] font-sans antialiased">
+    <!-- Header -->
+    <div
+      class="bg-gradient-to-br from-[#E8F0E9] to-[#F4F9F5] px-6 pt-12 pb-6 text-center"
+    >
+      <h1 class="text-2xl font-bold text-[#2D5A3D]">代購價格試算</h1>
+      <p class="text-sm text-[#6B8F7B] mt-2">日本 🇯🇵 → 台灣 🇹🇼</p>
+      <p v-if="!rateLoading" class="text-xs text-[#6B8F7B]/70 mt-1">
+        即時匯率：{{ jpyRate.toFixed(4) }}（玉山銀行現金賣出）
+      </p>
+      <p v-else class="text-xs text-[#6B8F7B]/70 mt-1">匯率載入中…</p>
+    </div>
 
-        <!-- 輸入區 -->
-        <div class="input-section">
-          <label class="label"> 日本商品價格 (JPY) </label>
+    <div class="max-w-lg mx-auto px-5 py-6 space-y-5">
+      <!-- 日幣商品總金額輸入 -->
+      <div>
+        <label class="block text-sm font-semibold mb-2"
+          >日幣商品總額(含稅)</label
+        >
+        <div class="relative">
+          <span
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-[#6B8F7B] font-medium"
+            >¥</span
+          >
           <input
-            v-model.number="jpPrice"
+            v-model.number="jpyPrice"
             type="number"
-            placeholder="例如: 25000"
-            class="input-field"
-            @keypress.enter="handleCalculate"
+            inputmode="numeric"
+            placeholder="例如 1990"
+            class="w-full pl-10 pr-4 py-3.5 bg-white border-2 border-[#E8F0E9] rounded-2xl text-lg focus:outline-none focus:border-[#A8D5BA] focus:ring-2 focus:ring-[#A8D5BA]/20 transition-all"
           />
         </div>
+      </div>
 
-        <!-- 商品重量 -->
-        <div class="type-section">
-          <label class="label"> 商品重量 </label>
-          <select v-model="type" class="select-field">
-            <option
-              v-for="(value, key) in shippingTable"
-              :key="key"
-              :value="key"
-            >
-              {{ value.desc }} - 運費 ¥{{ value.jpFee }} (約NT${{
-                Math.ceil(value.fee)
-              }})
+      <!-- 重量選擇 -->
+      <div>
+        <label class="block text-sm font-semibold mb-2">預估商品總重量</label>
+        <select
+          v-model="weightGrams"
+          class="w-full px-4 py-3.5 bg-white border-2 border-[#E8F0E9] rounded-2xl text-base focus:outline-none focus:border-[#A8D5BA] focus:ring-2 focus:ring-[#A8D5BA]/20 transition-all"
+        >
+          <optgroup label="📦 ePacket（航空小包・≤ 2kg）">
+            <option v-for="w in ePacketWeights" :key="w" :value="w">
+              {{ kgLabel(w) }} — 運費 ¥{{
+                shippingForWeight(w).costJpy.toLocaleString()
+              }}（≈NT${{ shippingForWeight(w).costTwd.toLocaleString() }}）
             </option>
-          </select>
+          </optgroup>
+          <optgroup label="📦 國際小包（> 2kg）">
+            <option v-for="w in intlWeights" :key="w" :value="w">
+              {{ kgLabel(w) }} — 運費 ¥{{
+                shippingForWeight(w).costJpy.toLocaleString()
+              }}（≈NT${{ shippingForWeight(w).costTwd.toLocaleString() }}）
+            </option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- 日本國內運費 -->
+      <div>
+        <label class="block text-sm font-semibold mb-2"
+          >日本國內運費（日幣）</label
+        >
+        <div class="relative">
+          <span
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-[#6B8F7B] font-medium"
+            >¥</span
+          >
+          <input
+            v-model.number="domesticShippingJpy"
+            type="number"
+            inputmode="numeric"
+            placeholder="如無可不填"
+            class="w-full pl-10 pr-4 py-3.5 bg-white border-2 border-[#E8F0E9] rounded-2xl text-lg focus:outline-none focus:border-[#A8D5BA] focus:ring-2 focus:ring-[#A8D5BA]/20 transition-all"
+          />
         </div>
+      </div>
 
-        <!-- 計算按鈕 -->
-        <button class="calculate-btn" @click="handleCalculate">
-          💰 計算價格
-        </button>
+      <!-- 試算結果 -->
+      <div
+        v-if="result"
+        class="bg-white rounded-3xl p-5 border border-[#E8F0E9] shadow-sm space-y-3"
+      >
+        <h2 class="font-bold text-lg text-[#2D5A3D]">試算結果</h2>
 
-        <!-- 結果區 -->
-        <div v-if="result" class="result-section">
-          <h2 class="result-title">📊 計算結果</h2>
-
-          <div class="breakdown">
-            <div class="breakdown-item">
-              <span
-                >💴 日幣轉台幣匯率
-                {{ Number(rate.toFixed(10)) }} (含海外手續費)</span
-              >
-              <span class="amount"
-                >NT$
-                {{ result.breakdown.twdBeforeService.toLocaleString() }}</span
-              >
-            </div>
-
-            <div class="breakdown-item">
-              <span>
-                💼 服務費
-                {{
-                  result.breakdown.serviceRate > 0
-                    ? ` (${result.breakdown.serviceRate * 100}%)`
-                    : ' (固定)'
-                }}
-              </span>
-              <span class="amount"
-                >NT$ {{ result.breakdown.serviceCharge.toLocaleString() }}</span
-              >
-            </div>
-
-            <div class="breakdown-item">
-              <span>📦 運費 ({{ type }})</span>
-              <span class="amount"
-                >NT$ {{ result.breakdown.shipping.toLocaleString() }}</span
-              >
-            </div>
-
-            <div class="total-divider">
-              <div class="total-card">
-                <span class="total-label"> 🎯 總價 </span>
-                <span class="total-amount">
-                  NT$ {{ result.total.toLocaleString() }}
-                </span>
+        <div class="space-y-2.5 text-sm">
+          <!-- 商品售價 -->
+          <div
+            class="flex justify-between items-start py-2.5 px-3.5 bg-[#F4F9F5] rounded-xl"
+          >
+            <div>
+              <div class="font-medium">商品售價</div>
+              <div class="text-xs text-[#6B8F7B] mt-0.5">
+                ¥{{ jpyPrice!.toLocaleString() }} ×
+                {{ result.finalRate.toFixed(4) }}
+                <span class="block"
+                  >（匯率 {{ result.rate.toFixed(4) }} + 加碼
+                  {{ result.markupPct }}%）</span
+                >
               </div>
+            </div>
+            <div class="font-semibold whitespace-nowrap ml-3">
+              NT${{ result.productTwd.toLocaleString() }}
             </div>
           </div>
 
-          <div class="info-box">
-            <p class="info-title">📌 計費說明：</p>
-            <ul class="info-list">
-              <li v-for="(rule, index) in serviceFeeRules" :key="index">
-                {{ rule.desc }}
-              </li>
-            </ul>
+          <!-- 國際運費 -->
+          <div
+            class="flex justify-between items-start py-2.5 px-3.5 bg-[#F4F9F5] rounded-xl"
+          >
+            <div>
+              <div class="font-medium">國際運費</div>
+              <div class="text-xs text-[#6B8F7B] mt-0.5">
+                {{ result.shippingMethod }}・¥{{
+                  result.shippingJpy.toLocaleString()
+                }}
+              </div>
+            </div>
+            <div class="font-semibold whitespace-nowrap ml-3">
+              NT${{ result.shippingTwd.toLocaleString() }}
+            </div>
+          </div>
+
+          <!-- 日本國內運費 -->
+          <div
+            v-if="result.domesticTwd > 0"
+            class="flex justify-between items-start py-2.5 px-3.5 bg-[#F4F9F5] rounded-xl"
+          >
+            <div>
+              <div class="font-medium">日本國內運費</div>
+              <div class="text-xs text-[#6B8F7B] mt-0.5">
+                ¥{{ result.domesticJpy.toLocaleString() }}
+              </div>
+            </div>
+            <div class="font-semibold whitespace-nowrap ml-3">
+              NT${{ result.domesticTwd.toLocaleString() }}
+            </div>
+          </div>
+
+          <!-- 小計 / 服務費 / 稅 -->
+          <div class="border-t border-[#E8F0E9] pt-2.5 space-y-1">
+            <div class="flex justify-between py-1 px-3.5">
+              <span class="text-[#6B8F7B]">小計</span>
+              <span class="font-medium"
+                >NT${{ result.subtotal.toLocaleString() }}</span
+              >
+            </div>
+            <div class="flex justify-between py-1 px-3.5">
+              <span class="text-[#6B8F7B]">服務費（1%）</span>
+              <span class="font-medium"
+                >NT${{ result.serviceFee.toLocaleString() }}</span
+              >
+            </div>
+            <div class="flex justify-between py-1 px-3.5">
+              <span class="text-[#6B8F7B]">消費稅（5%）</span>
+              <span class="font-medium"
+                >NT${{ result.tax.toLocaleString() }}</span
+              >
+            </div>
+          </div>
+
+          <!-- 預估總計 -->
+          <div
+            class="bg-[#2D5A3D] text-white rounded-2xl p-4 flex justify-between items-center"
+          >
+            <span class="font-bold text-base">預估總計</span>
+            <span class="font-bold text-2xl tracking-tight"
+              >NT${{ result.total.toLocaleString() }}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- 注意事項 + 加碼說明 -->
+      <div
+        class="bg-white rounded-2xl p-4 border border-[#E8F0E9] text-xs text-[#6B8F7B] space-y-3"
+      >
+        <div>
+          <p class="font-semibold text-[#4A5D59] mb-1">⚠️ 注意事項</p>
+          <p>
+            此為預估金額，因可能有日本國內運費、材積重量等考量，實際金額以專人客服報價為主。
+          </p>
+          <p class="mt-1">運費路線：日本 → 台灣（目前尚未提供其他國家運費）</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#4A5D59] mb-1">📋 加碼比例說明</p>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-0.5 mt-1.5 ml-1">
+            <span>≤ ¥990</span><span class="text-right">+7%</span>
+            <span>≤ ¥1,990</span><span class="text-right">+6%</span>
+            <span>≤ ¥2,990</span><span class="text-right">+2.89%</span>
+            <span>≤ ¥3,990</span><span class="text-right">+2.5%</span>
+            <span>≤ ¥4,990</span><span class="text-right">+2.3%</span>
+            <span>≤ ¥5,990</span><span class="text-right">+2.2%</span>
+            <span>¥6,000+</span><span class="text-right">+2%</span>
           </div>
         </div>
       </div>
@@ -301,265 +268,14 @@ const handleCalculate = () => {
 </template>
 
 <style scoped>
-.app-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, sans-serif;
+/* 隱藏 number input 的 +/- 按鈕 */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
-
-.calculator-wrapper {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.calculator-card {
-  background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 2.5rem;
-  animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.title {
-  font-size: 2rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 2rem;
-  text-align: center;
-}
-
-.input-section {
-  margin-bottom: 2rem;
-}
-
-.label {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #4a5568;
-  margin-bottom: 0.5rem;
-}
-
-.input-field {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  outline: none;
-  transition: all 0.3s;
-  box-sizing: border-box;
-}
-
-.input-field:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.type-section {
-  margin-bottom: 2rem;
-}
-
-.type-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.type-button {
-  padding: 1rem;
-  border-radius: 12px;
-  border: 2px solid #e2e8f0;
-  background-color: white;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.select-field {
-  width: 100%;
-  padding: 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 1rem;
-  outline: none;
-  transition: all 0.3s;
-  box-sizing: border-box;
-  background-color: white;
-  cursor: pointer;
-  color: #2d3748;
-  font-weight: 500;
-}
-
-.select-field:hover {
-  border-color: #cbd5e0;
-}
-
-.select-field:focus {
-  border-color: #667eea;
-  background-color: #f7fafc;
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-}
-
-.type-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.type-key {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #2d3748;
-}
-
-.type-key.active {
-  color: #667eea;
-}
-
-.type-desc {
-  color: #718096;
-  margin-left: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.type-fee {
-  color: #667eea;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.calculate-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-weight: bold;
-  padding: 1.2rem;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1rem;
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s;
-  margin-bottom: 2rem;
-}
-
-.calculate-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
-}
-
-.result-section {
-  background: linear-gradient(135deg, #f0f4ff 0%, #f5f0ff 100%);
-  border-radius: 16px;
-  padding: 1.5rem;
-  border: 2px solid #e9d5ff;
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.result-title {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #2d3748;
-  margin-bottom: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.breakdown {
-  margin-bottom: 1rem;
-}
-
-.breakdown-item {
-  display: flex;
-  justify-content: space-between;
-  color: #4a5568;
-  margin-bottom: 0.8rem;
-  padding: 0.5rem;
-  background-color: white;
-  border-radius: 8px;
-}
-
-.amount {
-  font-weight: 600;
-}
-
-.total-divider {
-  border-top: 3px solid #c4b5fd;
-  padding-top: 1rem;
-  margin-top: 1rem;
-}
-
-.total-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  color: white;
-}
-
-.total-label {
-  font-size: 1.3rem;
-  font-weight: bold;
-}
-
-.total-amount {
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.info-box {
-  font-size: 0.85rem;
-  color: #718096;
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-}
-
-.info-title {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #4a5568;
-}
-
-.info-list {
-  margin-left: 1.2rem;
-  line-height: 1.8;
-  list-style-type: disc;
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 </style>

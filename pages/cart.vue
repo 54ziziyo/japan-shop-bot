@@ -158,7 +158,7 @@ onMounted(async () => {
   const [liffModule] = await Promise.all([
     import('@line/liff'),
     initSupabase(),
-    fetchRate(),
+    fetchRate({ skipCache: true }),
   ]);
   liff = liffModule.default;
 
@@ -213,124 +213,124 @@ const handleReload = () => {
       </AppNavbar>
 
       <main class="flex-1">
-      <div class="max-w-md mx-auto px-6 pb-6">
-        <div
-          v-if="!loading && items.length > 0"
-          class="bg-[#E8F0E9] border border-[#D1E2D5] rounded-3xl px-5 py-3 mb-8 mt-6"
-        >
-          <p
-            class="text-[11px] text-[#5A746B] font-medium leading-relaxed flex items-center gap-2"
-          >
-            <span class="text-base">🍃</span> 為確保同步，購物車將於 6
-            小時後清空喔！
-          </p>
-        </div>
-
-        <AppLoading v-if="loading" />
-
-        <div v-else-if="items.length > 0" class="space-y-10 mt-6">
+        <div class="max-w-md mx-auto px-6 pb-6">
           <div
-            v-for="item in items"
-            :key="item.id"
-            class="group relative flex gap-5 items-center"
+            v-if="!loading && items.length > 0"
+            class="bg-[#E8F0E9] border border-[#D1E2D5] rounded-3xl px-5 py-3 mb-8 mt-6"
           >
-            <div
-              class="w-24 h-24 bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.12)] flex-shrink-0 border border-[#F0F4F1]"
+            <p
+              class="text-[11px] text-[#5A746B] font-medium leading-relaxed flex items-center gap-2"
             >
-              <img :src="item.image_url" class="w-full h-full object-cover" />
-            </div>
+              <span class="text-base">🍃</span> 為確保同步，購物車將於 6
+              小時後清空喔！
+            </p>
+          </div>
 
-            <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-start mb-1">
-                <h2
-                  class="font-bold text-sm tracking-tight truncate text-[#4A5D59]"
-                >
-                  {{ item.product_title }}
-                </h2>
-                <button
-                  @click="removeItem(item.id)"
-                  class="p-1 text-[#D1E2D5] hover:text-red-400 transition-colors"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
-                    ></path>
-                  </svg>
-                </button>
+          <AppLoading v-if="loading" />
+
+          <div v-else-if="items.length > 0" class="space-y-10 mt-6">
+            <div
+              v-for="item in items"
+              :key="item.id"
+              class="group relative flex gap-5 items-center"
+            >
+              <div
+                class="w-24 h-24 bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.12)] flex-shrink-0 border border-[#F0F4F1]"
+              >
+                <img :src="item.image_url" class="w-full h-full object-cover" />
               </div>
 
-              <p
-                v-if="item.product_code"
-                class="text-[9px] font-mono text-[#749D8E]/60 tracking-wide mb-1"
-              >
-                {{ item.product_code }}
-              </p>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start mb-1">
+                  <h2
+                    class="font-bold text-sm tracking-tight truncate text-[#4A5D59]"
+                  >
+                    {{ item.product_title }}
+                  </h2>
+                  <button
+                    @click="removeItem(item.id)"
+                    class="p-1 text-[#D1E2D5] hover:text-red-400 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
 
-              <p
-                class="text-[10px] font-bold text-[#749D8E]/60 mb-2 uppercase tracking-wide"
-              >
-                {{ item.color }} <span class="mx-1 opacity-30">/</span>
-                {{ item.size }}
-              </p>
-
-              <div class="flex items-center justify-between">
-                <p class="font-black text-xl tracking-tighter text-[#5A746B]">
-                  <span class="text-xs mr-0.5">NT$</span
-                  >{{ parsePriceTwd(item.price, jpyRate).toLocaleString() }}
+                <p
+                  v-if="item.product_code"
+                  class="text-[9px] font-mono text-[#749D8E]/60 tracking-wide mb-1"
+                >
+                  {{ item.product_code }}
                 </p>
 
-                <div
-                  class="flex items-center bg-[#F4F9F5] rounded-xl p-1 shadow-inner border border-[#E8F0E9]"
+                <p
+                  class="text-[10px] font-bold text-[#749D8E]/60 mb-2 uppercase tracking-wide"
                 >
-                  <button
-                    @click="decreaseQty(item)"
-                    class="w-6 h-6 flex items-center justify-center rounded-lg text-[#749D8E] hover:bg-white transition-all font-bold"
+                  {{ item.color }} <span class="mx-1 opacity-30">/</span>
+                  {{ item.size }}
+                </p>
+
+                <div class="flex items-center justify-between">
+                  <p class="font-black text-xl tracking-tighter text-[#5A746B]">
+                    <span class="text-xs mr-0.5">NT$</span
+                    >{{ parsePriceTwd(item.price, jpyRate).toLocaleString() }}
+                  </p>
+
+                  <div
+                    class="flex items-center bg-[#F4F9F5] rounded-xl p-1 shadow-inner border border-[#E8F0E9]"
                   >
-                    −
-                  </button>
-                  <span
-                    class="w-8 text-center text-[11px] font-black text-[#5A746B]"
-                    >{{ item.quantity || 1 }}</span
-                  >
-                  <button
-                    @click="increaseQty(item)"
-                    class="w-6 h-6 flex items-center justify-center rounded-lg bg-[#749D8E] text-white shadow-md shadow-[#749D8E]/30 font-bold"
-                  >
-                    +
-                  </button>
+                    <button
+                      @click="decreaseQty(item)"
+                      class="w-6 h-6 flex items-center justify-center rounded-lg text-[#749D8E] hover:bg-white transition-all font-bold"
+                    >
+                      −
+                    </button>
+                    <span
+                      class="w-8 text-center text-[11px] font-black text-[#5A746B]"
+                      >{{ item.quantity || 1 }}</span
+                    >
+                    <button
+                      @click="increaseQty(item)"
+                      class="w-6 h-6 flex items-center justify-center rounded-lg bg-[#749D8E] text-white shadow-md shadow-[#749D8E]/30 font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div
-          v-else
-          class="flex flex-col items-center justify-center py-32 text-center"
-        >
-          <p
-            class="text-[11px] font-bold text-[#A4B8B0] uppercase tracking-[0.3em] mb-6 italic"
+          <div
+            v-else
+            class="flex flex-col items-center justify-center py-32 text-center"
           >
-            你的購物車空蕩蕩，快去逛逛吧！
-          </p>
-          <button
-            @click="handleReload"
-            class="text-[10px] text-[#5A746B] font-black border-b-[3px] border-[#749D8E] pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
-          >
-            🔄 點擊我重整
-          </button>
+            <p
+              class="text-[11px] font-bold text-[#A4B8B0] uppercase tracking-[0.3em] mb-6 italic"
+            >
+              你的購物車空蕩蕩，快去逛逛吧！
+            </p>
+            <button
+              @click="handleReload"
+              class="text-[10px] text-[#5A746B] font-black border-b-[3px] border-[#749D8E] pb-1 uppercase tracking-widest active:opacity-50 transition-opacity"
+            >
+              🔄 點擊我重整
+            </button>
+          </div>
         </div>
-      </div>
       </main>
 
       <AppBottomBar

@@ -6,6 +6,9 @@
 /** 預設日本賣出匯率 */
 export const JPY_SELL_RATE = 0.205;
 
+/** 最低匯率下限 — 即使玉山匯率低於此值，仍以此為準 */
+export const MIN_JPY_RATE = 0.2;
+
 /**
  * 解析日幣字串為數字
  * e.g. "¥1,990" → 1990
@@ -32,7 +35,7 @@ export function getRateMarkup(jpyPrice: number): number {
  */
 export function jpyToTwd(jpyPrice: number, rate?: number): number {
   if (jpyPrice <= 0) return 0;
-  const baseRate = rate ?? JPY_SELL_RATE;
+  const baseRate = Math.max(rate ?? JPY_SELL_RATE, MIN_JPY_RATE);
   const markup = getRateMarkup(jpyPrice);
   const finalRate = baseRate + markup;
   const result = Math.round(jpyPrice * finalRate);
