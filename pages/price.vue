@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getShippingTwd } from '#shared/shipping';
-import { getRateMarkup } from '#shared/pricing';
+import { getRateMarkup, MIN_PROFIT_TWD } from '#shared/pricing';
 
 const { rate: jpyRate, loading: rateLoading, fetchRate } = useExchangeRate();
 
@@ -8,10 +8,15 @@ const jpyPrice = ref<number | null>(null);
 const weightGrams = ref(2000);
 const domesticShippingJpy = ref<number | null>(null);
 
-// ── 重量選項 ──
-const ePacketWeights = [500, 1000, 1500, 2000];
+// ── 重量選項（完整費率表） ──
+const ePacketWeights = [
+  100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400,
+  1500, 1600, 1700, 1800, 1900, 2000,
+];
 const intlWeights = [
-  3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000,
+  1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000,
+  13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000,
+  24000, 25000, 26000, 27000, 28000, 29000, 30000,
 ];
 
 const kgLabel = (g: number) => {
@@ -31,7 +36,13 @@ const result = computed(() => {
   const markup = getRateMarkup(jpy);
   const markupPct = +(markup * 100).toFixed(2);
   const finalRate = rate + markup;
-  const productTwd = Math.round(jpy * finalRate);
+  const baseCost = Math.round(jpy * rate);
+  const rawProductTwd = Math.round(jpy * finalRate);
+  const rawProfit = rawProductTwd - baseCost;
+  const minProfitApplied = rawProfit < MIN_PROFIT_TWD;
+  const productTwd = minProfitApplied
+    ? baseCost + MIN_PROFIT_TWD
+    : rawProductTwd;
 
   const shipping = getShippingTwd(weightGrams.value, rate);
   const domesticJpy = domesticShippingJpy.value ?? 0;
@@ -48,6 +59,9 @@ const result = computed(() => {
     markup,
     markupPct,
     finalRate,
+    baseCost,
+    rawProfit,
+    minProfitApplied,
     productTwd,
     shippingMethod: shipping.method,
     shippingJpy: shipping.costJpy,
@@ -163,8 +177,14 @@ onMounted(() => fetchRate({ skipCache: true }));
                 {{ result.finalRate.toFixed(4) }}
                 <span class="block"
                   >（匯率 {{ result.rate.toFixed(4) }} + 加碼
-                  {{ result.markupPct }}%）</span
+                  {{ result.markup.toFixed(3) }}）</span
                 >
+                <span
+                  v-if="result.minProfitApplied"
+                  class="block text-amber-600 font-medium"
+                >
+                  ⚠️ 利潤 NT${{ result.rawProfit }} 不足 → 補足至 NT$100
+                </span>
               </div>
             </div>
             <div class="font-semibold whitespace-nowrap ml-3">
@@ -181,7 +201,7 @@ onMounted(() => fetchRate({ skipCache: true }));
               <div class="text-xs text-[#6B8F7B] mt-0.5">
                 {{ result.shippingMethod }}・¥{{
                   result.shippingJpy.toLocaleString()
-                }}
+                }}（含 1% 包材費）
               </div>
             </div>
             <div class="font-semibold whitespace-nowrap ml-3">
@@ -214,7 +234,7 @@ onMounted(() => fetchRate({ skipCache: true }));
               >
             </div>
             <div class="flex justify-between py-1 px-3.5">
-              <span class="text-[#6B8F7B]">服務費（1%）</span>
+              <span class="text-[#6B8F7B]">服務費（5%）</span>
               <span class="font-medium"
                 >NT${{ result.serviceFee.toLocaleString() }}</span
               >
@@ -253,13 +273,13 @@ onMounted(() => fetchRate({ skipCache: true }));
         <div>
           <p class="font-semibold text-[#4A5D59] mb-1">📋 加碼比例說明</p>
           <div class="grid grid-cols-2 gap-x-4 gap-y-0.5 mt-1.5 ml-1">
-            <span>≤ ¥990</span><span class="text-right">+7%</span>
-            <span>≤ ¥1,990</span><span class="text-right">+6%</span>
-            <span>≤ ¥2,990</span><span class="text-right">+2.89%</span>
-            <span>≤ ¥3,990</span><span class="text-right">+2.5%</span>
-            <span>≤ ¥4,990</span><span class="text-right">+2.3%</span>
-            <span>≤ ¥5,990</span><span class="text-right">+2.2%</span>
-            <span>¥6,000+</span><span class="text-right">+2%</span>
+            <span>≤ ¥990</span><span class="text-right">+0.1</span>
+            <span>≤ ¥1,990</span><span class="text-right">+0.09</span>
+            <span>≤ ¥2,990</span><span class="text-right">+0.03</span>
+            <span>≤ ¥3,990</span><span class="text-right">+0.025</span>
+            <span>≤ ¥4,990</span><span class="text-right">+0.023</span>
+            <span>≤ ¥5,990</span><span class="text-right">+0.022</span>
+            <span>¥5,991+</span><span class="text-right">+0.02</span>
           </div>
         </div>
       </div>

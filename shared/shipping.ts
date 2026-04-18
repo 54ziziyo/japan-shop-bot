@@ -325,7 +325,13 @@ export function getShippingTwd(
       costJpy = INTL_SMALL_PACKET_RATES[INTL_SMALL_PACKET_RATES.length - 1]![1];
   }
 
-  return { method, costJpy, costTwd: Math.round(costJpy * baseRate) };
+  // +1% 包材費用
+  const adjustedJpy = Math.ceil(costJpy * 1.01);
+  return {
+    method,
+    costJpy: adjustedJpy,
+    costTwd: Math.round(adjustedJpy * baseRate),
+  };
 }
 
 // ── 服務費 ──

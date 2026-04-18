@@ -9,6 +9,9 @@ export const JPY_SELL_RATE = 0.205;
 /** 最低匯率下限 — 即使玉山匯率低於此值，仍以此為準 */
 export const MIN_JPY_RATE = 0.2;
 
+/** 最低利潤下限（台幣）— 單件商品利潤低於此值時，強制補足至此金額 */
+export const MIN_PROFIT_TWD = 100;
+
 /**
  * 解析日幣字串為數字
  * e.g. "¥1,990" → 1990
@@ -18,9 +21,9 @@ export function parseJpy(priceStr: string): number {
 }
 
 export function getRateMarkup(jpyPrice: number): number {
-  if (jpyPrice <= 990) return 0.07;
-  if (jpyPrice <= 1990) return 0.06;
-  if (jpyPrice <= 2990) return 0.0289;
+  if (jpyPrice <= 990) return 0.1;
+  if (jpyPrice <= 1990) return 0.09;
+  if (jpyPrice <= 2990) return 0.03;
   if (jpyPrice <= 3990) return 0.025;
   if (jpyPrice <= 4990) return 0.023;
   if (jpyPrice <= 5990) return 0.022;
@@ -38,10 +41,14 @@ export function jpyToTwd(jpyPrice: number, rate?: number): number {
   const baseRate = Math.max(rate ?? JPY_SELL_RATE, MIN_JPY_RATE);
   const markup = getRateMarkup(jpyPrice);
   const finalRate = baseRate + markup;
-  const result = Math.round(jpyPrice * finalRate);
+  const baseCost = Math.round(jpyPrice * baseRate);
+  const rawResult = Math.round(jpyPrice * finalRate);
+  const profit = rawResult - baseCost;
+  const result =
+    profit < MIN_PROFIT_TWD ? baseCost + MIN_PROFIT_TWD : rawResult;
 
   console.log(
-    `💱 jpyToTwd: ¥${jpyPrice} × (${baseRate} + ${markup}) = ¥${jpyPrice} × ${finalRate.toFixed(4)} = NT$${result}${rate ? '' : ' ⚠️ 使用預設匯率'}`,
+    `💱 jpyToTwd: ¥${jpyPrice} × ${finalRate.toFixed(4)} = NT$${rawResult}（利潤 NT$${profit}${profit < MIN_PROFIT_TWD ? ` → 補足至 NT$${MIN_PROFIT_TWD}，售價 NT$${result}` : ''}）${rate ? '' : ' ⚠️ 使用預設匯率'}`,
   );
 
   return result;

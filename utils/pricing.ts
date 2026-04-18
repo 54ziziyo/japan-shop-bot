@@ -8,7 +8,9 @@
 export {
   JPY_SELL_RATE,
   MIN_JPY_RATE,
+  MIN_PROFIT_TWD,
   parseJpy,
+  getRateMarkup,
   jpyToTwd,
   formatTwd,
   parsePriceTwd,

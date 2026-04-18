@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getShippingTwd } from '#shared/shipping';
-import { getRateMarkup } from '#shared/pricing';
+import { getRateMarkup, MIN_PROFIT_TWD } from '#shared/pricing';
 
 const { rate: jpyRate, loading: rateLoading, fetchRate } = useExchangeRate();
 
@@ -41,7 +41,11 @@ const result = computed(() => {
   const rate = jpyRate.value;
   const markup = getRateMarkup(jpy);
   const finalRate = rate + markup;
-  const productTwd = Math.round(jpy * finalRate);
+  const baseCost = Math.round(jpy * rate);
+  const rawProductTwd = Math.round(jpy * finalRate);
+  const rawProfit = rawProductTwd - baseCost;
+  const productTwd =
+    rawProfit < MIN_PROFIT_TWD ? baseCost + MIN_PROFIT_TWD : rawProductTwd;
 
   const shipping = getShippingTwd(weightKg.value * 1000, rate);
   const domesticTwd = Math.round((domesticShippingJpy.value ?? 0) * rate);
