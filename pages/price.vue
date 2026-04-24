@@ -7,6 +7,7 @@ const { rate: jpyRate, loading: rateLoading, fetchRate } = useExchangeRate();
 const jpyPrice = ref<number | null>(null);
 const weightGrams = ref(2000);
 const domesticShippingJpy = ref<number | null>(null);
+const serviceFeeRate = ref(5);
 
 // ── 重量選項（完整費率表） ──
 const ePacketWeights = [
@@ -49,10 +50,12 @@ const result = computed(() => {
   const domesticTwd = Math.round(domesticJpy * rate);
 
   const subtotal = productTwd + shipping.costTwd + domesticTwd;
-  const serviceFee = Math.round(subtotal * 0.05); // 服務費 5%
+  const serviceFee = Math.round(subtotal * (serviceFeeRate.value / 100));
   const preTax = subtotal + serviceFee;
   const tax = Math.round(preTax * 0.05); // 消費稅 5%
   const total = preTax + tax;
+  const profit = total - baseCost - shipping.costTwd - domesticTwd;
+  const totalCost = baseCost + shipping.costTwd + domesticTwd;
 
   return {
     rate,
@@ -73,6 +76,8 @@ const result = computed(() => {
     preTax,
     tax,
     total,
+    profit,
+    totalCost,
   };
 });
 
@@ -158,6 +163,26 @@ onMounted(() => fetchRate({ skipCache: true }));
         </div>
       </div>
 
+      <!-- 服務費比例 -->
+      <div>
+        <label class="block text-sm font-semibold mb-2">服務費比例</label>
+        <div class="relative">
+          <input
+            v-model.number="serviceFeeRate"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            max="100"
+            placeholder="5"
+            class="w-full pl-4 pr-10 py-3.5 bg-white border-2 border-[#E8F0E9] rounded-2xl text-lg focus:outline-none focus:border-[#A8D5BA] focus:ring-2 focus:ring-[#A8D5BA]/20 transition-all"
+          />
+          <span
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-[#6B8F7B] font-medium"
+            >%</span
+          >
+        </div>
+      </div>
+
       <!-- 試算結果 -->
       <div
         v-if="result"
@@ -234,7 +259,9 @@ onMounted(() => fetchRate({ skipCache: true }));
               >
             </div>
             <div class="flex justify-between py-1 px-3.5">
-              <span class="text-[#6B8F7B]">服務費（5%）</span>
+              <span class="text-[#6B8F7B]"
+                >服務費（{{ serviceFeeRate }}%）</span
+              >
               <span class="font-medium"
                 >NT${{ result.serviceFee.toLocaleString() }}</span
               >
@@ -254,6 +281,34 @@ onMounted(() => fetchRate({ skipCache: true }));
             <span class="font-bold text-base">預估總計</span>
             <span class="font-bold text-2xl tracking-tight"
               >NT${{ result.total.toLocaleString() }}</span
+            >
+          </div>
+
+          <!-- 總利潤 -->
+          <div
+            class="bg-[#FFF8E7] border border-amber-200 rounded-2xl p-4 flex justify-between items-center"
+          >
+            <div>
+              <span class="font-bold text-base text-amber-800">💰 總利潤</span>
+              <div class="text-xs text-amber-600 mt-0.5">商品加碼 + 服務費</div>
+            </div>
+            <span class="font-bold text-2xl tracking-tight text-amber-700"
+              >NT${{ result.profit.toLocaleString() }}</span
+            >
+          </div>
+
+          <!-- 總成本 -->
+          <div
+            class="bg-[#F4F9F5] border border-[#E8F0E9] rounded-2xl p-4 flex justify-between items-center"
+          >
+            <div>
+              <span class="font-bold text-base text-[#2D5A3D]">📌 總成本</span>
+              <div class="text-xs text-[#6B8F7B] mt-0.5">
+                商品成本 + 國際運費 + 國內運費
+              </div>
+            </div>
+            <span class="font-bold text-2xl tracking-tight text-[#2D5A3D]"
+              >NT${{ result.totalCost.toLocaleString() }}</span
             >
           </div>
         </div>
