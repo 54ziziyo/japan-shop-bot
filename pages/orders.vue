@@ -181,9 +181,7 @@ function closeLiff() {
 
 <template>
   <ClientOnly>
-    <div
-      class="flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans"
-    >
+    <div class="flex flex-col bg-[#FDFCF8] text-[#4A5D59] font-sans">
       <!-- ── Navbar ── -->
       <AppNavbar title="訂單查詢">
         <template #subtitle>
@@ -425,20 +423,72 @@ function closeLiff() {
                 </div>
               </div>
 
-              <!-- 訂單總計 -->
+              <!-- 商品明細 + 訂單總計 -->
               <div
                 v-if="order.grand_total_twd"
-                class="px-5 py-3 bg-[#F4F9F5]/50 border-t border-[#E8F0E9] flex justify-between items-center"
+                class="px-5 py-3 bg-[#F4F9F5]/50 border-t border-[#E8F0E9] space-y-1.5"
               >
-                <p
-                  class="text-[10px] text-[#A4B8B0] font-black uppercase tracking-widest"
+                <!-- 商品小計 -->
+                <div class="flex justify-between items-center">
+                  <p class="text-[10px] text-[#A4B8B0] font-semibold">
+                    商品小計
+                  </p>
+                  <p class="text-sm font-semibold text-[#5A746B]">
+                    NT${{
+                      order.items
+                        .reduce(
+                          (sum: number, it: any) =>
+                            sum +
+                            (Number(it.priceTwd) || 0) * (it.quantity || 1),
+                          0,
+                        )
+                        .toLocaleString()
+                    }}
+                  </p>
+                </div>
+                <!-- 運費＋服務費＋稅 -->
+                <div
+                  v-if="
+                    Number(order.grand_total_twd) -
+                      order.items.reduce(
+                        (s: number, it: any) =>
+                          s + (Number(it.priceTwd) || 0) * (it.quantity || 1),
+                        0,
+                      ) >
+                    0
+                  "
+                  class="flex justify-between items-center"
                 >
-                  訂單總計
-                </p>
-                <p class="font-black text-xl text-[#5A746B]">
-                  <span class="text-xs">NT$</span
-                  >{{ Number(order.grand_total_twd).toLocaleString() }}
-                </p>
+                  <p class="text-[10px] text-[#A4B8B0] font-semibold">
+                    其他費用（運費、消費稅）
+                  </p>
+                  <p class="text-sm font-semibold text-[#5A746B]">
+                    NT${{
+                      (
+                        Number(order.grand_total_twd) -
+                        order.items.reduce(
+                          (s: number, it: any) =>
+                            s + (Number(it.priceTwd) || 0) * (it.quantity || 1),
+                          0,
+                        )
+                      ).toLocaleString()
+                    }}
+                  </p>
+                </div>
+                <!-- 分隔線 -->
+                <div
+                  class="border-t border-[#E8F0E9] pt-1.5 flex justify-between items-center"
+                >
+                  <p
+                    class="text-[10px] text-[#A4B8B0] font-black uppercase tracking-widest"
+                  >
+                    訂單總計
+                  </p>
+                  <p class="font-black text-xl text-[#5A746B]">
+                    <span class="text-xs">NT$</span
+                    >{{ Number(order.grand_total_twd).toLocaleString() }}
+                  </p>
+                </div>
               </div>
 
               <!-- 追蹤碼（已出貨時顯示） -->
@@ -538,56 +588,6 @@ function closeLiff() {
                   </svg>
                 </a>
               </div>
-              <!-- <div
-              v-if="order.status === 'packing' && order.tracking_code"
-              class="px-5 py-4 bg-[#EFF6FF]/60 border-t border-[#D6E4F0]"
-            >
-              <p
-                class="text-[10px] font-black text-[#5B8DB8] uppercase tracking-widest mb-2"
-              >
-                📦 包裹追蹤
-              </p>
-              <div class="flex items-center gap-2">
-                <button
-                  @click="copyTrackingCode(order.tracking_code)"
-                  class="flex items-center gap-1.5 bg-white border border-[#D6E4F0] rounded-xl px-3 py-2 text-sm font-bold font-mono text-[#3B6FA0] hover:bg-[#EFF6FF] active:scale-[0.97] transition-all"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="shrink-0"
-                  >
-                    <rect
-                      x="9"
-                      y="9"
-                      width="13"
-                      height="13"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <path
-                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                    ></path>
-                  </svg>
-                  {{ order.tracking_code }}
-                </button>
-              </div>
-              <a
-                href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500200"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 mt-2.5 text-[11px] font-bold text-[#5B8DB8] hover:text-[#3B6FA0] transition-colors border-b border-[#5B8DB8]/30 pb-0.5"
-              >
-                前往郵局查詢包裹 →
-              </a>
-            </div> -->
             </div>
           </div>
         </div>
