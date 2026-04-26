@@ -13,6 +13,12 @@ const submittedPaymentMethod = ref('');
 const submittedTotal = ref(0);
 const showTermsModal = ref(false);
 const termsAccepted = ref(false);
+
+// 折扣碼
+const couponInput = ref('');
+const appliedCoupon = ref(null); // { code: string, discountTwd: number }
+const couponLoading = ref(false);
+const couponError = ref('');
 let supabase = null;
 let liff = null;
 const { rate: jpyRate, fetchRate } = useExchangeRate();
@@ -261,6 +267,13 @@ const taxAmount = computed(() => Math.round(preTaxForPayment.value * 0.05));
 // 最終應付金額
 const displayTotal = computed(() => preTaxForPayment.value + taxAmount.value);
 
+// 折扣碼優惠
+const couponDiscountTwd = computed(() => appliedCoupon.value?.discountTwd ?? 0);
+// 扣除折扣碼後的實際應付金額
+const finalTotal = computed(() =>
+  Math.max(0, displayTotal.value - couponDiscountTwd.value),
+);
+
 const syncBanner = computed(() => {
   if (!syncResults.value.length) return '';
   const changes = [];
@@ -290,6 +303,33 @@ const closeLiff = () => {
   } catch {
     navigateTo('/cart');
   }
+};
+
+const applyCoupon = async () => {
+  if (!couponInput.value.trim()) return;
+  couponLoading.value = true;
+  couponError.value = '';
+  try {
+    const res = await $fetch('/api/validate-coupon', {
+      method: 'POST',
+      body: { code: couponInput.value.trim(), lineUserId: userId.value },
+    });
+    if (res.valid) {
+      appliedCoupon.value = { code: res.code, discountTwd: res.discountTwd };
+    } else {
+      couponError.value = res.message || '折扣碼無效';
+    }
+  } catch {
+    couponError.value = '折扣碼驗證失敗，請稍後再試';
+  } finally {
+    couponLoading.value = false;
+  }
+};
+
+const removeCoupon = () => {
+  appliedCoupon.value = null;
+  couponInput.value = '';
+  couponError.value = '';
 };
 
 const validateForm = () => {
@@ -439,7 +479,8 @@ const submitOrder = async () => {
           form.value.paymentMethod === 'bank_transfer'
             ? hiddenSurcharge.value
             : 0,
-        grandTotalTwd: displayTotal.value,
+        couponCode: appliedCoupon.value?.code || null,
+        grandTotalTwd: finalTotal.value,
         website: form.value.website, // 🍯 honeypot（server-side 也會檢查）
       }),
     });
@@ -452,7 +493,7 @@ const submitOrder = async () => {
     const data = await res.json();
     orderNo.value = data.orderNo || '';
     submittedPaymentMethod.value = form.value.paymentMethod;
-    submittedTotal.value = displayTotal.value;
+    submittedTotal.value = finalTotal.value;
     showTermsModal.value = false;
     orderSubmitted.value = true;
     await nextTick();
@@ -678,11 +719,58 @@ onMounted(async () => {
                 :hidden-surcharge="hiddenSurcharge"
                 :tax-amount="taxAmount"
                 :display-total="displayTotal"
+                :final-total="finalTotal"
+                :coupon-discount-twd="couponDiscountTwd"
                 :payment-method="form.paymentMethod"
                 :valid-item-count="
                   validItems.reduce((s, i) => s + (i.quantity || 1), 0)
                 "
               />
+
+              <!-- 折扣碼 -->
+              <div class="py-4 border-t border-[#E8F0E9]">
+                <p
+                  class="text-[10px] font-black text-[#749D8E] uppercase tracking-widest mb-4 leading-none"
+                >
+                  折扣碼
+                </p>
+                <div class="flex gap-2">
+                  <input
+                    v-model="couponInput"
+                    type="text"
+                    placeholder="輸入折扣碼（選填）"
+                    :disabled="!!appliedCoupon || couponLoading"
+                    class="flex-1 px-4 py-2.5 text-sm bg-[#F4F7F5] border border-[#D4E2DA] rounded-2xl text-[#4A5D59] placeholder-[#A4B8B0] focus:outline-none focus:border-[#749D8E] disabled:opacity-50 uppercase"
+                    @keyup.enter="applyCoupon"
+                  />
+                  <button
+                    v-if="!appliedCoupon"
+                    :disabled="!couponInput.trim() || couponLoading"
+                    class="px-4 py-2.5 text-xs font-bold bg-[#749D8E] text-white rounded-2xl disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap"
+                    @click="applyCoupon"
+                  >
+                    {{ couponLoading ? '確認中...' : '套用' }}
+                  </button>
+                  <button
+                    v-else
+                    class="px-4 py-2.5 text-xs font-bold bg-[#E8F0E9] text-[#5A746B] rounded-2xl whitespace-nowrap"
+                    @click="removeCoupon"
+                  >
+                    取消
+                  </button>
+                </div>
+                <p v-if="couponError" class="text-xs text-red-500 mt-2 ml-1">
+                  {{ couponError }}
+                </p>
+                <p
+                  v-if="appliedCoupon"
+                  class="text-xs text-red-400 font-semibold mt-2 ml-1"
+                >
+                  折扣碼已套用，省下 NT${{
+                    appliedCoupon.discountTwd.toLocaleString()
+                  }}
+                </p>
+              </div>
 
               <CheckoutOrderForm
                 :form="form"
@@ -701,7 +789,7 @@ onMounted(async () => {
         v-if="!pageLoading && !orderSubmitted && validItems.length > 0"
         label="訂單總計"
         sublabel=""
-        :amount="displayTotal"
+        :amount="finalTotal"
         :button-text="submitting ? '送出中' : '下一步'"
         :disabled="submitting"
         @submit="handleSubmitClick"

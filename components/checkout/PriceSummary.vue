@@ -11,8 +11,10 @@ defineProps({
   hiddenSurcharge: { type: Number, default: 0 },
   taxAmount: { type: Number, default: 0 },
   displayTotal: { type: Number, default: 0 },
+  finalTotal: { type: Number, default: 0 },
   paymentMethod: { type: String, default: '' },
   validItemCount: { type: Number, default: 0 },
+  couponDiscountTwd: { type: Number, default: 0 },
 });
 
 const BRAND_LABELS = {
@@ -80,6 +82,16 @@ const BRAND_LABELS = {
           >NT${{ taxAmount.toLocaleString() }}</span
         >
       </div>
+      <!-- 折扣碼優惠 -->
+      <div
+        v-if="couponDiscountTwd > 0"
+        class="flex justify-between items-center"
+      >
+        <span class="text-[11px] text-[#749D8E] font-semibold">折扣碼優惠</span>
+        <span class="text-sm font-bold text-red-400"
+          >-NT${{ couponDiscountTwd.toLocaleString() }}</span
+        >
+      </div>
       <!-- 服務費 -->
       <!-- <div class="flex justify-between items-center">
         <span class="text-[11px] text-[#749D8E] font-semibold">代購服務費</span>
@@ -108,7 +120,7 @@ const BRAND_LABELS = {
           class="text-3xl font-black tracking-tighter leading-none text-[#5A746B]"
         >
           <span class="text-sm">NT$</span>
-          {{ displayTotal.toLocaleString() }}
+          {{ finalTotal.toLocaleString() }}
         </span>
       </div>
     </div>

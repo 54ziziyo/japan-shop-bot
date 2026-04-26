@@ -23,6 +23,7 @@ export async function appendOrderRow(
     subtotalTwd: number;
     shippingTwd: number;
     serviceFeeTwd: number;
+    couponDiscountTwd: number;
     grandTotalTwd: number;
     totalJpy: number;
     email: string;
@@ -58,18 +59,21 @@ export async function appendOrderRow(
     item.priceTwd, // O 商品單價(台幣) (每列顯示)
     item.priceTwd * item.quantity, // P 商品總計(台幣) (每列顯示)
     index === 0 ? order.shippingTwd : '', // Q 運費(台幣) (僅首列顯示)
-    index === 0 ? order.grandTotalTwd : '', // R 含稅總額(台幣) (僅首列顯示)
-    index === 0 ? '' : '', // S 追蹤碼 (僅首列顯示，出貨時由管理員填入)
-    index === 0 ? order.email : '', // T 電子信箱 (僅首列顯示)
-    item.product_url || '', // U 商品網址 (每列顯示)
-    item.costTwd ?? '', // V 單件商品成本(台幣) (每列顯示)
-    item.costTwd != null ? item.priceTwd - item.costTwd : '', // W 單件利潤(台幣) (每列顯示)
-    item.costTwd != null ? (item.priceTwd - item.costTwd) * item.quantity : '', // X 總利潤(台幣) (每列顯示)
+    index === 0 ? (order.couponDiscountTwd > 0 ? order.couponDiscountTwd : '') : '', // R 折扣優惠金額(台幣) (僅首列顯示)
+    index === 0 ? order.grandTotalTwd : '', // S 含稅總額(台幣) (僅首列顯示)
+    index === 0 ? '' : '', // T 追蹤碼 (僅首列顯示，出貨時由管理員填入)
+    index === 0 ? order.email : '', // U 電子信箱 (僅首列顯示)
+    item.product_url || '', // V 商品網址 (每列顯示)
+    item.costTwd ?? '', // W 單件商品成本(台幣) (每列顯示)
+    item.costTwd != null ? item.priceTwd - item.costTwd : '', // X 單件利潤(台幣) (每列顯示)
+    item.costTwd != null
+      ? (item.priceTwd - item.costTwd) * item.quantity - (index === 0 ? order.couponDiscountTwd : 0)
+      : '', // Y 總利潤(台幣)：第一列扣除折扣優惠金額 (每列顯示)
   ]);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: config.googleSpreadsheetId,
-    range: `${config.googleSheetName}!A:X`, // 範圍確保包含 X 欄
+    range: `${config.googleSheetName}!A:Y`, // 範圍確保包含 Y 欄
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: rows },
   });

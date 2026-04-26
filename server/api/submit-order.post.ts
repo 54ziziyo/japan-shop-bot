@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
     shippingMethod,
     serviceFeeTwd,
     discountTwd,
+    couponCode,
     grandTotalTwd,
     website,
     email,
@@ -58,6 +59,73 @@ export default defineEventHandler(async (event) => {
     channelAccessToken: config.line.channelAccessToken,
     channelSecret: config.line.channelSecret,
   });
+
+  // 0. 驗證折扣碼並原子性扣除使用次數
+  let couponDiscountTwd = 0;
+  if (couponCode) {
+    const { data: coupon } = await supabase
+      .from('coupon_codes')
+      .select(
+        'id, code, discount_twd, used_count, total_quantity, is_active, expires_at, per_user_limit',
+      )
+      .eq('code', String(couponCode).trim().toUpperCase())
+      .maybeSingle();
+
+    if (!coupon || !coupon.is_active) {
+      throw createError({ statusCode: 400, statusMessage: '折扣碼無效' });
+    }
+    couponDiscountTwd = coupon.discount_twd ?? 0;
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      throw createError({ statusCode: 400, statusMessage: '此折扣碼已過期' });
+    }
+    if (coupon.used_count >= coupon.total_quantity) {
+      throw createError({ statusCode: 400, statusMessage: '折扣碼已使用完畢' });
+    }
+    // 僅在此折扣碼設定「每人限用一次」時才檢查使用記錄
+    if (coupon.per_user_limit) {
+      const { data: existingUsage } = await supabase
+        .from('coupon_usages')
+        .select('id')
+        .eq('coupon_code', coupon.code)
+        .eq('line_user_id', userId)
+        .maybeSingle();
+      if (existingUsage) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: '您已使用過此折扣碼',
+        });
+      }
+    }
+    // 樂觀鎖定：確保 used_count 未被其他請求同步更新，防止超用
+    const { data: updated } = await supabase
+      .from('coupon_codes')
+      .update({ used_count: coupon.used_count + 1 })
+      .eq('id', coupon.id)
+      .eq('used_count', coupon.used_count)
+      .select('id');
+    if (!updated?.length) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: '折扣碼剛被其他人使用，請重新整理後再試',
+      });
+    }
+    // 若限制每人一次，記錄此用戶已使用
+    if (coupon.per_user_limit) {
+      const { error: usageError } = await supabase
+        .from('coupon_usages')
+        .insert({
+          coupon_code: coupon.code,
+          line_user_id: userId,
+        });
+      if (usageError) {
+        console.error(
+          '❌ coupon_usages insert error:',
+          usageError.code,
+          usageError.message,
+        );
+      }
+    }
+  }
 
   // 1. 儲存訂單至資料庫
   const { data: order, error: orderError } = await supabase
@@ -116,6 +184,7 @@ export default defineEventHandler(async (event) => {
         subtotalTwd: subtotalTwd || 0,
         shippingTwd: shippingTwd || 0,
         serviceFeeTwd: serviceFeeTwd || 0,
+        couponDiscountTwd,
         grandTotalTwd: grandTotalTwd || 0,
         totalJpy: totalJpy || 0,
         email: email || '',
