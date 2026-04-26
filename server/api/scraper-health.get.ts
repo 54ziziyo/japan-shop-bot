@@ -16,27 +16,27 @@ const TEST_URLS: Record<
   { url: string; scraper: (url: string) => Promise<unknown> }
 > = {
   uniqlo: {
-    url: 'https://www.uniqlo.com/jp/ja/products/E469498-000/00',
+    url: 'https://www.uniqlo.com/jp/ja/products/E482148-000/00?colorDisplayCode=11&sizeDisplayCode=004',
     scraper: scrapeUniqlo,
   },
   gu: {
-    url: 'https://www.gu-global.com/jp/ja/products/E363578-000/00',
+    url: 'https://www.gu-global.com/jp/ja/products/E359749-000/00?colorDisplayCode=01&sizeDisplayCode=999',
     scraper: scrapeGu,
   },
   rstaichi: {
-    url: 'https://ec.rs-taichi.com/rsj334.html',
+    url: 'https://www.ec.rs-taichi.com/rss014.html',
     scraper: scrapeRstaichi,
   },
   kushitani: {
-    url: 'https://www.kushitanionline.com/shopdetail/000000001191/?pid=1721203975',
+    url: 'https://www.kushitani.co.jp/products/kg11c.html',
     scraper: scrapeKushitani,
   },
   fr2: {
-    url: 'https://fr2.tokyo/products/1080000003180',
+    url: 'https://fr2.tokyo/products/1080000003294',
     scraper: scrapeFr2,
   },
   bape: {
-    url: 'https://jp.bape.com/products/1l70-150-001',
+    url: 'https://jp.bape.com/products/1k70-291-329?_pos=5&_sid=de1a546fb&_ss=r',
     scraper: scrapeBape,
   },
 };
