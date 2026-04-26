@@ -62,11 +62,14 @@ export async function appendOrderRow(
     index === 0 ? '' : '', // S 追蹤碼 (僅首列顯示，出貨時由管理員填入)
     index === 0 ? order.email : '', // T 電子信箱 (僅首列顯示)
     item.product_url || '', // U 商品網址 (每列顯示)
+    item.costTwd ?? '', // V 單件商品成本(台幣) (每列顯示)
+    item.costTwd != null ? item.priceTwd - item.costTwd : '', // W 單件利潤(台幣) (每列顯示)
+    item.costTwd != null ? (item.priceTwd - item.costTwd) * item.quantity : '', // X 總利潤(台幣) (每列顯示)
   ]);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: config.googleSpreadsheetId,
-    range: `${config.googleSheetName}!A:U`, // 範圍確保包含 U 欄
+    range: `${config.googleSheetName}!A:X`, // 範圍確保包含 X 欄
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: rows },
   });

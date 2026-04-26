@@ -396,17 +396,23 @@ const handleSubmitClick = async () => {
 const submitOrder = async () => {
   submitting.value = true;
   try {
-    const orderItems = validItems.value.map((item) => ({
-      product_title: item.product_title,
-      product_code: item.product_code,
-      color: item.color,
-      size: item.size,
-      price: item.displayPrice,
-      priceTwd: parsePriceTwd(item.displayPrice, jpyRate.value),
-      quantity: item.quantity || 1,
-      image_url: item.image_url || '',
-      product_url: item.product_url || '',
-    }));
+    const orderItems = validItems.value.map((item) => {
+      const priceTwd = parsePriceTwd(item.displayPrice, jpyRate.value);
+      // 成本 = 日幣原價 × 基礎匯率（不含加碼），等同代購進貨成本
+      const costTwd = Math.round(parseJpy(item.displayPrice) * jpyRate.value);
+      return {
+        product_title: item.product_title,
+        product_code: item.product_code,
+        color: item.color,
+        size: item.size,
+        price: item.displayPrice,
+        priceTwd,
+        costTwd,
+        quantity: item.quantity || 1,
+        image_url: item.image_url || '',
+        product_url: item.product_url || '',
+      };
+    });
 
     const res = await fetch('/api/submit-order', {
       method: 'POST',
