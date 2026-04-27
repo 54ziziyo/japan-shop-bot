@@ -46,10 +46,10 @@ const BRAND_LABELS = {
       <div class="flex justify-between items-center">
         <span class="text-[11px] text-[#749D8E] font-semibold">
           國際運費
-          <!-- <span class="text-[9px] text-[#A4B8B0] ml-1"
+          <span class="text-[9px] text-[#A4B8B0] ml-1"
             >{{ shippingInfo.method }} ·
             {{ totalWeight.toLocaleString() }}g</span
-          > -->
+          >
         </span>
 
         <span class="text-sm font-bold text-[#5A746B]"
