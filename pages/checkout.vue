@@ -92,38 +92,14 @@ const formatTaiwanDeadline = (unixTs) => {
   if (!unixTs) return null;
   const utcMs = Number(unixTs) * 1000;
 
-  console.log('---------- 採購截止計算分析 ----------');
-  console.log('1. 原始時間戳 (Unix):', unixTs);
-  console.log('2. UTC 時間 (GMT):', new Date(utcMs).toUTCString());
-
-  // 計算日本時間 (UTC+9)
-  const dateJP = new Date(utcMs + 9 * 60 * 60 * 1000);
-  console.log(
-    `3. 日本官網截止 (JST): ${dateJP.getUTCMonth() + 1}/${dateJP.getUTCDate()} ${dateJP.getUTCHours().toString().padStart(2, '0')}:${dateJP.getUTCMinutes().toString().padStart(2, '0')}`,
-  );
-
-  // 計算台灣對應時間 (UTC+8)
-  const dateTW = new Date(utcMs + 8 * 60 * 60 * 1000);
-  console.log(
-    `4. 台灣對應時間 (CST): ${dateTW.getUTCMonth() + 1}/${dateTW.getUTCDate()} ${dateTW.getUTCHours().toString().padStart(2, '0')}:${dateTW.getUTCMinutes().toString().padStart(2, '0')}`,
-  );
-
-  // 你的緩衝計算邏輯 (UTC + 7)
-  // 這等於是「台灣時間 (UTC+8)」再「提前 1 小時 ( -1 )」收單
+  // 台灣時間 (UTC+8)，提前 1 小時收單作為緩衝
   const tw = new Date(utcMs + 7 * 60 * 60 * 1000);
-
-  // 這裡要用 getUTCHours，因為 tw 已經手動加了時差偏移，要取其絕對值
   const m = tw.getUTCMonth() + 1;
   const day = tw.getUTCDate();
   const h = tw.getUTCHours();
   const min = tw.getUTCMinutes();
 
-  const finalResult = `${m}/${day} ${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}（台灣時間）`;
-  console.log('5. 顯示給客戶看 (緩衝後):', finalResult);
-  console.log('------------------------------------');
-  // --- 偵錯結束 ---
-
-  return finalResult;
+  return `${m}/${day} ${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}（台灣時間）`;
 };
 
 // ── Computed ──
@@ -209,16 +185,22 @@ const totalWeight = computed(() => {
   }, 0);
 });
 
-// 是否包含 RsTaichi 商品（強制國際小包）
-const hasRstaichiItems = computed(() =>
-  validItems.value.some((item) =>
-    (item.category || '').toLowerCase().startsWith('rstaichi|'),
-  ),
+// 是否需要強制國際小包（RS Taichi 任何商品 / Kushitani 有重量商品）
+const forceIntlPacket = computed(() =>
+  validItems.value.some((item) => {
+    const cat = (item.category || '').toLowerCase();
+    if (cat.startsWith('rstaichi|')) return true;
+    if (cat.startsWith('kushitani|')) {
+      const w = parseInt(cat.split('|')[1] || '0');
+      return w > 0;
+    }
+    return false;
+  }),
 );
 
 // 運費資訊
 const shippingInfo = computed(() =>
-  getShippingTwd(totalWeight.value, jpyRate.value, hasRstaichiItems.value),
+  getShippingTwd(totalWeight.value, jpyRate.value, forceIntlPacket.value),
 );
 
 // 日本國內運費
@@ -820,9 +802,19 @@ onMounted(async () => {
               限時特價商品若於日本網站採購時已恢復原價，我們將主動聯繫您，並依情況取消交易退款或請您補足差額。
             </li>
             <li>
+              運費變動：
+              商品運費為設定好的預估金額，實際運費將依照日本寄出時的重量、材積與運費規則計算，若有變動將主動聯繫您說明差額並請您補足。
+            </li>
+            <li>
               物流時效：商品皆由日本空運回台，正常現貨狀況約 7-14
               個工作天抵台，若遇海關查驗或物流突發狀況，最長需等候 30
-              個工作天，急單請聯繫專人客服 👉 https://lin.ee/BIvxV5C
+              個工作天，急單請聯繫專人客服 👉
+              <a
+                href="https://lin.ee/BIvxV5C"
+                target="_blank"
+                rel="noopener noreferrer"
+                ><b>LINE 客服</b></a
+              >
             </li>
             <li>
               代購性質：本服務屬「客製化給付」，下單後即進入採購流程，不適用 7

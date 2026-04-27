@@ -152,15 +152,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: '訂單儲存失敗' });
   }
 
-  // 生成訂單編號
+  // 生成訂單編號（台灣時間 UTC+8）
   const now = new Date();
+  const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
   const datePart =
-    now.getFullYear().toString().slice(-2) +
-    (now.getMonth() + 1).toString().padStart(2, '0') +
-    now.getDate().toString().padStart(2, '0') +
-    now.getHours().toString().padStart(2, '0') +
-    now.getMinutes().toString().padStart(2, '0');
+    twNow.getUTCFullYear().toString().slice(-2) +
+    pad(twNow.getUTCMonth() + 1) +
+    pad(twNow.getUTCDate()) +
+    pad(twNow.getUTCHours()) +
+    pad(twNow.getUTCMinutes());
   const orderNo = `RM${datePart}${order.id.slice(-4).toUpperCase()}`;
+  // 台灣時間字串（寫入 Google 試算表 C 欄下單時間）
+  const twDateStr = `${twNow.getUTCFullYear()}/${pad(twNow.getUTCMonth() + 1)}/${pad(twNow.getUTCDate())} ${pad(twNow.getUTCHours())}:${pad(twNow.getUTCMinutes())}:${pad(twNow.getUTCSeconds())}`;
 
   // 2. 寫入 Google 試算表（失敗不阻斷下單）
   try {
@@ -173,7 +177,7 @@ export default defineEventHandler(async (event) => {
       {
         orderId: order.id,
         orderNo,
-        createdAt: now.toISOString(),
+        createdAt: twDateStr,
         lineName: lineName || '',
         customerName,
         phone,

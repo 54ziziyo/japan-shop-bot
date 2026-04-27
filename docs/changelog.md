@@ -4,6 +4,35 @@
 
 ---
 
+### 2026-04-27
+
+**修正 RS Taichi 商品重量多算 500g 包材**
+
+- **問題**：爬蟲 `scrapeRstaichi()` 已在 `weightGrams` 加入 500g 包材，但 `shared/shipping.ts` 的 `getCategoryWeight()` 對 `rstaichi|` 類別又多加一次 500g，導致每件商品運費超收
+- **影響**：以 RS Taichi 夾克（1.2kg）為例，實際應計 1700g（含包材），系統誤算 2200g，跨費率區間後運費多收約 ¥700（NT$143）
+- **修正位置**：`shared/shipping.ts` → `getCategoryWeight()` 中 `rstaichi` 分支移除多餘的 `+ 500`，與 Kushitani 邏輯一致
+- **驗證**：`kushitani|` 分支原本就是「爬蟲已含包材，直接使用」，現在 `rstaichi|` 統一相同處理
+
+**修正 Kushitani 商品未強制國際小包（checkout.vue）**
+
+- **問題**：`checkout.vue` 僅偵測 `rstaichi|` 前綴觸發強制國際小包，Kushitani 有重量商品（`kushitani|{grams}`，grams > 0）未被納入判斷
+- **修正位置**：`pages/checkout.vue` → `forceIntlPacket` computed 加入 Kushitani 判斷
+- **邏輯**：`kushitani|0`（skipShipping=true）不觸發；`kushitani|{grams > 0}` 正確觸發國際小包
+
+**訂單時間改為台灣時區（UTC+8）**
+
+- **問題**：Vercel 伺服器以 UTC 運行，`new Date()` 回傳 UTC 時間，導致訂單編號（`RM260427...`）和 Google 試算表 C 欄時間顯示 UTC，與台灣時間差 8 小時
+- **修正位置**：`server/api/submit-order.post.ts`
+- **方式**：`new Date(now.getTime() + 8 * 60 * 60 * 1000)` 換算台灣時間，訂單編號與試算表時間欄均改用台灣時間字串（格式：`YYYY/MM/DD HH:mm:ss`）
+- **DB `created_at`**：Supabase 儲存仍為 UTC（PostgreSQL 標準），不受影響
+
+**確認 Kushitani 自訂售價商品全部為含運直送**
+
+- `server/data/kushitani-pricing.json` 所有條目 `skipShipping: true`，確認全部為含運直送
+- LINE Bot 確認訊息「此商品為自訂售價，含運直送」文字正確無誤
+
+---
+
 ### 2026-04-18
 
 **新增國際運費 1% 包材附加費**

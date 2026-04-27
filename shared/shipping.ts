@@ -158,9 +158,9 @@ export function getCategoryWeight(categoryStr: string): number {
 
     // 品牌直接重量格式: "rstaichi|1700" / "kushitani|2500"
     if (cls === 'rstaichi') {
-      // +500g 為包材（紙箱 / 緩衝材）
+      // 爬蟲內部已加 500g 包材（scraper: weightGrams += PACKAGING_EXTRA_GRAMS），直接使用
       const grams = parseInt(rest);
-      return grams > 0 ? grams + 500 : FALLBACK_WEIGHT;
+      return grams > 0 ? grams : FALLBACK_WEIGHT;
     }
     if (cls === 'kushitani') {
       // 爬蟲已含包材重量，直接使用；0 表示含運直送，不計重
@@ -347,6 +347,10 @@ const DOMESTIC_FLAT_FEE_JPY = 400;
 const DOMESTIC_FREE_THRESHOLD_JPY = 4990;
 /** UNIQLO / GU：未達門檻時的日本國內運費 */
 const DOMESTIC_THRESHOLD_FEE_JPY = 500;
+/** KUSHITANI：訂單日幣總額（含稅）未滿此門檻時，加收日本國內運費 */
+const KUSHITANI_FREE_THRESHOLD_JPY = 22000;
+/** KUSHITANI：未達門檻時的日本國內運費 */
+const KUSHITANI_DOMESTIC_FEE_JPY = 1100;
 
 export interface DomesticShippingResult {
   totalJpy: number;
@@ -359,6 +363,7 @@ export interface DomesticShippingResult {
  * 計算日本國內運費
  * - BAPE / FR2：不論金額，每個有買到的品牌固定 ¥400
  * - UNIQLO / GU：該品牌日幣商品總額 < ¥4990 時才收 ¥500
+ * - KUSHITANI：有日幣計價商品且總額（含稅）< ¥22,000 時收 ¥1,100；≥ ¥22,000 免運
  */
 export function getDomesticShippingJpy(
   items: CartItemForQuote[],
@@ -409,6 +414,14 @@ export function getDomesticShippingJpy(
     if (jpyTotal < DOMESTIC_FREE_THRESHOLD_JPY) {
       details.push({ brand: 'gu', feeJpy: DOMESTIC_THRESHOLD_FEE_JPY });
       totalJpy += DOMESTIC_THRESHOLD_FEE_JPY;
+    }
+  }
+  // KUSHITANI：有日幣計價商品且未滿 ¥22,000（含稅）時收 ¥1,100
+  if (brandPresent.has('kushitani')) {
+    const jpyTotal = brandJpyTotals['kushitani'] || 0;
+    if (jpyTotal > 0 && jpyTotal < KUSHITANI_FREE_THRESHOLD_JPY) {
+      details.push({ brand: 'kushitani', feeJpy: KUSHITANI_DOMESTIC_FEE_JPY });
+      totalJpy += KUSHITANI_DOMESTIC_FEE_JPY;
     }
   }
 

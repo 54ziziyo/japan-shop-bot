@@ -46,6 +46,14 @@ export default defineEventHandler(async (event) => {
 
   if (!items.length) return { results: [], hasChanges: false };
 
+  // 每次最多允許 30 件（防止惡意大量爬蟲請求）
+  if (items.length > 30) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '購物車商品數量超過上限（30 件）',
+    });
+  }
+
   // 按品牌分流
   const uniqloItems: CartItem[] = [];
   const guItems: CartItem[] = [];

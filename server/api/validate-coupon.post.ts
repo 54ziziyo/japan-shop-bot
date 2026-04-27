@@ -18,10 +18,11 @@ export default defineEventHandler(async (event) => {
     .eq('code', code.trim().toUpperCase())
     .maybeSingle();
 
-  if (!coupon) return { valid: false, message: '折扣碼不存在' };
-  if (!coupon.is_active) return { valid: false, message: '此折扣碼已停用' };
+  // 統一回傳「無效」，避免洩漏折扣碼是否存在或狀態
+  if (!coupon || !coupon.is_active)
+    return { valid: false, message: '折扣碼無效' };
   if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-    return { valid: false, message: '此折扣碼已過期' };
+    return { valid: false, message: '折扣碼無效' };
   }
   if (coupon.used_count >= coupon.total_quantity) {
     return { valid: false, message: '此折扣碼已被使用完畢' };

@@ -4,16 +4,39 @@ LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**GU**、**RS Taich
 
 ---
 
+## 近期重要更新（2026-04-28）
+
+| 項目                                  | 說明                                                                                       |
+| ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 🔒 移除 checkout.post.ts 公開端點     | 該 fallback 端點為死碼且無身分驗證，已直接刪除消除攻擊面                                   |
+| 🔒 折扣碼查詢統一錯誤訊息             | `validate-coupon.post.ts` 不存在/停用/過期統一回傳「折扣碼無效」，防止外部試探碼的存在狀態 |
+| 🔒 sync-cart 新增最大 30 件上限       | 防止惡意送入大量商品觸發爬蟲請求                                                           |
+| 🐛 Kushitani 國內運費邏輯新增         | 訂單日幣總額（含稅）< ¥22,000 收 ¥1,100；≥ ¥22,000 免運                                    |
+| 🧹 移除 checkout.vue 偵錯 console.log | `formatTaiwanDeadline` 中殘留的開發期 log 已清除                                           |
+
+**2026-04-27**
+
+| 項目                            | 說明                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| 🐛 RS Taichi 運費多算 500g 修正 | 爬蟲與 `getCategoryWeight` 都在加 500g 包材，現已統一只加一次           |
+| 🐛 Kushitani 強制國際小包修正   | `checkout.vue` 的 `forceIntlPacket` 現在正確偵測 `kushitani\|{grams>0}` |
+| 🕐 訂單時間改為台灣時區         | 訂單編號與 Google 試算表 C 欄時間均改為 UTC+8                           |
+| ✅ Kushitani 自訂售價全部含運   | `kushitani-pricing.json` 所有條目確認 `skipShipping: true`              |
+
+> 詳細變更說明見 [docs/changelog.md](docs/changelog.md)
+
+---
+
 ## 📖 文件導覽
 
-| 文件 | 內容 |
-|------|------|
-| **README.md**（本頁） | 技術架構、目錄結構、操作流程、快速開始 |
-| [docs/business-rules.md](docs/business-rules.md) | 定價、匯率、運費、國內運費、品牌規則、試算頁面、驗證規則 |
-| [docs/database.md](docs/database.md) | 環境變數、Supabase 資料表、Google 試算表、Apps Script |
-| [docs/operations.md](docs/operations.md) | 維運費用、爬蟲監控、效能設計、Vercel/Supabase 額度 |
-| [docs/extension-guide.md](docs/extension-guide.md) | 擴充新品牌步驟、系統連動修改對照表 |
-| [docs/changelog.md](docs/changelog.md) | 更新紀錄 |
+| 文件                                               | 內容                                                     |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| **README.md**（本頁）                              | 技術架構、目錄結構、操作流程、快速開始                   |
+| [docs/business-rules.md](docs/business-rules.md)   | 定價、匯率、運費、國內運費、品牌規則、試算頁面、驗證規則 |
+| [docs/database.md](docs/database.md)               | 環境變數、Supabase 資料表、Google 試算表、Apps Script    |
+| [docs/operations.md](docs/operations.md)           | 維運費用、爬蟲監控、效能設計、Vercel/Supabase 額度       |
+| [docs/extension-guide.md](docs/extension-guide.md) | 擴充新品牌步驟、系統連動修改對照表                       |
+| [docs/changelog.md](docs/changelog.md)             | 更新紀錄                                                 |
 
 ---
 
@@ -62,9 +85,8 @@ japan-shop-bot/
 ├── server/
 │   ├── api/                   # 後端 API 路由
 │   │   ├── webhook.post.ts            # LINE Webhook 入口（處理所有 LINE 事件）
-│   │   ├── sync-cart.post.ts          # 結帳前同步驗證商品價格與庫存
+│   │   ├── sync-cart.post.ts          # 結帳前同步驗證商品價格與庫存（最多 30 件）
 │   │   ├── submit-order.post.ts       # 提交訂單（DB + 試算表 + email）
-│   │   ├── checkout.post.ts           # 結帳 fallback（liff.sendMessages 失敗備案）
 │   │   ├── exchange-rate.get.ts       # 取得當前 JPY 匯率
 │   │   ├── update-order-status.post.ts# Google Apps Script Webhook（更新訂單狀態）
 │   │   ├── update-order-address.post.ts # 客戶修改收件地址
@@ -207,19 +229,19 @@ GET http://localhost:3000/api/cancel-expired-orders?secret={CRON_SECRET 值}
 
 ## 常見修改位置速查
 
-| 想改什麼                  | 去哪改                                                                                                                                                           |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 加碼比例 / 定價公式       | `shared/pricing.ts` → `getRateMarkup()`                                                                                                                          |
-| 最低匯率下限              | `shared/pricing.ts` → `MIN_JPY_RATE`                                                                                                                             |
-| 商品重量估算              | `shared/shipping.ts` → `WEIGHT_MAP`                                                                                                                              |
-| 服務費金額                | `shared/shipping.ts` → `SERVICE_FEE_TWD`                                                                                                                         |
-| 國內運費常數              | `shared/shipping.ts` → `DOMESTIC_FLAT_FEE_JPY` / `DOMESTIC_FREE_THRESHOLD_JPY`                                                                                   |
-| 匯率備用值                | `server/utils/exchangeRate.ts` → `FALLBACK_RATE`                                                                                                                 |
-| 逾期天數（3 天 → 改幾天） | `server/api/cancel-expired-orders.get.ts` → `EXPIRE_MS`                                                                                                          |
-| 自動刪除執行時間          | `vercel.json` → `schedule`                                                                                                                                       |
-| 訂單狀態新增 / 修改       | `server/api/update-order-status.post.ts` → `ALLOWED_STATUSES`、`orders.vue` 的 `STATUS_LABELS`、Google 試算表 H 欄下拉選單                                       |
-| 銀行帳號 / 行名           | `submit-order.post.ts`、`OrderForm.vue`、`Success.vue`、`orders.vue` 各自的 `BANK_*` 常數（四處都要改） |
-| Kushitani 自訂售價        | `server/data/kushitani-pricing.json`                                                                                                                             |
-| Kushitani 禁售商品        | `server/utils/brandConfig.ts` → `KUSHITANI_BLOCKED_PIDS`                                                                                                         |
-| 品牌分類選擇器            | `server/utils/line/shopCarousel.ts` → `buildCategorySelector()`                                                                                                  |
-| 截單時間（22:00）         | `webhook.post.ts` → `promoWarning` + `OrderForm.vue` → 截單提醒文字（兩處都要改）                                                                               |
+| 想改什麼                  | 去哪改                                                                                                                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 加碼比例 / 定價公式       | `shared/pricing.ts` → `getRateMarkup()`                                                                                                                                                |
+| 最低匯率下限              | `shared/pricing.ts` → `MIN_JPY_RATE`                                                                                                                                                   |
+| 商品重量估算              | `shared/shipping.ts` → `WEIGHT_MAP`                                                                                                                                                    |
+| 服務費金額                | `shared/shipping.ts` → `SERVICE_FEE_TWD`                                                                                                                                               |
+| 國內運費常數              | `shared/shipping.ts` → `DOMESTIC_FLAT_FEE_JPY`（BAPE/FR2 固定 ¥400）、`DOMESTIC_FREE_THRESHOLD_JPY`（Uniqlo/GU 門檻 ¥4,990）、`KUSHITANI_FREE_THRESHOLD_JPY`（Kushitani 門檻 ¥22,000） |
+| 匯率備用值                | `server/utils/exchangeRate.ts` → `FALLBACK_RATE`                                                                                                                                       |
+| 逾期天數（3 天 → 改幾天） | `server/api/cancel-expired-orders.get.ts` → `EXPIRE_MS`                                                                                                                                |
+| 自動刪除執行時間          | `vercel.json` → `schedule`                                                                                                                                                             |
+| 訂單狀態新增 / 修改       | `server/api/update-order-status.post.ts` → `ALLOWED_STATUSES`、`orders.vue` 的 `STATUS_LABELS`、Google 試算表 H 欄下拉選單                                                             |
+| 銀行帳號 / 行名           | `submit-order.post.ts`、`OrderForm.vue`、`Success.vue`、`orders.vue` 各自的 `BANK_*` 常數（四處都要改）                                                                                |
+| Kushitani 自訂售價        | `server/data/kushitani-pricing.json`                                                                                                                                                   |
+| Kushitani 禁售商品        | `server/utils/brandConfig.ts` → `KUSHITANI_BLOCKED_PIDS`                                                                                                                               |
+| 品牌分類選擇器            | `server/utils/line/shopCarousel.ts` → `buildCategorySelector()`                                                                                                                        |
+| 截單時間（22:00）         | `webhook.post.ts` → `promoWarning` + `OrderForm.vue` → 截單提醒文字（兩處都要改）                                                                                                      |
