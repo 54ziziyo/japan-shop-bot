@@ -416,6 +416,7 @@ const handleSubmitClick = async () => {
 };
 
 const submitOrder = async () => {
+  if (submitting.value) return;
   submitting.value = true;
   try {
     const orderItems = validItems.value.map((item) => {

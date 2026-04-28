@@ -4,11 +4,110 @@
 
 ---
 
-### 2026-04-27
+### 2026-04-29（第二批次）
+
+**修正 BAPE jp.bape.com CDN store ID 錯誤**
+
+- **問題**：`server/utils/line/cards/bape.ts` 圖片壓縮與 `server/api/webhook.post.ts` 圖片重建均使用錯誤的 store ID `1/0553/6863/3473`，正確值為 `1/0326/3660/0451`
+- **影響**：所有 jp.bape.com 商品圖片無法壓縮（壓縮後前綴不符 `BAPE:`），postback data 直接塞完整 URL，必然超過 300 字元上限
+- **修正位置**：`cards/bape.ts`（`replace()` 正則）、`webhook.post.ts`（`BAPE:` 重建段）
+
+**修正 bapepirate.com productUrl 重建錯誤**
+
+- **問題**：`webhook.post.ts` brand=bape 區塊一律產生 `jp.bape.com/products/{handle}`，bapepirate 商品加入購物車後 `product_url` 指向錯誤網站
+- **修正**：判斷 `imgPath.startsWith('BAPEP:')` 決定 productUrl 來源
+- **連動影響**：sync-cart 調用 `detectBrand(product_url)` 時會正確辨識 bapepirate 商品並發起正確爬蟲
+
+**確認 bapepirate.com 國內運費邏輯**
+
+- bapepirate 商品透過 BAPE 爬蟲存入 `category = 'bape|{grams}'`，`shared/shipping.ts` 的 `brandPresent.has('bape')` 判斷已自動涵蓋，固定 ¥400，無需額外修改
+
+**BAPE 重量估算規則擴充**
+
+- 新增 product_type 對應表項目：`アイウェア` 100g、`ニット` 400g、`シューズ` 800g
+- 新增 name 關鍵字規則（按比對優先順序排列）：
+  - 眼鏡：`SUNGLASSES / OPTICAL FRAME / GLASSES` → 100g
+  - 手機殼：`IPHONE / PHONE CASE / \bCASE\b` → 100g
+  - 吊飾：`\bCHARM\b / チャーム` → 80g
+  - 公仔：`FIGURE / フィギュア` → 400g
+  - 填充玩具：`PLUSH / ぬいぐるみ / STUFFED` → 250g
+  - 靠枕：`CUSHION / クッション / PILLOW` → 350g
+  - 水瓶/保溫瓶：`WATER BOTTLE / BOTTLE / TUMBLER / \bMUG\b` → 300g
+  - 項鍊/錶帶：`NECKLACE / BRACELET / BANGLE / WATCH BAND` → 80g
+  - 泳裝：`SWIMWEAR / 水着` → 150g
+  - 內衣：`\bBRA\b / BRALETTE` → 100g
+  - `KEYRING` 加入 KEYCHAIN 規則
+  - `BANDANA` 加入 SCARF/TOWEL 規則
+
+**AAPE 重量估算規則擴充**
+
+- 新增 name 關鍵字規則（涵蓋 ファッション雑貨 / 食器キッチン / アクセサリー 等分類）：
+  - 眼鏡：`sunglasses / optical frame` → 100g
+  - 腰帶：`belt / ベルト` → 250g
+  - 手錶：`watch / 時計` → 200g
+  - 飾品：`necklace / bracelet` → 80g
+  - 錢包：`wallet / pouch` → 100g
+  - 保溫瓶/馬克杯：`tumbler / bottle / \bmug\b / \bcup\b` → 300g
+  - 泳裝：`swimwear / 水着` → 150g
+- 後背包規則（`backpack / リュック`）已移至 `bag` 通用規則之前（上一批次修正，此批次確認生效）
+
+**AAPE LINE 卡片顏色統一**
+
+- overlay 背景、完售按鈕背景、footer 背景均從 `#3d3d2a`（黃綠調）改為 `#3d4e4a`（與 BAPE 卡片一致）
+- footer 文字從 `🦁 前往 AAPE 官網查看` 改為 `查看官網詳情`，字型大小改為 `xs`
+
+**F size 按鈕 UX 優化**
+
+- BAPE 與 AAPE 卡片：商品只有 Free size（`F`）時，按鈕顯示「加入購物車」（有庫存）/ 「完售」（無庫存），不顯示多餘的尺碼代號
+
+---
+
+### 2026-04-29（第一批次）
+
+**新增 AAPE（aape.jp）完整支援**
+
+- 新增 `server/utils/scrape/aape.ts`：cheerio 爬蟲，解析 ebisumart SSR HTML，支援顏色/尺寸/庫存，圖片壓縮格式 `AAPE:{colorCode}`
+- 新增 `server/utils/line/cards/aape.ts`：LINE Flex Message 卡片產生器
+- `server/api/webhook.post.ts`：加入 aape 品牌路由、圖片重建（`c.imgz.jp` CDN）
+- `server/api/sync-cart.post.ts`：加入 aape 結帳前價格/庫存同步
+- `shared/shipping.ts`：`AAPE_DOMESTIC_FEE_JPY = 440`，重量解析加入 `aape|` 前綴
+- `server/utils/brandConfig.ts`：`BrandId` 加入 `'aape'`，`detectBrand()` 支援 `aape.jp/item/\d+` 網址，`detectNonJapaneseSite()` 涵蓋 `aape.com`
+
+**新增 bapepirate.com 支援**
+
+- `server/utils/brandConfig.ts`：`detectBrand()` 支援 `bapepirate.com` 網址，歸類為 `'bape'` 品牌
+- `detectNonJapaneseSite()` 改用正則通式，移除 kr.bape.com 等硬編碼，改以 `-JP` TLD 動態偵測
+- bapepirate 商品與 jp.bape.com 共用 BAPE 爬蟲，圖片壓縮前綴 `BAPEP:`（CDN store `1/2238/5135`）
+
+---
+
+### 2026-04-28
+
+**安全性強化、Kushitani 國內運費、雜項修正**
+
+**移除 checkout.post.ts 公開端點**
+
+- 該端點為死碼且無身分驗證，已直接刪除消除攻擊面
+
+**折扣碼查詢統一錯誤訊息**
+
+- `validate-coupon.post.ts` 不存在/停用/過期統一回傳「折扣碼無效」，防止外部試探碼的存在狀態
+
+**sync-cart 新增最大 30 件上限**
+
+- 防止惡意送入大量商品觸發爬蟲請求
+
+**新增 Kushitani 國內運費邏輯**
+
+- 訂單日幣總額（含稅）< ¥22,000 收 ¥1,100；≥ ¥22,000 免運
+- 修改位置：`shared/shipping.ts` → `getDomesticShippingJpy()`
+
+**移除 checkout.vue 偵錯 console.log**
+
+- `formatTaiwanDeadline` 中殘留的開發期 log 已清除
 
 **修正 RS Taichi 商品重量多算 500g 包材**
 
-- **問題**：爬蟲 `scrapeRstaichi()` 已在 `weightGrams` 加入 500g 包材，但 `shared/shipping.ts` 的 `getCategoryWeight()` 對 `rstaichi|` 類別又多加一次 500g，導致每件商品運費超收
 - **影響**：以 RS Taichi 夾克（1.2kg）為例，實際應計 1700g（含包材），系統誤算 2200g，跨費率區間後運費多收約 ¥700（NT$143）
 - **修正位置**：`shared/shipping.ts` → `getCategoryWeight()` 中 `rstaichi` 分支移除多餘的 `+ 500`，與 Kushitani 邏輯一致
 - **驗證**：`kushitani|` 分支原本就是「爬蟲已含包材，直接使用」，現在 `rstaichi|` 統一相同處理

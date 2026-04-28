@@ -177,6 +177,11 @@ export function getCategoryWeight(categoryStr: string): number {
       const grams = parseInt(rest);
       return grams > 0 ? grams : FALLBACK_WEIGHT;
     }
+    if (cls === 'aape') {
+      // AAPE 爬蟲已含包材重量（估算值），直接使用
+      const grams = parseInt(rest);
+      return grams > 0 ? grams : FALLBACK_WEIGHT;
+    }
 
     const classMap = WEIGHT_MAP[cls];
     if (classMap) return classMap[rest] ?? classMap._default ?? FALLBACK_WEIGHT;
@@ -215,7 +220,7 @@ export function getCategoryLabel(categoryStr: string): string {
   const lower = categoryStr.toLowerCase();
   const cls = lower.includes('|') ? lower.split('|')[0]! : lower;
   if (cls === 'rstaichi' || cls === 'kushitani') return '重機部品';
-  if (cls === 'fr2' || cls === 'bape') return '潮流精品';
+  if (cls === 'fr2' || cls === 'bape' || cls === 'aape') return '潮流精品';
   return CLASS_LABELS[cls] || '其他';
 }
 
@@ -351,6 +356,8 @@ const DOMESTIC_THRESHOLD_FEE_JPY = 500;
 const KUSHITANI_FREE_THRESHOLD_JPY = 22000;
 /** KUSHITANI：未達門檻時的日本國內運費 */
 const KUSHITANI_DOMESTIC_FEE_JPY = 1100;
+/** AAPE：每個品牌固定收 ¥440 日本國內運費 */
+const AAPE_DOMESTIC_FEE_JPY = 440;
 
 export interface DomesticShippingResult {
   totalJpy: number;
@@ -361,7 +368,8 @@ export interface DomesticShippingResult {
 
 /**
  * 計算日本國內運費
- * - BAPE / FR2：不論金額，每個有買到的品牌固定 ¥400
+ * - BAPE / bapepirate / FR2：不論金額，每個有買到的品牌固定 ¥400
+ *   （bapepirate 商品以 category='bape|{g}' 存儲，與 jp.bape.com 同屬 bape 品牌邏輯）
  * - UNIQLO / GU：該品牌日幣商品總額 < ¥4990 時才收 ¥500
  * - KUSHITANI：有日幣計價商品且總額（含稅）< ¥22,000 時收 ¥1,100；≥ ¥22,000 免運
  */
@@ -399,6 +407,11 @@ export function getDomesticShippingJpy(
   if (brandPresent.has('fr2')) {
     details.push({ brand: 'fr2', feeJpy: DOMESTIC_FLAT_FEE_JPY });
     totalJpy += DOMESTIC_FLAT_FEE_JPY;
+  }
+  // AAPE：有買就收 ¥440
+  if (brandPresent.has('aape')) {
+    details.push({ brand: 'aape', feeJpy: AAPE_DOMESTIC_FEE_JPY });
+    totalJpy += AAPE_DOMESTIC_FEE_JPY;
   }
   // UNIQLO：未滿 ¥4990 收 ¥500
   if (brandPresent.has('uniqlo')) {

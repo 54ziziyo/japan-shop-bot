@@ -6,3 +6,4 @@ export { buildGuCards } from './gu';
 export { buildKushitaniCards } from './kushitani';
 export { buildFr2Cards } from './fr2';
 export { buildBapeCards } from './bape';
+export { buildAapeCards } from './aape';

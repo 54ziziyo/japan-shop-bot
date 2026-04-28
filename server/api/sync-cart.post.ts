@@ -6,6 +6,7 @@ import { scrapeRstaichi } from '../utils/scrape/rstaichi';
 import { scrapeKushitani } from '../utils/scrape/kushitani';
 import { scrapeFr2 } from '../utils/scrape/fr2';
 import { scrapeBape } from '../utils/scrape/bape';
+import { scrapeAape } from '../utils/scrape/aape';
 import { detectBrand } from '../utils/brandConfig';
 
 const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
@@ -61,6 +62,7 @@ export default defineEventHandler(async (event) => {
   const kushitaniItems: CartItem[] = [];
   const fr2Items: CartItem[] = [];
   const bapeItems: CartItem[] = [];
+  const aapeItems: CartItem[] = [];
   for (const item of items) {
     const brand = item.product_url ? detectBrand(item.product_url) : 'uniqlo';
     if (brand === 'rstaichi') {
@@ -71,6 +73,8 @@ export default defineEventHandler(async (event) => {
       fr2Items.push(item);
     } else if (brand === 'bape') {
       bapeItems.push(item);
+    } else if (brand === 'aape') {
+      aapeItems.push(item);
     } else if (brand === 'gu') {
       guItems.push(item);
     } else {
@@ -331,6 +335,66 @@ export default defineEventHandler(async (event) => {
     );
 
     allResults.push(...bapeResults.flat());
+  }
+
+  // ── AAPE 同步：重新抓取商品頁驗證價格和庫存 ──
+  if (aapeItems.length) {
+    const byUrl = new Map<string, CartItem[]>();
+    for (const item of aapeItems) {
+      const url = item.product_url || '';
+      if (!byUrl.has(url)) byUrl.set(url, []);
+      byUrl.get(url)!.push(item);
+    }
+
+    const aapeResults = await Promise.all(
+      [...byUrl.entries()].map(async ([url, cartItems]) => {
+        try {
+          const product = await scrapeAape(url);
+          if (!product) throw new Error('scrape failed');
+
+          const results: SyncResult[] = [];
+          for (const item of cartItems) {
+            const variant = product.variants.find(
+              (v: any) => v.color === item.color,
+            );
+            const sizeInfo = variant?.sizes.find(
+              (s: any) => s.name === item.size,
+            );
+            const currentPrice = variant ? variant.price : item.price;
+            const inStock = sizeInfo?.isStock ?? false;
+            const priceChanged = currentPrice !== item.price;
+
+            results.push({
+              product_code: item.product_code,
+              color: item.color,
+              size: item.size,
+              currentPrice,
+              inStock,
+              isPromo: false,
+              promoEndTs: null,
+              priceChanged,
+              stockChanged: !inStock,
+            });
+          }
+          return results;
+        } catch (err: any) {
+          console.error(`❌ sync-cart AAPE: ${url} 失敗:`, err.message);
+          return cartItems.map((item) => ({
+            product_code: item.product_code,
+            color: item.color,
+            size: item.size,
+            currentPrice: item.price,
+            inStock: false,
+            isPromo: false,
+            promoEndTs: null,
+            priceChanged: false,
+            stockChanged: true,
+          }));
+        }
+      }),
+    );
+
+    allResults.push(...aapeResults.flat());
   }
 
   // ── UNIQLO / GU 同步（共用 Fast Retailing v5 API） ──

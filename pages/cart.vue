@@ -119,7 +119,7 @@ const decreaseQty = async (item) => {
 };
 
 const handleCheckout = async () => {
-  if (items.value.length === 0) return;
+  if (items.value.length === 0 || syncing.value) return;
 
   syncing.value = true;
   try {
@@ -147,7 +147,7 @@ const handleCheckout = async () => {
     );
   }
 
-  syncing.value = false;
+  // 不重置 syncing，讓按鈕保持 disabled 直到頁面跳轉完成
   await navigateTo('/checkout');
 };
 

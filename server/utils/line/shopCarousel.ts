@@ -244,6 +244,10 @@ export function buildShopCarousel(category?: ShopCategory): FlexBubble[] {
       'https://jp.bape.com/',
     ),
     buildBrandBubble(
+      'https://romoru.vercel.app/image/aape.jpg',
+      'https://aape.jp/',
+    ),
+    buildBrandBubble(
       'https://romoru.vercel.app/image/fr2.jpg',
       // 'https://i.ibb.co/nqfCW4CC/fr2.jpg',
       'https://fr2.tokyo/',

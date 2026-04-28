@@ -14,6 +14,7 @@ import { scrapeGu } from '../utils/scrape/gu';
 import { scrapeKushitani } from '../utils/scrape/kushitani';
 import { scrapeFr2 } from '../utils/scrape/fr2';
 import { scrapeBape } from '../utils/scrape/bape';
+import { scrapeAape } from '../utils/scrape/aape';
 import { getKushitaniCustomPrice } from '../utils/kushitaniPricing';
 import {
   detectBrand,
@@ -21,6 +22,7 @@ import {
   isRstaichiBlocked,
   isKushitaniBlocked,
   extractKushitaniPid,
+  detectNonJapaneseSite,
 } from '../utils/brandConfig';
 import { parseJpy, jpyToTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
@@ -37,6 +39,7 @@ import {
   buildKushitaniCards,
   buildFr2Cards,
   buildBapeCards,
+  buildAapeCards,
 } from '../utils/line/cards';
 
 export default defineEventHandler(async (event) => {
@@ -152,7 +155,15 @@ export default defineEventHandler(async (event) => {
               : imgPath;
           } else if (brand === 'bape') {
             itemImg = imgPath.startsWith('BAPE:')
-              ? `https://cdn.shopify.com/s/files/1/0553/6863/3473/${imgPath.slice(5)}`
+              ? `https://cdn.shopify.com/s/files/1/0326/3660/0451/${imgPath.slice(5)}`
+              : imgPath.startsWith('BAPEP:')
+                ? `https://cdn.shopify.com/s/files/1/2238/5135/${imgPath.slice(6)}`
+                : imgPath;
+          } else if (brand === 'aape') {
+            // AAPE: 壓縮格式 "AAPE:{colorCode}" → 重建完整 CDN URL
+            // 圖片格式： https://c.imgz.jp/420/{itemId}/{itemId}b_{colorCode}_d_500.jpg
+            itemImg = imgPath.startsWith('AAPE:')
+              ? `https://c.imgz.jp/420/${productCode}/${productCode}b_${imgPath.slice(5)}_d_500.jpg`
               : imgPath;
           } else {
             // uniqlo / gu — 圖片都在 image.uniqlo.com
@@ -167,7 +178,11 @@ export default defineEventHandler(async (event) => {
           } else if (brand === 'fr2') {
             productUrl = `https://fr2.tokyo/products/${productCode}`;
           } else if (brand === 'bape') {
-            productUrl = `https://jp.bape.com/products/${productCode}`;
+            productUrl = imgPath.startsWith('BAPEP:')
+              ? `https://bapepirate.com/products/${productCode}`
+              : `https://jp.bape.com/products/${productCode}`;
+          } else if (brand === 'aape') {
+            productUrl = `https://aape.jp/item/${productCode}.html`;
           } else if (brand === 'gu') {
             productUrl = `https://www.gu-global.com/jp/ja/products/${productCode}/${pg}`;
           } else {
@@ -323,6 +338,16 @@ export default defineEventHandler(async (event) => {
       const brand = detectBrand(pastedUrl);
 
       if (!brand) {
+        // 通用偵測：已知品牌的非日本版官網（kr.bape.com / us.bape.com / uniqlo.com/us/ 等）
+        const nonJP = detectNonJapaneseSite(pastedUrl);
+        if (nonJP) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: `⚠️ 您貼上的是 ${nonJP.brandName} 非日本版官網喔！\n\n目前僅支援日本官網代購，請改用日本版：\n${nonJP.jpUrl}`,
+          });
+          return;
+        }
+
         if (
           pastedUrl.includes('uniqlo.com') ||
           pastedUrl.includes('gu-global.com')
@@ -350,6 +375,16 @@ export default defineEventHandler(async (event) => {
           await sendReplyOrPush({
             type: 'text',
             text: '⚠️ 請貼上 BAPE「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://jp.bape.com/products/1k30-110-009\n\n❌ 首頁或分類頁無法使用',
+          });
+        } else if (pastedUrl.includes('bapepirate.com')) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: '⚠️ 請貼上 BAPE PIRATE「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://bapepirate.com/products/1k80191309\n\n❌ 首頁或分類頁無法使用',
+          });
+        } else if (pastedUrl.includes('aape.jp')) {
+          await sendReplyOrPush({
+            type: 'text',
+            text: '⚠️ 請貼上 AAPE「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://aape.jp/item/103433420.html\n\n❌ 首頁或分類頁無法使用',
           });
         }
         return;
@@ -448,6 +483,14 @@ export default defineEventHandler(async (event) => {
             throw new Error('無法識別的 BAPE 商品資料（可能為禁運品）');
           productTitle = productData.title;
           bubbles = buildBapeCards(productData, jpyRate, pastedUrl);
+        }
+
+        if (brand === 'aape') {
+          const productData = await scrapeAape(pastedUrl);
+          if (!productData)
+            throw new Error('無法識別的 AAPE 商品資料（可能為禁運品）');
+          productTitle = productData.title;
+          bubbles = buildAapeCards(productData, jpyRate, pastedUrl);
         }
 
         if (!bubbles.length) throw new Error('未取得任何商品變體');

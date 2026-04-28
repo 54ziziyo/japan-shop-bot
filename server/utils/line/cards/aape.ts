@@ -1,9 +1,9 @@
-// server/utils/line/cards/bape.ts
+// server/utils/line/cards/aape.ts
 import type { FlexBubble, FlexComponent } from '@line/bot-sdk';
 import { ensureLineImageUrl } from '../helpers';
 import { parseJpy, jpyToTwd, formatTwd } from '#shared/pricing';
 
-export function buildBapeCards(
+export function buildAapeCards(
   productData: any,
   jpyRate: number,
   pastedUrl: string,
@@ -12,20 +12,12 @@ export function buildBapeCards(
 
   return productData.variants.map((v: any) => {
     const safeImageUrl = ensureLineImageUrl(v.image);
-    // 壓縮 Shopify CDN URL
-    // jp.bape.com (store 0326/3660/0451) 或 bapepirate.com (store 2238/5135) 的 CDN 壓縮
-    const imgCompact = (v.image || '')
-      .replace(
-        /^https?:\/\/cdn\.shopify\.com\/s\/files\/1\/0326\/3660\/0451\//,
-        'BAPE:',
-      )
-      .replace(
-        /^https?:\/\/cdn\.shopify\.com\/s\/files\/1\/2238\/5135\//,
-        'BAPEP:',
-      );
+    // 壓縮圖片 URL：只保留顏色代碼（colorCode），重建時用 code(itemId) 拼接
+    // 壓縮格式：AAPE:{colorCode}  →  https://c.imgz.jp/420/{itemId}/{itemId}b_{colorCode}_d_500.jpg
+    const imgCompact = `AAPE:${v.colorCode}`;
 
     const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {
-      const baseData = `action=buy&brand=bape&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.handle}&img=${encodeURIComponent(imgCompact)}&cat=bape|${productData.weightGrams}&ts=${Math.floor(Date.now() / 1000)}`;
+      const baseData = `action=buy&brand=aape&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.itemId}&img=${encodeURIComponent(imgCompact)}&cat=aape|${productData.weightGrams}&ts=${Math.floor(Date.now() / 1000)}`;
       let titleSlice = productData.title;
       let compactData = `${baseData}&t=${encodeURIComponent(titleSlice)}`;
       while (compactData.length > 300 && titleSlice.length > 0) {
@@ -118,7 +110,7 @@ export function buildBapeCards(
               },
               {
                 type: 'text',
-                text: `顏色：${v.color} ¥${parseJpy(v.price).toLocaleString()}`,
+                text: `顏色：${v.color}　${v.price}`,
                 size: 'xs',
                 color: '#dddddd',
                 margin: 'xs',
@@ -162,8 +154,8 @@ export function buildBapeCards(
                 type: 'text',
                 text: '查看官網詳情',
                 color: '#ffffff',
-                weight: 'bold',
                 size: 'xs',
+                weight: 'bold',
                 align: 'center',
               },
             ],
@@ -171,5 +163,5 @@ export function buildBapeCards(
         ],
       },
     };
-  }) as FlexBubble[];
+  });
 }

@@ -71,6 +71,15 @@ const PRODUCT_TYPE_WEIGHT_MAP: Record<string, number> = {
 
   // ── 嬰兒 ──
   ベビー: 200, // 嬰兒服飾
+
+  // ── 眼鏡 / 太陽眼鏡 ──
+  アイウェア: 100, // 太陽眼鏡、光學眼鏡
+
+  // ── 針織衫 ──
+  ニット: 400, // 針織衫、毛衣
+
+  // ── 鞋子 ──
+  シューズ: 800, // 鞋類（NAME_WEIGHT_RULES 會更精確覆蓋 BAPE STA 等）
 };
 
 /**
@@ -83,7 +92,8 @@ const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] =
   [
     // ── 鞋子（BAPE STA 等）──
     {
-      pattern: /BAPE\s*STA|STA\s*LOW|STA\s*MID|STA\s*HIGH|スニーカー|SNEAKER|SHOES/i,
+      pattern:
+        /BAPE\s*STA|STA\s*LOW|STA\s*MID|STA\s*HIGH|スニーカー|SNEAKER|SHOES/i,
       weight: 1200,
       label: '鞋子（BAPE STA / Sneakers）',
     },
@@ -116,16 +126,66 @@ const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] =
       label: '背包（バックパック）',
     },
 
+    // ── 太陽眼鏡 / 光學眼鏡 ──
+    {
+      pattern: /SUNGLASSES|サングラス|OPTICAL\s*FRAME|GLASSES/i,
+      weight: 100,
+      label: '眼鏡（アイウェア）',
+    },
+
+    // ── 手機殼 ──
+    {
+      pattern: /IPHONE|PHONE\s*CASE|\bCASE\b(?!.*JACKET|.*OUTER)/i,
+      weight: 100,
+      label: '手機殼',
+    },
+
+    // ── 吊飾 / 掛件 ──
+    {
+      pattern: /\bCHARM\b|チャーム/i,
+      weight: 80,
+      label: '吊飾（チャーム）',
+    },
+
+    // ── 公仔 / 模型 ──
+    {
+      pattern: /FIGURE|フィギュア/i,
+      weight: 400,
+      label: '公仔（フィギュア）',
+    },
+
+    // ── 填充玩具 ──
+    {
+      pattern: /PLUSH|ぬいぐるみ|STUFFED/i,
+      weight: 250,
+      label: 'ぬいぐるみ',
+    },
+
+    // ── 靠枕 / 坐墊 ──
+    {
+      pattern: /CUSHION|クッション|PILLOW|枕/i,
+      weight: 350,
+      label: 'クッション',
+    },
+
+    // ── 水瓶 / 杯子 ──
+    {
+      pattern: /WATER\s*BOTTLE|BOTTLE|ボトル|TUMBLER|タンブラー|\bMUG\b|マグ/i,
+      weight: 300,
+      label: '水瓶/馬克杯',
+    },
+
     // ── 小物（鑰匙圈、手機殼等）──
     {
-      pattern: /KEYCHAIN|キーチェーン|CARABINER|カラビナ|PHONE\s*CASE|ケース|STICKER|ステッカー/i,
+      pattern:
+        /KEYCHAIN|キーチェーン|KEYRING|キーリング|CARABINER|カラビナ|PHONE\s*CASE|ケース|STICKER|ステッカー/i,
       weight: 150,
       label: '小物（キーチェーン等）',
     },
 
-    // ── 圍巾 / 毛巾 ──
+    // ── 圍巾 / 毛巾 / 頭巾 ──
     {
-      pattern: /SCARF|マフラー|TOWEL|タオル/i,
+      pattern: /SCARF|マフラー|TOWEL|タオル|BANDANA|バンダナ/i,
       weight: 300,
       label: '圍巾/毛巾',
     },
@@ -143,7 +203,27 @@ const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] =
       weight: 100,
       label: '襪子（ソックス）',
     },
+    // ── 項頡 / 手環 / 錢包帶（飾品類）──
+    {
+      pattern:
+        /NECKLACE|ネックレス|BRACELET|ブレスレット|BANGLE|バングル|WATCH\s*BAND|WATCH\s*STRAP/i,
+      weight: 80,
+      label: '飾品（ネックレス等）',
+    },
 
+    // ── 泳裝 / 泳褲 ──
+    {
+      pattern: /SWIMWEAR|水着|SWIM\s*PANT/i,
+      weight: 150,
+      label: '泳裝',
+    },
+
+    // ── 內衣 / 胸罩 ──
+    {
+      pattern: /\bBRA\b|ブラジャー|BRALETTE/i,
+      weight: 100,
+      label: '內衣',
+    },
     // ── 打火機（禁運品不會到這，但保險起見歸類）──
     {
       pattern: /LIGHTER|ライター/i,
@@ -171,6 +251,8 @@ export interface BapeProduct {
   title: string;
   handle: string;
   price: string; // e.g. "¥12100"
+  /** 爬取來源網域（jp.bape.com 或 bapepirate.com） */
+  shopDomain: string;
   /** 預估重量(g) + 500g 包材 */
   weightGrams: number;
   /** 重量來源說明 */
@@ -190,16 +272,23 @@ export interface BapeProduct {
 /**
  * 從 BAPE 商品 URL 提取 handle
  * e.g. https://jp.bape.com/products/1k30-110-009 → 1k30-110-009
+ * e.g. https://bapepirate.com/products/1k80191309 → 1k80191309
  */
 export function extractBapeHandle(url: string): string | null {
-  const m = url.match(/jp\.bape\.com\/.*products\/([a-z0-9-]+)/i);
+  const m = url.match(
+    /(?:jp\.bape\.com|bapepirate\.com)\/.*products\/([a-z0-9-]+)/i,
+  );
   return m ? m[1]! : null;
 }
 
 /**
  * 檢查商品是否含有國際運送禁止品項
  */
-function isRestricted(title: string, bodyHtml: string, tags: string[]): boolean {
+function isRestricted(
+  title: string,
+  bodyHtml: string,
+  tags: string[],
+): boolean {
   const text = `${title} ${bodyHtml} ${tags.join(' ')}`;
   return RESTRICTED_KEYWORDS.some((re) => re.test(text));
 }
@@ -214,7 +303,10 @@ function estimateWeight(
   // 1. 先用名稱關鍵字（更精確）
   const nameMatch = NAME_WEIGHT_RULES.find((r) => r.pattern.test(title));
   if (nameMatch) {
-    return { grams: nameMatch.weight, source: `名稱比對「${nameMatch.label}」` };
+    return {
+      grams: nameMatch.weight,
+      source: `名稱比對「${nameMatch.label}」`,
+    };
   }
 
   // 2. 用 product_type 查表
@@ -229,15 +321,17 @@ function estimateWeight(
   return { grams: FALLBACK_WEIGHT_GRAMS, source: '預設值' };
 }
 
-export const scrapeBape = async (
-  url: string,
-): Promise<BapeProduct | null> => {
+export const scrapeBape = async (url: string): Promise<BapeProduct | null> => {
   try {
     const handle = extractBapeHandle(url);
     if (!handle) throw new Error('無法從網址提取 BAPE 商品 handle');
 
-    console.log(`🦍 BAPE: 正在抓取 ${handle}...`);
-    const jsUrl = `https://jp.bape.com/products/${handle}.js`;
+    // bapepirate.com 是獨立的 Shopify 店鋪，需對其網域呼叫 API
+    const domain = /bapepirate\.com/i.test(url)
+      ? 'bapepirate.com'
+      : 'jp.bape.com';
+    console.log(`🦍 BAPE: 正在抓取 ${handle}（${domain}）...`);
+    const jsUrl = `https://${domain}/products/${handle}.js`;
     const res = await api.get(jsUrl);
     const product = res.data;
     if (!product) throw new Error('無法取得 BAPE 商品資料');
@@ -291,7 +385,9 @@ export const scrapeBape = async (
       const color: string = v.option1 || 'ONE COLOR';
       const size: string = hasSize ? v.option2 || 'F' : 'F';
       // .js 價格為 1/100 日幣（例 3960000 = ¥39600）
-      const price = Math.round((typeof v.price === 'number' ? v.price : parseInt(v.price) || 0) / 100);
+      const price = Math.round(
+        (typeof v.price === 'number' ? v.price : parseInt(v.price) || 0) / 100,
+      );
       const isStock: boolean = v.available ?? true;
 
       if (!colorMap.has(color)) {
@@ -326,7 +422,11 @@ export const scrapeBape = async (
 
     // ── 主要售價 ──
     const firstVariantPrice = variants[0]
-      ? Math.round((typeof variants[0].price === 'number' ? variants[0].price : parseInt(variants[0].price) || 0) / 100)
+      ? Math.round(
+          (typeof variants[0].price === 'number'
+            ? variants[0].price
+            : parseInt(variants[0].price) || 0) / 100,
+        )
       : 0;
     const price = firstVariantPrice > 0 ? `¥${firstVariantPrice}` : '請洽官網';
 
@@ -354,6 +454,7 @@ export const scrapeBape = async (
     return {
       title,
       handle,
+      shopDomain: domain,
       price,
       weightGrams,
       weightSource: weight.source,
