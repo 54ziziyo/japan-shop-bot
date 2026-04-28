@@ -132,10 +132,12 @@ export function extractFr2Handle(url: string): string | null {
 }
 
 /**
- * 從 URL 提取 BAPE 商品 handle
+ * 從 URL 提取 BAPE 商品 handle（jp.bape.com 與 bapepirate.com 均支援）
  */
 export function extractBapeHandle(url: string): string | null {
-  const m = url.match(/jp\.bape\.com\/.*products\/([a-z0-9-]+)/i);
+  const m = url.match(
+    /(?:jp\.bape\.com|bapepirate\.com)\/.*products\/([a-z0-9-]+)/i,
+  );
   return m ? m[1]! : null;
 }
 

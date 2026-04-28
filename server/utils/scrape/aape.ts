@@ -78,7 +78,7 @@ const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] =
       label: '眼鏡',
     },
     { pattern: /belt|ベルト/i, weight: 250, label: '腰帶' },
-    { pattern: /watch|時計|腕時計/i, weight: 200, label: '手錢' },
+    { pattern: /watch|時計|腕時計/i, weight: 200, label: '手錶' },
     {
       pattern: /necklace|ネックレス|bracelet|ブレスレット/i,
       weight: 80,

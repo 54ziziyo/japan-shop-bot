@@ -9,6 +9,7 @@ import { scrapeRstaichi } from '../utils/scrape/rstaichi';
 import { scrapeKushitani } from '../utils/scrape/kushitani';
 import { scrapeFr2 } from '../utils/scrape/fr2';
 import { scrapeBape } from '../utils/scrape/bape';
+import { scrapeAape } from '../utils/scrape/aape';
 
 /** 每個品牌的測試商品 URL（選用長期穩定的基本款商品） */
 const TEST_URLS: Record<
@@ -38,6 +39,14 @@ const TEST_URLS: Record<
   bape: {
     url: 'https://jp.bape.com/products/1k70-291-329?_pos=5&_sid=de1a546fb&_ss=r',
     scraper: scrapeBape,
+  },
+  bapepirate: {
+    url: 'https://bapepirate.com/collections/all/products/4l20184001',
+    scraper: scrapeBape,
+  },
+  aape: {
+    url: 'https://aape.jp/category/GT119/98340709.html?condition=GENDER:G2',
+    scraper: scrapeAape,
   },
 };
 

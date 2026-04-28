@@ -265,8 +265,13 @@ const syncBanner = computed(() => {
         `❌ ${item.product_title}（${item.color} / ${item.size}）：此貨已售完`,
       );
     } else if (item.priceChanged) {
+      // oldTwd：sync 前購物車記錄的舊售價（台幣）
+      // newTwd：sync 後抓到的新售價（台幣）
+      // 兩者都用 parsePriceTwd，才能正確處理 NT$ 自訂售價與 ¥ 日幣兩種格式
+      const oldTwd = parsePriceTwd(item.oldPrice || '', jpyRate.value);
+      const newTwd = parsePriceTwd(item.displayPrice || '', jpyRate.value);
       changes.push(
-        `💰 ${item.product_title}（${item.color} / ${item.size}）：NT$${jpyToTwd(parseJpy(item.oldPrice), jpyRate.value).toLocaleString()} → NT$${jpyToTwd(parseJpy(item.displayPrice), jpyRate.value).toLocaleString()}`,
+        `💰 ${item.product_title}（${item.color} / ${item.size}）：NT$${oldTwd.toLocaleString()} → NT$${newTwd.toLocaleString()}`,
       );
     }
   }
@@ -420,9 +425,18 @@ const submitOrder = async () => {
   submitting.value = true;
   try {
     const orderItems = validItems.value.map((item) => {
+      // priceTwd：客戶實際付的台幣售價
+      //   - ¥ 商品 → parsePriceTwd 內部走 jpyToTwd（日幣 × (rate + markup)）
+      //   - NT$ 商品（Kushitani 自訂售價）→ parsePriceTwd 直接回傳 NT$ 面額
       const priceTwd = parsePriceTwd(item.displayPrice, jpyRate.value);
-      // 成本 = 日幣原價 × 基礎匯率（不含加碼），等同代購進貨成本
-      const costTwd = Math.round(parseJpy(item.displayPrice) * jpyRate.value);
+
+      // costTwd：我方代購成本（寫入 Google 試算表 W/X/Y 欄，用於利潤計算）
+      //   ※ shippingInfo.costTwd 是運費，語意不同；此處為 .map() 內 local 變數，不會混淆
+      //   - ¥ 商品 → 日幣原價 × 基礎匯率（只有 rate，不含加碼）
+      //   - NT$ 商品（Kushitani 含運直送自訂售價）→ 成本結構不明，保守以 priceTwd 代入
+      const costTwd = (item.displayPrice || '').startsWith('NT$')
+        ? priceTwd
+        : Math.round(parseJpy(item.displayPrice) * jpyRate.value);
       return {
         product_title: item.product_title,
         product_code: item.product_code,

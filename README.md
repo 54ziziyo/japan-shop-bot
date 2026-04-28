@@ -50,14 +50,14 @@ LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**GU**、**RS Taich
 
 ## 📖 文件導覽
 
-| 文件                                               | 內容                                                     |
-| -------------------------------------------------- | -------------------------------------------------------- |
-| **README.md**（本頁）                              | 技術架構、目錄結構、操作流程、快速開始                   |
-| [docs/business-rules.md](docs/business-rules.md)   | 定價、匯率、運費、國內運費、品牌規則、試算頁面、驗證規則 |
-| [docs/database.md](docs/database.md)               | 環境變數、Supabase 資料表、Google 試算表、Apps Script    |
-| [docs/operations.md](docs/operations.md)           | 維運費用、爬蟲監控、效能設計、Vercel/Supabase 額度       |
-| [docs/extension-guide.md](docs/extension-guide.md) | 擴充新品牌步驟、系統連動修改對照表                       |
-| [docs/changelog.md](docs/changelog.md)             | 更新紀錄                                                 |
+| 文件                                               | 內容                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **README.md**（本頁）                              | 技術架構、目錄結構、操作流程、快速開始                                                                     |
+| [docs/business-rules.md](docs/business-rules.md)   | 定價、匯率、運費、國內運費、品牌規則、試算頁面、驗證規則、**結帳頁金額變數定義**（`priceTwd` / `costTwd`） |
+| [docs/database.md](docs/database.md)               | 環境變數、Supabase 資料表、Google 試算表、Apps Script                                                      |
+| [docs/operations.md](docs/operations.md)           | 維運費用、爬蟲監控、效能設計、Vercel/Supabase 額度                                                         |
+| [docs/extension-guide.md](docs/extension-guide.md) | 擴充新品牌步驟、系統連動修改對照表                                                                         |
+| [docs/changelog.md](docs/changelog.md)             | 更新紀錄                                                                                                   |
 
 ---
 
@@ -266,3 +266,4 @@ GET http://localhost:3000/api/cancel-expired-orders?secret={CRON_SECRET 值}
 | Kushitani 禁售商品        | `server/utils/brandConfig.ts` → `KUSHITANI_BLOCKED_PIDS`                                                                                                                                                                          |
 | 品牌分類選擇器            | `server/utils/line/shopCarousel.ts` → `buildCategorySelector()`                                                                                                                                                                   |
 | 截單時間（22:00）         | `webhook.post.ts` → `promoWarning` + `OrderForm.vue` → 截單提醒文字（兩處都要改）                                                                                                                                                 |
+| 結帳頁金額變數說明        | `pages/checkout.vue` inline 注釋 + [`docs/business-rules.md`](docs/business-rules.md) →「結帳頁金額變數定義」章節（`priceTwd` 客戶售價、`costTwd` 代購成本、`shippingInfo.costTwd` 運費，三者語意不同）                           |
