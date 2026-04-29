@@ -237,7 +237,7 @@ const handleReload = () => {
               <div
                 class="w-24 h-24 bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.12)] flex-shrink-0 border border-[#F0F4F1]"
               >
-                <img :src="item.image_url" class="w-full h-full object-cover" />
+                <img :src="item.image_url" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
               </div>
 
               <div class="flex-1 min-w-0">

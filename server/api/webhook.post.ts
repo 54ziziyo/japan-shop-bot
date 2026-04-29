@@ -384,7 +384,7 @@ export default defineEventHandler(async (event) => {
         } else if (pastedUrl.includes('aape.jp')) {
           await sendReplyOrPush({
             type: 'text',
-            text: '⚠️ 請貼上 AAPE「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://aape.jp/item/103433420.html\n\n❌ 首頁或分類頁無法使用',
+            text: '⚠️ 請貼上 AAPE「商品內頁」的網址喔！\n\n✅ 正確格式範例：\nhttps://aape.jp/item/103433420.html\nhttps://aape.jp/category/GT108/87720188.html\n\n❌ 首頁或搜尋頁無法使用',
           });
         }
         return;

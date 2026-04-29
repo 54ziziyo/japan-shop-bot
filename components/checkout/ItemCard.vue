@@ -23,6 +23,7 @@ defineProps({
         :src="
           item.image_url || 'https://placehold.co/128x128.png?text=No+Image'
         "
+        referrerpolicy="no-referrer"
         class="w-full h-full object-cover"
       />
     </div>
