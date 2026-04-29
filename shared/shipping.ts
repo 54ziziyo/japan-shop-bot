@@ -28,7 +28,7 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
   tops: {
     't shirts': 300, // T恤、Cut & Sew（短袖薄棉）
     'ut graphic tees': 300, // UT 聯名印花 T恤
-    'sweatshirts and hoodies': 750, // 衛衣、連帽衫
+    'sweatshirts and hoodies': 850, // 衛衣、連帽衫
     'tank tops': 200, // 背心、吊帶
     'polo shirts': 350, // Polo 衫
     _default: 400, // 其他上衣
@@ -36,7 +36,7 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
 
   // ── 毛衣・針織 (sweaters) ──
   sweaters: {
-    sweaters: 700, // 針織毛衣（羊毛、美麗諾）
+    sweaters: 800, // 針織毛衣（羊毛、美麗諾）
     cardigans: 600, // 開襟外套
     vests: 400, // 針織背心
     _default: 650,
@@ -65,23 +65,23 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
   // ── 外套 (outerwear) ──
   outerwear: {
     blouson: 900, // 夾克、風衣
-    coats: 1300, // 大衣、長版外套
-    down: 800, // 一般羽絨外套
+    coats: 1700, // 大衣、長版外套
+    down: 1000, // 一般羽絨外套
     'ultra light down': 350, // 特級極輕羽絨
-    fleece: 600, // 搖粒絨外套
+    fleece: 700, // 搖粒絨外套
     jackets: 800, // 西裝外套、夾克
-    parkas: 1000, // 連帽風衣
+    parkas: 1300, // 連帽風衣
     _default: 900,
   },
 
   // ── 褲子 (bottoms) ──
   bottoms: {
-    jeans: 800, // 牛仔褲
+    jeans: 950, // 牛仔褲
     pants: 500, // 一般長褲
     'wide pants': 700, // 寬褲
     shorts: 400, // 短褲
     'leggings pants': 400, // 內搭褲
-    'sweat pants': 700, // 運動棉褲
+    'sweat pants': 800, // 運動棉褲
     _default: 600,
   },
 
@@ -113,7 +113,8 @@ const WEIGHT_MAP: Record<string, Record<string, number>> = {
 
   // ── 配件 (accessories) ──
   accessories: {
-    shoes: 1200, // 鞋子
+    shoes: 2000, // 革靴・デッキシューズ・スニーカー・ブーツ
+    sandals: 1150, // サンダル・フリップフロップ
     bags: 500, // 包包
     belts: 200, // 腰帶
     hats: 150, // 帽子
@@ -330,12 +331,10 @@ export function getShippingTwd(
       costJpy = INTL_SMALL_PACKET_RATES[INTL_SMALL_PACKET_RATES.length - 1]![1];
   }
 
-  // +1% 包材費用
-  const adjustedJpy = Math.ceil(costJpy * 1.01);
   return {
     method,
-    costJpy: adjustedJpy,
-    costTwd: Math.round(adjustedJpy * baseRate),
+    costJpy,
+    costTwd: Math.round(costJpy * baseRate),
   };
 }
 
@@ -500,8 +499,11 @@ export function calculateQuote(
     categoryCounts[label] = (categoryCounts[label] || 0) + qty;
   }
 
+  // 8% 重量安全係數：抵銷單品估算誤差，避免運費不足
+  const safeWeight = Math.ceil(totalWeight * 1.08);
+
   const shipping = getShippingTwd(
-    totalWeight,
+    safeWeight,
     rate,
     // 只要有任何 RsTaichi 或 Kushitani（有重量）商品 → 強制國際小包
     items.some((i) => {

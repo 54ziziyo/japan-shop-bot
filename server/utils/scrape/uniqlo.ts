@@ -67,7 +67,13 @@ export const scrapeUniqlo = async (url: string) => {
     const breadcrumbs = result.breadcrumbs || {};
     const className = breadcrumbs?.class?.name || 'unknown';
     const categoryName = breadcrumbs?.category?.name || '';
-    const category = categoryName ? `${className}|${categoryName}` : className;
+    const categoryLocale: string = breadcrumbs?.category?.locale || '';
+    // サンダル類（locale: 靴・サンダル）は shoes より軽いため分けて推定
+    const resolvedCategory =
+      categoryName === 'shoes' && categoryLocale.includes('サンダル')
+        ? 'sandals'
+        : categoryName;
+    const category = resolvedCategory ? `${className}|${resolvedCategory}` : className;
 
     // 4. 從 stock API + l2s API 建立精確的每色每尺寸庫存
     //    stock API: { [l2Id]: { statusCode: "IN_STOCK" | "STOCK_OUT", ... } }

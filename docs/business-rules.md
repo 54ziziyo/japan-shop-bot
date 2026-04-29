@@ -87,8 +87,10 @@
 
 - 運送方式：ePacket、國際小包
 - 運費按商品總重量查表計算
-- **國際運費另加 1% 包材附加費**：查表日幣運費 × 1.01（無條件進位）後才換算台幣
-- **要修改包材附加費 → 改 [`shared/shipping.ts`](../shared/shipping.ts) 的 `getShippingTwd()`**
+- **重量安全係數 8%**：`calculateQuote()` 在查費率表前，先將商品總重量 × 1.08 作為緩衝，避免單品估算誤差導致向客戶收取的運費不足
+  - 安全係數只加在**總重量**上，不是對運費金額做百分比加成
+  - **`/price` 試算頁面不套用安全係數**：該頁為手動輸入精確重量查表，供內部報價用，直接反映費率表原始數值
+  - **要修改係數 → 改 [`shared/shipping.ts`](../shared/shipping.ts) `calculateQuote()` 的 `safeWeight` 計算**
 - 商品重量依 Uniqlo 商品分類（class/category）查表估算
 - 代購服務費另計（見 `SERVICE_FEE_TWD`）
 - **日本國內運費**：部分品牌需額外加收日本國內配送費（見下方獨立章節）
@@ -116,6 +118,12 @@
 - 每個品牌固定加收 ¥400 日本國內運費
 - 國際運費依重量正常計算
 
+### Uniqlo 涼鞋重量特殊規則
+
+- Uniqlo API 的 `breadcrumbs.category.name` 對所有鞋款（皮鞋/靴子/涼鞋）都回傳 `"shoes"`，無法單純從 name 區分
+- scraper 額外讀取 `breadcrumbs.category.locale`，若含「サンダル」則將 category 儲存為 `accessories|sandals`（650g），否則維持 `accessories|shoes`（1200g）
+- **所有包款（後背包/肩包/托特包）的 `category.name` 均為 `"bags"`**，Uniqlo API 無子分類，統一估算重量（見 `WEIGHT_MAP`）
+
 ---
 
 ## 日本國內運費規則
@@ -134,6 +142,38 @@
 - 結帳頁「日本國內運費」會獨立顯示在國際運費下方，並列出涉及的品牌名稱
 - 國內運費以日幣計算後按匯率換算台幣，一併計入總金額
 - **要修改國內運費常數 → 改 [`shared/shipping.ts`](../shared/shipping.ts) 的 `DOMESTIC_FLAT_FEE_JPY`、`DOMESTIC_FREE_THRESHOLD_JPY`、`DOMESTIC_THRESHOLD_FEE_JPY`**
+
+---
+
+## 航空禁運品封鎖
+
+系統採**兩層封鎖機制**，任一層命中即回覆使用者「無法提供代購」訊息（不顯示商品卡片）：
+
+### 第一層：品牌專屬封鎖
+
+| 品牌          | 封鎖方式                                                      | 管理位置                                           |
+| ------------- | ------------------------------------------------------------- | -------------------------------------------------- |
+| **RsTaichi**  | SKU 白名單黑名單（`RSTAICHI_BLOCKED_SKUS`）                   | `server/utils/brandConfig.ts`                      |
+| **Kushitani** | PID 黑名單（`KUSHITANI_BLOCKED_PIDS`）                        | `server/utils/brandConfig.ts`                      |
+| **FR2**       | 關鍵字比對商品標題 **+ body description**（比其他品牌更嚴格） | `server/utils/scrape/fr2.ts` `RESTRICTED_KEYWORDS` |
+| **Uniqlo**    | 商品分類 `class.name === 'flower'` → 花卉/植物類全部封鎖      | `server/api/webhook.post.ts`                       |
+
+### 第二層：跨品牌全局關鍵字（標題比對）
+
+定義於 `server/utils/brandConfig.ts` → `GLOBAL_RESTRICTED_KEYWORDS`，適用所有品牌：
+
+| 類別           | 關鍵字範例                                                      |
+| -------------- | --------------------------------------------------------------- |
+| 點火/燃料      | ライター、lighter、アルコール、ガソリン、灯油                   |
+| 電池/充電      | バッテリー、電池、充電式、リチウム、lithium                     |
+| 噴霧           | スプレー、spray                                                 |
+| 化妝品液體     | 香水、パルファム、マニキュア、nail polish                       |
+| 花卉/植物      | 生花、花束、ブーケ、盆栽、鉢植え、種子、苗木                    |
+| **液體護理品** | シャンプー、shampoo、コンディショナー、リンス、ヘアオイル、洗顔 |
+
+> FR2 的 `RESTRICTED_KEYWORDS` 與全局關鍵字**內容相同**（液體類已同步），但 FR2 額外比對 description，因此可攔截標題未寫明成分但 description 有說明的商品（例如：洗髮精成分說明、充電電池規格描述）。
+
+> **要新增封鎖關鍵字**：`GLOBAL_RESTRICTED_KEYWORDS`（全品牌標題）+ FR2 的 `RESTRICTED_KEYWORDS`（FR2 標題+描述）都要同步修改。
 
 ---
 
