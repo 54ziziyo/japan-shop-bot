@@ -16,6 +16,7 @@ const termsAccepted = ref(false);
 
 // 折扣碼
 const couponInput = ref('');
+const couponInputRef = (ref < HTMLInputElement) | (null > null);
 const appliedCoupon = ref(null); // { code: string, discountTwd: number }
 const couponLoading = ref(false);
 const couponError = ref('');
@@ -88,19 +89,29 @@ watch(
   },
 );
 
-const formatTaiwanDeadline = (unixTs) => {
-  if (!unixTs) return null;
-  const utcMs = Number(unixTs) * 1000;
-
-  // 台灣時間 (UTC+8)，提前 1 小時收單作為緩衝
-  const tw = new Date(utcMs + 7 * 60 * 60 * 1000);
-  const m = tw.getUTCMonth() + 1;
-  const day = tw.getUTCDate();
-  const h = tw.getUTCHours();
-  const min = tw.getUTCMinutes();
-
-  return `${m}/${day} ${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}（台灣時間）`;
+const formatPromoDeadline = (unixTs, displayDate = null) => {
+  if (!unixTs && !displayDate) return null;
+  let dateStr;
+  if (displayDate) {
+    dateStr = displayDate;
+  } else {
+    // Uniqlo/GU API 以 UTC+7 為基準存截止時間，減 1ms 取得最後一天的日期
+    const d = new Date(Number(unixTs) * 1000 + 7 * 60 * 60 * 1000 - 1);
+    dateStr = `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+  }
+  return `${dateStr} 22:00`;
 };
+
+function scrollCouponIntoView() {
+  nextTick(() => {
+    const el = couponInputRef.value;
+    if (!el) return;
+    const nav = document.querySelector('nav');
+    const navHeight = nav ? nav.offsetHeight : 80;
+    const y = el.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  });
+}
 
 // ── Computed ──
 
@@ -115,7 +126,7 @@ const annotatedItems = computed(() => {
     if (!sr) {
       // 沒有 sync 結果時，用 cart_items 的 promo_end 作為 fallback
       const promoDeadline = item.promo_end
-        ? formatTaiwanDeadline(item.promo_end)
+        ? formatPromoDeadline(item.promo_end)
         : null;
       return {
         ...item,
@@ -127,7 +138,7 @@ const annotatedItems = computed(() => {
       };
     }
     const promoDeadline = sr.promoEndTs
-      ? formatTaiwanDeadline(sr.promoEndTs)
+      ? formatPromoDeadline(sr.promoEndTs, sr.promoDisplayDate)
       : null;
     return {
       ...item,
@@ -151,12 +162,14 @@ const hasPromoItems = computed(() =>
 );
 
 const earliestPromoDeadline = computed(() => {
-  const tsList = syncResults.value
-    .filter((r) => r.isPromo && r.inStock && r.promoEndTs)
-    .map((r) => r.promoEndTs);
-  if (!tsList.length) return null;
-  const earliest = Math.min(...tsList);
-  return formatTaiwanDeadline(earliest);
+  const promoItems = syncResults.value.filter(
+    (r) => r.isPromo && r.inStock && r.promoEndTs,
+  );
+  if (!promoItems.length) return null;
+  const earliest = promoItems.reduce((a, b) =>
+    a.promoEndTs < b.promoEndTs ? a : b,
+  );
+  return formatPromoDeadline(earliest.promoEndTs, earliest.promoDisplayDate);
 });
 
 // JPY 小計（用於 DB 存儲）
@@ -733,12 +746,17 @@ onMounted(async () => {
                 </p>
                 <div class="flex gap-2">
                   <input
+                    ref="couponInputRef"
                     v-model="couponInput"
                     type="text"
+                    inputmode="text"
+                    autocomplete="off"
+                    enterkeyhint="done"
                     placeholder="輸入折扣碼（選填）"
                     :disabled="!!appliedCoupon || couponLoading"
                     class="flex-1 px-4 py-2.5 text-sm bg-[#F4F7F5] border border-[#D4E2DA] rounded-2xl text-[#4A5D59] placeholder-[#A4B8B0] focus:outline-none focus:border-[#749D8E] disabled:opacity-50 uppercase"
                     @keyup.enter="applyCoupon"
+                    @focus="scrollCouponIntoView"
                   />
                   <button
                     v-if="!appliedCoupon"

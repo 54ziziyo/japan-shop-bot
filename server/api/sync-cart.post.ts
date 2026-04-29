@@ -37,6 +37,7 @@ interface SyncResult {
   inStock: boolean;
   isPromo: boolean;
   promoEndTs: number | null;
+  promoDisplayDate?: string | null;
   priceChanged: boolean;
   stockChanged: boolean;
 }
@@ -528,9 +529,11 @@ export default defineEventHandler(async (event) => {
     const baseVal = detail.prices?.base?.value;
     const currentPrice = baseVal ? `¥${baseVal}` : '';
     const priceFlags: any[] = detail.representative?.flags?.priceFlags || [];
-    const limitedFlag = priceFlags.find((f: any) => f.code === 'limitedOffer');
+    const limitedFlag = priceFlags.find((f: any) => f.effectiveTime?.end);
     const isPromo = !!limitedFlag;
     const promoEndTs: number | null = limitedFlag?.effectiveTime?.end || null;
+    const promoDisplayDate: string | null =
+      limitedFlag?.nameWording?.substitutions?.date || null;
 
     for (const item of cartItems) {
       const colorDC = item.color.split(' ')[0] || ''; // "34" from "34 BROWN"
@@ -549,6 +552,7 @@ export default defineEventHandler(async (event) => {
         inStock,
         isPromo,
         promoEndTs,
+        promoDisplayDate,
         priceChanged,
         stockChanged: !inStock,
       });

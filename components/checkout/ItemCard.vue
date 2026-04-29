@@ -84,7 +84,7 @@ function fixImgzUrl(url) {
           v-if="item.promoDeadline"
           class="text-[9px] text-orange-600 font-semibold mt-1"
         >
-          特價至 {{ item.promoDeadline }}
+          本檔特價截止至 {{ item.promoDeadline }}，請於收單前完成下單。
         </p>
       </div>
     </div>
