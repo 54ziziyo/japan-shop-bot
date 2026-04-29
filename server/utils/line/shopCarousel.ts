@@ -127,7 +127,7 @@ export function buildCategorySelector(): FlexMessage {
             createCategoryItem(
               'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=200&fit=cover',
               '潮牌服飾',
-              'BAPE / FR2 / UNIQLO / GU',
+              'BAPE / AAPE / FR2 / UNIQLO / GU',
               'fashion',
             ),
             createCategoryItem(

@@ -63,7 +63,9 @@ export function detectBrand(url: string): BrandId | null {
     /(?:www\.)?bapepirate\.com\/products\/[a-z0-9-]+/i.test(url)
   )
     return 'bape';
-  if (/(?:www\.)?aape\.jp\/item\/\d+\.html/i.test(url)) return 'aape';
+  // /item/{itemId}.html 或 /category/{type}/{itemId}.html
+  if (/(?:www\.)?aape\.jp\/(?:item|category\/[^/]+)\/\d+\.html/i.test(url))
+    return 'aape';
   return null;
 }
 

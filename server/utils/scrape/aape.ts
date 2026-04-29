@@ -149,10 +149,14 @@ export interface AapeProduct {
 
 /**
  * 從 aape.jp 商品 URL 提取 item_cd
+ * 支援兩種路徑格式：
+ *   /item/{itemId}.html
+ *   /category/{type}/{itemId}.html
  * e.g. https://aape.jp/item/103433420.html → 103433420
+ *      https://aape.jp/category/GT108/87720188.html?condition=GENDER:G2 → 87720188
  */
 export function extractAapeItemId(url: string): string | null {
-  const m = url.match(/aape\.jp\/item\/(\d+)\.html/i);
+  const m = url.match(/aape\.jp\/(?:item|category\/[^/]+)\/(\d+)\.html/i);
   return m ? m[1]! : null;
 }
 
