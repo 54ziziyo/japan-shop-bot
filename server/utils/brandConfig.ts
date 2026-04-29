@@ -178,6 +178,12 @@ export const GLOBAL_RESTRICTED_KEYWORDS = [
   /香水|perfume|パルファム/i,
   /マニキュア|nail\s*polish/i,
   /花火|firework/i,
+  // 植物・生花類（種・苗・土付き → 動植物検疫で国際発送禁止）
+  /盆栽|bonsai/i,
+  /鉢植え?|potted\s*plant/i,
+  /生花|切り?花|flower\s*bouquet/i,
+  /花束|bouquet|ブーケ/i,
+  /種子?|苗木?|seedling|seed/i,
 ];
 
 /** 商品名稱是否命中全局禁運關鍵字 */

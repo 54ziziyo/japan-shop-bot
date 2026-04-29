@@ -441,6 +441,9 @@ export default defineEventHandler(async (event) => {
           const productData = await scrapeUniqlo(pastedUrl);
           if (!productData) throw new Error('無法識別的網站資料');
           productTitle = productData.title;
+          // Uniqlo「花・植物」分類（breadcrumbs.class.name = "flower"）→ 動植物検疫禁止
+          if (productData.category.startsWith('flower'))
+            throw new ProhibitedItemError(productTitle);
           if (isGloballyRestricted(productTitle))
             throw new ProhibitedItemError(productTitle);
           bubbles = buildUniqloCards(productData, jpyRate, pastedUrl);
