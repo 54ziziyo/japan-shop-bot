@@ -128,7 +128,6 @@
 **確認 Kushitani 自訂售價商品全部為含運直送**
 
 - `server/data/kushitani-pricing.json` 所有條目 `skipShipping: true`，確認全部為含運直送
-- LINE Bot 確認訊息「此商品為自訂售價，含運直送」文字正確無誤
 
 ---
 

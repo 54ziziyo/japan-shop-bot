@@ -263,12 +263,9 @@ export default defineEventHandler(async (event) => {
             const twdItemPrice = isCustomPrice
               ? parseInt(itemPrice.replace(/[^\d]/g, ''), 10)
               : jpyToTwd(parseJpy(itemPrice), jpyRate);
-            const customNote = isCustomPrice
-              ? '\n（此商品為自訂售價，含運直送）'
-              : '';
             await sendReplyOrPush({
               type: 'text',
-              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n價格：NT$${twdItemPrice.toLocaleString()}${customNote}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
+              text: `✅ 已成功加入購物車！${qtyText}\n\n商品：${itemTitle}${codeText}\n顏色：${itemColor}\n尺寸：${itemSize}\n價格：NT$${twdItemPrice.toLocaleString()}\n\n🛒 點擊選單「查看購物車」即可查看所有商品。${promoWarning}`,
             });
           }
         }
