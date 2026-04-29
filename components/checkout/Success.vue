@@ -1,5 +1,5 @@
 <script setup>
-defineProps({
+const props = defineProps({
   orderNo: { type: String, default: '' },
   paymentMethod: { type: String, default: '' },
   total: { type: Number, default: 0 },
@@ -10,6 +10,21 @@ defineEmits(['close']);
 const BANK_NAME = '玉山銀行';
 const BANK_CODE = '808';
 const BANK_ACCOUNT = '0624940150560';
+const BANK_ACCOUNT_NAME = '騎旅生活股份有限公司';
+
+const copied = ref(false);
+async function copyAccount() {
+  await navigator.clipboard.writeText(BANK_ACCOUNT);
+  copied.value = true;
+  setTimeout(() => (copied.value = false), 2000);
+  alert(`${BANK_NAME}：${BANK_CODE}
+帳號：${BANK_ACCOUNT}
+戶名：${BANK_ACCOUNT_NAME}
+
+應轉帳金額：NT$${props.total.toLocaleString()}
+
+已為您複製銀行帳號！`);
+}
 </script>
 
 <template>
@@ -43,11 +58,46 @@ const BANK_ACCOUNT = '0624940150560';
       v-if="paymentMethod === 'bank_transfer'"
       class="w-full max-w-xs bg-[#F4F9F5] border border-[#D1E2D5] rounded-3xl px-5 py-4 mb-6 text-left"
     >
-      <p
-        class="text-[10px] font-black text-[#A4B8B0] uppercase tracking-widest mb-3"
-      >
-        匯款資訊
-      </p>
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm font-black uppercase tracking-[0.2em] text-[#5A746B]">
+          ▍匯款資訊
+        </p>
+        <button
+          class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-[#D1E2D5] shadow-sm active:opacity-60 transition-opacity"
+          :class="copied ? 'border-[#749D8E]' : ''"
+          @click="copyAccount"
+        >
+          <svg
+            v-if="!copied"
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#749D8E"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#749D8E"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </button>
+      </div>
       <div class="space-y-4">
         <div class="flex justify-between">
           <span class="text-xs text-[#A4B8B0]">銀行</span>
