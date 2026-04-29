@@ -247,15 +247,25 @@ export default defineEventHandler(async (event) => {
             let promoWarning = '';
             if (data.get('pm') === '1') {
               const pdTs = data.get('pd');
+              const pdd = data.get('pdd'); // Uniqlo/GU nameWording.substitutions.date（e.g. "5/7"）
               if (pdTs) {
-                const twDate = new Date(
-                  Number(pdTs) * 1000 + 7 * 60 * 60 * 1000,
-                );
-                const twTimeStr = `${twDate.getUTCMonth() + 1}/${twDate.getUTCDate()} ${String(twDate.getUTCHours()).padStart(2, '0')}:${String(twDate.getUTCMinutes()).padStart(2, '0')}`;
-                promoWarning = `\n\n⏰ 此商品為期間限定特價，台灣截止時間為 ${twTimeStr}。\n系統每日採購時間約為 22:00，請盡早提交訂單以確保特價。如遇價格變動或庫存完售，將另行通知。`;
+                // 計算「前一天 22:00」作為本店採購截止
+                // pdd = Uniqlo 顯示截止日（e.g. "5/7"），前一天 = "5/6"
+                let cutoffDateStr: string;
+                let uniqloDeadlineStr: string;
+                if (pdd) {
+                  cutoffDateStr = pdd;
+                  uniqloDeadlineStr = pdd;
+                } else {
+                  // 無 pdd 時 fallback：從 timestamp 換算台灣時間
+                  const twDate = new Date(Number(pdTs) * 1000 + 8 * 60 * 60 * 1000);
+                  cutoffDateStr = `${twDate.getUTCMonth() + 1}/${twDate.getUTCDate()}`;
+                  uniqloDeadlineStr = cutoffDateStr;
+                }
+                promoWarning = `\n\n⏰ 此商品為期間限定特價（至 ${uniqloDeadlineStr} 止）。\n本店採購截止為 ${cutoffDateStr} 22:00（台灣時間），請於此時間前提交訂單。\n逾時若特價已結束，隔日將通知補足差額；如不願補差額，退款時將扣除手續費後退回，敬請知悉。`;
               } else {
                 promoWarning =
-                  '\n\n⚠️ 此商品目前為期間限定特價。系統非即時下單，每日採購時間約為 22:00。如遇價格變動或庫存完售，將另行通知。';
+                  '\n\n⚠️ 此商品目前為期間限定特價，本店每日採購時間約為 22:00（台灣時間）。\n逾時若特價已結束，隔日將通知補足差額；如不願補差額，退款時將扣除手續費後退回，敬請知悉。';
               }
             }
             const jpyRate = await getRate();

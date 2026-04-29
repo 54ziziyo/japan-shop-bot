@@ -18,7 +18,7 @@ export function buildGuCards(
     const useTwoCol = sizeCount > 8;
 
     const makeSizeBtn = (s: any): FlexComponent => {
-      const compactData = `action=buy&brand=gu&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}&ts=${Math.floor(Date.now() / 1000)}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}` : ''}`;
+      const compactData = `action=buy&brand=gu&t=${encodeURIComponent(productData.title.slice(0, 5))}&c=${encodeURIComponent(v.color)}&s=${encodeURIComponent(s.name)}&p=${encodeURIComponent(v.price)}&code=${productData.rawCode}&img=${imgPath}&cat=${productData.category}&pg=${productData.priceGroup}&ts=${Math.floor(Date.now() / 1000)}${productData.isLimitedOffer ? `&pm=1&pd=${productData.promoEndTs || ''}&pdd=${encodeURIComponent(productData.promoDisplayDate || '')}` : ''}`;
       const themeColor = s.isStock ? '#ffffff' : '#888888';
       return {
         type: 'box',

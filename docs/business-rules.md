@@ -281,16 +281,39 @@ LINE 官方帳號輸入「開始購物」後，系統會先顯示分類選擇器
 
 ### 特價偵測原理
 
-Uniqlo API 的商品資料含有 `priceFlags[]` 陣列。`server/utils/scrapeUniqlo.ts` 讀取此陣列，若存在 `code === 'limitedOffer'` 的旗標，代表該商品為**期間限定特價**：
+Uniqlo / GU API 的商品資料含有 `priceFlags[]` 陣列。Scraper（`scrape/uniqlo.ts`、`scrape/gu.ts`）讀取此陣列，若存在**含 `effectiveTime.end` 欄位**的旗標，即視為限時特價：
 
-| 欄位             | 說明                             |
-| ---------------- | -------------------------------- |
-| `isLimitedOffer` | `true` = 期間限定特價            |
-| `promoEndTs`     | 特價截止時間戳（毫秒，日本時間） |
+| flag code 範例       | 說明                                      |
+| -------------------- | ----------------------------------------- |
+| `limitedOffer`       | 一般期間限定特價                          |
+| `appmemberLimited`   | APP 會員特別價格（同樣有截止日）          |
+| `discount`           | 無截止日的長期降價，**不觸發**截止提醒    |
 
-API 回傳的截止時間為日本時間，系統會自動換算為台灣時間，顯示在 LINE 商品卡片的警告訊息中（`webhook.post.ts` 的 `promoWarning` 字串）。
+> 偵測條件：`priceFlags.find(f => f.effectiveTime?.end)`，只要有截止時間就觸發，不限定 code 名稱。
 
-若商品特價旗標為 `discount`（非 `limitedOffer`），代表此為無截止日的長期降價，不顯示截止時間提醒。
+Scraper 回傳以下欄位：
+
+| 欄位               | 說明                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `isLimitedOffer`   | `true` = 有截止日的限時特價                                  |
+| `promoEndTs`       | 截止時間戳（秒，UTC+7 為基準，Uniqlo/GU API 內部格式）       |
+| `promoDisplayDate` | API `nameWording.substitutions.date` 字串（e.g. `"5/7"`），與官網顯示一致 |
+
+> **重要**：`promoEndTs` 的時間戳以 UTC+7 為基準，直接用 UTC+8 換算會出現「隔天」，因此系統**優先使用 `promoDisplayDate`** 字串顯示截止日，而非從時間戳推算。
+
+### 截止日顯示邏輯（`webhook.post.ts`）
+
+用戶加入購物車後，若為限時特價，LINE Bot 會傳送以下格式的提醒：
+
+```
+⏰ 此商品為期間限定特價（至 5/7 止）。
+本店採購截止為 5/7 22:00（台灣時間），請於此時間前提交訂單。
+逾時若特價已結束，隔日將通知補足差額；如不願補差額，退款時將扣除手續費後退回，敬請知悉。
+```
+
+- **截止日** = `promoDisplayDate`（直接沿用 Uniqlo/GU 官網顯示的日期字串，e.g. `5/7`）
+- **本店採購截止** = 截止日當天 22:00 台灣時間（即截止日**當天**都還有優惠，22:00 是我方採購下單時間）
+- 無 `promoDisplayDate` 時 fallback 為從 `promoEndTs` 換算 UTC+8
 
 ### 每日截單時間
 
@@ -298,7 +321,7 @@ API 回傳的截止時間為日本時間，系統會自動換算為台灣時間�
 
 > **要修改截單時間 → 須同步修改兩個地方**：
 >
-> 1. `server/api/webhook.post.ts` — `promoWarning` 字串（含「系統每日採購時間約為 22:00」）
+> 1. `server/api/webhook.post.ts` — `promoWarning` 字串（含「22:00（台灣時間）」）
 > 2. `components/checkout/OrderForm.vue` — 購物車頁面對使用者顯示的截單提醒文字
 
 ---

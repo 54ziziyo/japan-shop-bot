@@ -52,15 +52,17 @@ export const scrapeGu = async (url: string) => {
     // 3.1 偵測「期間限定價格」vs「永久値下げ」
     const priceFlags: any[] = result.representative?.flags?.priceFlags || [];
     const limitedOfferFlag = priceFlags.find(
-      (f: any) => f.code === 'limitedOffer',
+      (f: any) => f.effectiveTime?.end,
     );
     const isLimitedOffer = !!limitedOfferFlag;
     const promoEndTs: number | null =
       limitedOfferFlag?.effectiveTime?.end || null;
+    const promoDisplayDate: string | null =
+      limitedOfferFlag?.nameWording?.substitutions?.date || null;
     if (isLimitedOffer) {
-      const endDate = limitedOfferFlag.nameWording?.substitutions?.date || '?';
+      const endDate = promoDisplayDate || '?';
       console.log(
-        `🏷️ GU 期間限定價格！¥${baseVal}（${endDate} まで / ts=${promoEndTs}）`,
+        `🏷️ GU 期間限定價格！¥${baseVal}（${endDate} まで / code=${limitedOfferFlag.code} ts=${promoEndTs}）`,
       );
     } else if (priceFlags.some((f: any) => f.code === 'discount')) {
       console.log(`💸 GU 永久値下げ：¥${baseVal}`);
@@ -155,6 +157,7 @@ export const scrapeGu = async (url: string) => {
       goodsId,
       isLimitedOffer,
       promoEndTs,
+      promoDisplayDate,
       variants: variants.slice(0, 10),
     };
   } catch (err: any) {

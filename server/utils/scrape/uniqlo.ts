@@ -48,13 +48,15 @@ export const scrapeUniqlo = async (url: string) => {
     //     真正可靠的來源是 representative.flags.priceFlags
     const priceFlags: any[] = result.representative?.flags?.priceFlags || [];
     const limitedOfferFlag = priceFlags.find(
-      (f: any) => f.code === 'limitedOffer',
+      (f: any) => f.effectiveTime?.end,
     );
     const isLimitedOffer = !!limitedOfferFlag;
     const promoEndTs: number | null =
       limitedOfferFlag?.effectiveTime?.end || null;
+    const promoDisplayDate: string | null =
+      limitedOfferFlag?.nameWording?.substitutions?.date || null;
     if (isLimitedOffer) {
-      const endDate = limitedOfferFlag.nameWording?.substitutions?.date || '?';
+      const endDate = promoDisplayDate || '?';
       console.log(
         `🏷️ 期間限定價格！¥${baseVal}（${endDate} まで / ts=${promoEndTs}）`,
       );
@@ -166,6 +168,7 @@ export const scrapeUniqlo = async (url: string) => {
       goodsId,
       isLimitedOffer,
       promoEndTs,
+      promoDisplayDate,
       variants: variants.slice(0, 10),
     };
   } catch (err: any) {
