@@ -3,6 +3,15 @@ defineProps({
   item: { type: Object, required: true },
   jpyRate: { type: Number, default: 0 },
 });
+
+// AAPE 圖片 CDN prefix 修正（prefix = itemId 後3碼）
+function fixImgzUrl(url) {
+  if (!url || !url.includes('c.imgz.jp')) return url;
+  return url.replace(
+    /c\.imgz\.jp\/\d+\/(\d+)\//,
+    (_, id) => `c.imgz.jp/${id.slice(-3)}/${id}/`,
+  );
+}
 </script>
 
 <template>
@@ -21,7 +30,9 @@ defineProps({
     >
       <img
         :src="
-          item.image_url || 'https://placehold.co/128x128.png?text=No+Image'
+          fixImgzUrl(
+            item.image_url || 'https://placehold.co/128x128.png?text=No+Image',
+          )
         "
         referrerpolicy="no-referrer"
         class="w-full h-full object-cover"

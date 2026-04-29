@@ -8,6 +8,7 @@
 
 import axios from 'axios';
 import https from 'node:https';
+import { ProhibitedItemError } from '../brandConfig';
 
 const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
 const api = axios.create({
@@ -34,6 +35,8 @@ const RESTRICTED_KEYWORDS = [
   /アルコール|alcohol/i,
   /ガソリン|gasoline|灯油|kerosene/i,
   /バッテリー|battery|電池/i,
+  // 充電式（内蔵リチウム電池）デバイス — 電池と明記しなくても航空便禁止対象
+  /充電時間|充電式|リチウム|lithium/i,
   /スプレー|spray/i,
   /香水|perfume|パルファム/i,
   /マニキュア|nail\s*polish/i,
@@ -78,9 +81,7 @@ function isRestricted(title: string, bodyHtml: string): boolean {
   return RESTRICTED_KEYWORDS.some((re) => re.test(text));
 }
 
-export const scrapeFr2 = async (
-  url: string,
-): Promise<Fr2Product | null> => {
+export const scrapeFr2 = async (url: string): Promise<Fr2Product | null> => {
   try {
     const handle = extractFr2Handle(url);
     if (!handle) throw new Error('無法從網址提取 FR2 商品 handle');
@@ -100,7 +101,7 @@ export const scrapeFr2 = async (
     // ── 禁運品檢查 ──
     if (isRestricted(title, description)) {
       console.warn(`🚫 FR2 禁運品: ${title}`);
-      return null;
+      throw new ProhibitedItemError(title);
     }
 
     // ── 預購 / 新商品 偵測 ──
@@ -134,7 +135,9 @@ export const scrapeFr2 = async (
       const color: string = v.option2 || colorType;
       const size: string = v.option3 || 'F';
       // .js 價格為 1/100 日幣（例 2640000 = ¥26400）
-      const price = Math.round((typeof v.price === 'number' ? v.price : parseInt(v.price) || 0) / 100);
+      const price = Math.round(
+        (typeof v.price === 'number' ? v.price : parseInt(v.price) || 0) / 100,
+      );
       // .js 用 weight 欄位（公克）
       const grams: number = v.weight || v.grams || 0;
       const isStock: boolean = v.available ?? true;
@@ -172,15 +175,18 @@ export const scrapeFr2 = async (
       // 用 SKU 前兩段比對圖片 URL 檔名
       if (firstVariant?.sku) {
         const skuPrefix = firstVariant.sku.split('-').slice(0, 2).join('-');
-        const matched = images.find(
-          (imgUrl: string) => imgUrl.includes(skuPrefix),
+        const matched = images.find((imgUrl: string) =>
+          imgUrl.includes(skuPrefix),
         );
         if (matched) return normalizeImgUrl(matched);
       }
 
       // fallback: 按顏色順序均分圖片
       const colorIdx = colorOrder.indexOf(colorType);
-      const step = Math.max(1, Math.floor(images.length / Math.max(colorOrder.length, 1)));
+      const step = Math.max(
+        1,
+        Math.floor(images.length / Math.max(colorOrder.length, 1)),
+      );
       const imgIdx = Math.min(colorIdx * step, images.length - 1);
       return images[imgIdx] ? normalizeImgUrl(images[imgIdx]) : '';
     };
@@ -196,7 +202,11 @@ export const scrapeFr2 = async (
 
     // ── 主要售價 ──
     const firstVariantPrice = variants[0]
-      ? Math.round((typeof variants[0].price === 'number' ? variants[0].price : parseInt(variants[0].price) || 0) / 100)
+      ? Math.round(
+          (typeof variants[0].price === 'number'
+            ? variants[0].price
+            : parseInt(variants[0].price) || 0) / 100,
+        )
       : 0;
     const price = firstVariantPrice > 0 ? `¥${firstVariantPrice}` : '請洽官網';
 
@@ -233,6 +243,7 @@ export const scrapeFr2 = async (
       variants: result,
     };
   } catch (err: any) {
+    if (err.name === 'ProhibitedItemError') throw err; // 禁運品錯誤向上傳遞
     console.error(`❌ FR2 爬蟲失敗:`, err.message);
     return null;
   }

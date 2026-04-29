@@ -13,7 +13,7 @@ export function buildAapeCards(
   return productData.variants.map((v: any) => {
     const safeImageUrl = ensureLineImageUrl(v.image);
     // 壓縮圖片 URL：只保留顏色代碼（colorCode），重建時用 code(itemId) 拼接
-    // 壓縮格式：AAPE:{colorCode}  →  https://c.imgz.jp/420/{itemId}/{itemId}b_{colorCode}_d_500.jpg
+    // 壓縮格式：AAPE:{colorCode}  →  https://c.imgz.jp/{itemId後3碼}/{itemId}/{itemId}b_{colorCode}_d_500.jpg
     const imgCompact = `AAPE:${v.colorCode}`;
 
     const sizeButtons: FlexComponent[] = v.sizes.map((s: any) => {

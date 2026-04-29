@@ -161,3 +161,37 @@ export function isRstaichiBlocked(sku: string): 'prohibited' | 'helmet' | null {
 export function isKushitaniBlocked(pid: string): boolean {
   return KUSHITANI_BLOCKED_PIDS.has(pid.toLowerCase());
 }
+
+// ── 全局禁運品（跨品牌）─────────────────────────────────────────
+
+/**
+ * 跨品牌共用：航空運送禁止品項關鍵字（商品名稱比對用）
+ * FR2 scraper 內部同時比對 description，此處僅作標題層防護
+ */
+export const GLOBAL_RESTRICTED_KEYWORDS = [
+  /ライター|lighter/i,
+  /アルコール|alcohol/i,
+  /ガソリン|gasoline|灯油|kerosene/i,
+  /バッテリー|battery|電池/i,
+  /充電時間|充電式|リチウム|lithium/i,
+  /スプレー|spray/i,
+  /香水|perfume|パルファム/i,
+  /マニキュア|nail\s*polish/i,
+  /花火|firework/i,
+];
+
+/** 商品名稱是否命中全局禁運關鍵字 */
+export function isGloballyRestricted(title: string): boolean {
+  return GLOBAL_RESTRICTED_KEYWORDS.some((re) => re.test(title));
+}
+
+/**
+ * 禁運品專用錯誤類別
+ * 與一般爬蟲失敗（網路、解析）區分，以顯示正確的使用者提示
+ */
+export class ProhibitedItemError extends Error {
+  constructor(title: string) {
+    super(`ProhibitedItem: ${title}`);
+    this.name = 'ProhibitedItemError';
+  }
+}

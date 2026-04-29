@@ -15,7 +15,7 @@
 //       .quantity                        → 庫存數量（0 = 缺貨）
 //
 // 圖片 URL 規律：
-//   https://c.imgz.jp/420/{itemId}/{itemId}b_{colorCode}_d_500.jpg
+//   https://c.imgz.jp/{itemId後3碼}/{itemId}/{itemId}b_{colorCode}_d_500.jpg
 //   壓縮格式：AAPE:{colorCode}  →  重建時用 productCode(itemId)
 
 import axios from 'axios';

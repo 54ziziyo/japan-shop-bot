@@ -3,6 +3,17 @@
 // 若在頂層靜態 import，Nuxt SSR 會在 server 端解析它們導致 useNuxtApp() 崩潰
 // 解法：全部改為 onMounted 內動態 import，確保只在瀏覽器執行
 
+// AAPE 圖片 CDN prefix 修正（prefix = itemId 後3碼）
+// c.imgz.jp 的 CDN prefix 規則：https://c.imgz.jp/{itemId後3碼}/{itemId}/...
+// 舊資料可能儲存了錯誤的 420，此函式自動修正
+function fixImgzUrl(url) {
+  if (!url || !url.includes('c.imgz.jp')) return url;
+  return url.replace(
+    /c\.imgz\.jp\/\d+\/(\d+)\//,
+    (_, id) => `c.imgz.jp/${id.slice(-3)}/${id}/`,
+  );
+}
+
 const config = useRuntimeConfig();
 const items = ref([]);
 const loading = ref(true);
@@ -237,7 +248,11 @@ const handleReload = () => {
               <div
                 class="w-24 h-24 bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(116,157,142,0.12)] flex-shrink-0 border border-[#F0F4F1]"
               >
-                <img :src="item.image_url" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+                <img
+                  :src="fixImgzUrl(item.image_url)"
+                  referrerpolicy="no-referrer"
+                  class="w-full h-full object-cover"
+                />
               </div>
 
               <div class="flex-1 min-w-0">

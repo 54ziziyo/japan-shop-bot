@@ -23,6 +23,8 @@ import {
   isKushitaniBlocked,
   extractKushitaniPid,
   detectNonJapaneseSite,
+  isGloballyRestricted,
+  ProhibitedItemError,
 } from '../utils/brandConfig';
 import { parseJpy, jpyToTwd } from '#shared/pricing';
 import { getJpyRate } from '../utils/exchangeRate';
@@ -161,9 +163,9 @@ export default defineEventHandler(async (event) => {
                 : imgPath;
           } else if (brand === 'aape') {
             // AAPE: 壓縮格式 "AAPE:{colorCode}" → 重建完整 CDN URL
-            // 圖片格式： https://c.imgz.jp/420/{itemId}/{itemId}b_{colorCode}_d_500.jpg
+            // 圖片格式： https://c.imgz.jp/{itemId後3碼}/{itemId}/{itemId}b_{colorCode}_d_500.jpg
             itemImg = imgPath.startsWith('AAPE:')
-              ? `https://c.imgz.jp/420/${productCode}/${productCode}b_${imgPath.slice(5)}_d_500.jpg`
+              ? `https://c.imgz.jp/${productCode.slice(-3)}/${productCode}/${productCode}b_${imgPath.slice(5)}_d_500.jpg`
               : imgPath;
           } else {
             // uniqlo / gu — 圖片都在 image.uniqlo.com
@@ -439,6 +441,8 @@ export default defineEventHandler(async (event) => {
           const productData = await scrapeUniqlo(pastedUrl);
           if (!productData) throw new Error('無法識別的網站資料');
           productTitle = productData.title;
+          if (isGloballyRestricted(productTitle))
+            throw new ProhibitedItemError(productTitle);
           bubbles = buildUniqloCards(productData, jpyRate, pastedUrl);
         }
 
@@ -446,6 +450,8 @@ export default defineEventHandler(async (event) => {
           const productData = await scrapeGu(pastedUrl);
           if (!productData) throw new Error('無法識別的 GU 商品資料');
           productTitle = productData.title;
+          if (isGloballyRestricted(productTitle))
+            throw new ProhibitedItemError(productTitle);
           bubbles = buildGuCards(productData, jpyRate, pastedUrl);
         }
 
@@ -453,6 +459,8 @@ export default defineEventHandler(async (event) => {
           const productData = await scrapeRstaichi(pastedUrl);
           if (!productData) throw new Error('無法識別的 RS Taichi 商品資料');
           productTitle = productData.title;
+          if (isGloballyRestricted(productTitle))
+            throw new ProhibitedItemError(productTitle);
           bubbles = buildRstaichiCards(productData, jpyRate, pastedUrl);
         }
 
@@ -460,6 +468,8 @@ export default defineEventHandler(async (event) => {
           const productData = await scrapeKushitani(pastedUrl);
           if (!productData) throw new Error('無法識別的 Kushitani 商品資料');
           productTitle = productData.title;
+          if (isGloballyRestricted(productTitle))
+            throw new ProhibitedItemError(productTitle);
           const customPrice = getKushitaniCustomPrice(productData.modelNumber);
           bubbles = buildKushitaniCards(
             productData,
@@ -469,27 +479,29 @@ export default defineEventHandler(async (event) => {
           );
         }
 
+        // FR2: scraper 內部已 throw ProhibitedItemError（含 description 比對），不需再做全局 title 檢查
         if (brand === 'fr2') {
           const productData = await scrapeFr2(pastedUrl);
-          if (!productData)
-            throw new Error('無法識別的 FR2 商品資料（可能為禁運品）');
+          if (!productData) throw new Error('無法識別的 FR2 商品資料');
           productTitle = productData.title;
           bubbles = buildFr2Cards(productData, jpyRate, pastedUrl);
         }
 
         if (brand === 'bape') {
           const productData = await scrapeBape(pastedUrl);
-          if (!productData)
-            throw new Error('無法識別的 BAPE 商品資料（可能為禁運品）');
+          if (!productData) throw new Error('無法識別的 BAPE 商品資料');
           productTitle = productData.title;
+          if (isGloballyRestricted(productTitle))
+            throw new ProhibitedItemError(productTitle);
           bubbles = buildBapeCards(productData, jpyRate, pastedUrl);
         }
 
         if (brand === 'aape') {
           const productData = await scrapeAape(pastedUrl);
-          if (!productData)
-            throw new Error('無法識別的 AAPE 商品資料（可能為禁運品）');
+          if (!productData) throw new Error('無法識別的 AAPE 商品資料');
           productTitle = productData.title;
+          if (isGloballyRestricted(productTitle))
+            throw new ProhibitedItemError(productTitle);
           bubbles = buildAapeCards(productData, jpyRate, pastedUrl);
         }
 
@@ -502,6 +514,17 @@ export default defineEventHandler(async (event) => {
         } as FlexMessage);
         console.log('✅ 訊息發送成功！');
       } catch (err: any) {
+        // 禁運品：顯示明確提示，不回報「讀取錯誤」
+        if (err.name === 'ProhibitedItemError') {
+          try {
+            await sendReplyOrPush({
+              type: 'text',
+              text: '🚫 很抱歉，此商品含有電池、充電裝置、酒精、汽油或其他航空運送禁止品項，無法提供代購服務。\n\n如有疑問，歡迎聯繫專人客服 🙏',
+            });
+          } catch {}
+          return;
+        }
+
         console.error('❌ 失敗:', err.message);
         const d = err?.originalError?.response?.data || err?.response?.data;
         if (d) console.error('📌 LINE API 錯誤細節:', JSON.stringify(d));
