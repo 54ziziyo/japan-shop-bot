@@ -258,7 +258,9 @@ export default defineEventHandler(async (event) => {
                   uniqloDeadlineStr = pdd;
                 } else {
                   // 無 pdd 時 fallback：從 timestamp 換算台灣時間
-                  const twDate = new Date(Number(pdTs) * 1000 + 8 * 60 * 60 * 1000);
+                  const twDate = new Date(
+                    Number(pdTs) * 1000 + 8 * 60 * 60 * 1000,
+                  );
                   cutoffDateStr = `${twDate.getUTCMonth() + 1}/${twDate.getUTCDate()}`;
                   uniqloDeadlineStr = cutoffDateStr;
                 }
@@ -336,6 +338,169 @@ export default defineEventHandler(async (event) => {
       // 購物須知 — FAQ 選單（不需匯率，秒回）
       if (userText === '購物須知' || userText === 'FAQ') {
         await sendReplyOrPush(buildFaqMenu());
+        return;
+      }
+
+      // 社群媒體 — 選擇 IG 帳號
+      if (userText === '社群媒體') {
+        const THEME = {
+          BG_LIGHT: '#F1F4F2',
+          SAGE_MAIN: '#4A7A6C',
+          TEXT_DARK: '#1E2B27',
+          TEXT_GRAY: '#708A81',
+          WHITE: '#FFFFFF',
+        };
+        const igFlex: FlexMessage = {
+          type: 'flex',
+          altText: '請選擇要瀏覽的社群媒體',
+          contents: {
+            type: 'bubble',
+            size: 'giga',
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: THEME.BG_LIGHT,
+              paddingAll: '24px',
+              contents: [
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  contents: [
+                    {
+                      type: 'text',
+                      text: 'SOCIAL MEDIA',
+                      size: 'xxs',
+                      color: THEME.SAGE_MAIN,
+                      weight: 'bold',
+                    },
+                    {
+                      type: 'text',
+                      text: '社群媒體',
+                      size: 'xl',
+                      weight: 'bold',
+                      color: THEME.TEXT_DARK,
+                      margin: 'xs',
+                    },
+                    {
+                      type: 'separator',
+                      margin: 'md',
+                      color: THEME.SAGE_MAIN,
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'horizontal',
+                  backgroundColor: THEME.WHITE,
+                  cornerRadius: 'xl',
+                  paddingAll: '16px',
+                  margin: 'md',
+                  alignItems: 'center',
+                  action: {
+                    type: 'uri',
+                    label: '潮牌服飾 IG',
+                    uri: 'https://www.instagram.com/roml_romu/',
+                  },
+                  contents: [
+                    {
+                      type: 'box',
+                      layout: 'vertical',
+                      width: '64px',
+                      height: '64px',
+                      cornerRadius: 'lg',
+                      contents: [
+                        {
+                          type: 'image',
+                          url: 'https://romoru.vercel.app/image/romu.jpg',
+                          size: 'full',
+                          aspectMode: 'cover',
+                        },
+                      ],
+                    },
+                    {
+                      type: 'box',
+                      layout: 'vertical',
+                      margin: 'lg',
+                      flex: 1,
+                      contents: [
+                        {
+                          type: 'text',
+                          text: '潮牌服飾',
+                          weight: 'bold',
+                          size: 'md',
+                          color: THEME.TEXT_DARK,
+                        },
+                        {
+                          type: 'text',
+                          text: 'BAPE/AAPE/FR2 等潮牌精品資訊分享',
+                          size: 'xxs',
+                          color: THEME.TEXT_GRAY,
+                          margin: 'xs',
+                          wrap: true,
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: 'box',
+                  layout: 'horizontal',
+                  backgroundColor: THEME.WHITE,
+                  cornerRadius: 'xl',
+                  paddingAll: '16px',
+                  margin: 'md',
+                  alignItems: 'center',
+                  action: {
+                    type: 'uri',
+                    label: '重機部品 IG',
+                    uri: 'https://www.instagram.com/roml_life',
+                  },
+                  contents: [
+                    {
+                      type: 'box',
+                      layout: 'vertical',
+                      width: '64px',
+                      height: '64px',
+                      cornerRadius: 'lg',
+                      contents: [
+                        {
+                          type: 'image',
+                          url: 'https://romoru.vercel.app/image/roml.jpg',
+                          size: 'full',
+                          aspectMode: 'cover',
+                        },
+                      ],
+                    },
+                    {
+                      type: 'box',
+                      layout: 'vertical',
+                      margin: 'lg',
+                      flex: 1,
+                      contents: [
+                        {
+                          type: 'text',
+                          text: '重機部品',
+                          weight: 'bold',
+                          size: 'md',
+                          color: THEME.TEXT_DARK,
+                        },
+                        {
+                          type: 'text',
+                          text: 'Kushitani/RSTaichi/Hyod 等部品資訊分享',
+                          size: 'xxs',
+                          color: THEME.TEXT_GRAY,
+                          margin: 'xs',
+                          wrap: true,
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+        await sendReplyOrPush(igFlex);
         return;
       }
 
