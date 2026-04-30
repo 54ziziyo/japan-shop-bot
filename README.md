@@ -6,12 +6,16 @@ LINE 官方帳號的日本代購服務，整合 **Uniqlo**、**GU**、**RS Taich
 
 ## 近期重要更新（2026-04-30）
 
-| 項目                                    | 說明                                                                                                                                                                                 |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 🐛 特價 flag 偵測擴大                   | 原本只認 `limitedOffer`，漏抓 `appmemberLimited`（APP 會員特別價格）等其他限時 flag。改為「含 `effectiveTime.end` 的任意 flag」，確保所有有截止日的特價都能觸發提醒                   |
-| ✨ 特價截止文案改版                     | 加入購物車訊息改顯示「本店採購截止為 X/X 22:00（台灣時間）」，並說明逾時補差額及不補差額時退款扣手續費的政策。截止日直接沿用 Uniqlo/GU API 的 `nameWording.substitutions.date` 字串 |
-| 🐛 修正 `tracking_code` 抓到 `grand_total_twd` | Google Apps Script 讀欄位偏移（舊 S 欄 vs 新 T 欄），需在試算表 Apps Script 端更新欄位索引（T=col 20，0-indexed=19）                                                           |
-| ✨ Success.vue 複製帳號顯示 alert       | 點擊複製後跳出含銀行資訊＋應轉帳金額的提示框                                                                                                                                        |
+| 項目                                           | 說明                                                                                                                                                                                |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🧹 webhook.post.ts 重構                        | 原 883 行單一檔案拆分為 3 個模組：`handlePostback.ts`（加入購物車邏輯）、`handleUrlMessage.ts`（商品網址處理）、`socialMenu.ts`（社群媒體/代購群組 Flex）。主檔精簡至 183 行        |
+| ✨ 社群媒體選單改版                            | 點擊「社群媒體」回傳與「開始購物」同風格的 Flex 卡片，分別連結潮牌服飾 IG（roml_romu）與重機部品 IG（roml_life）                                                                    |
+| ✨ 代購群組選單                                | 新增「代購群組」觸發字詞，回傳潮牌精品與重機部品兩個 LINE 群組連結卡片                                                                                                              |
+| 🐛 RS Taichi URL query string 造成解析失敗     | 從首頁點擊商品會帶 `?___store=en&__from_store=en`，Magento 據此切換語系導致解析失敗。改為從 URL 萃取 SKU 後重建乾淨網址，忽略 query string                                          |
+| 🐛 特價 flag 偵測擴大                          | 原本只認 `limitedOffer`，漏抓 `appmemberLimited`（APP 會員特別價格）等其他限時 flag。改為「含 `effectiveTime.end` 的任意 flag」，確保所有有截止日的特價都能觸發提醒                 |
+| ✨ 特價截止文案改版                            | 加入購物車訊息改顯示「本店採購截止為 X/X 22:00（台灣時間）」，並說明逾時補差額及不補差額時退款扣手續費的政策。截止日直接沿用 Uniqlo/GU API 的 `nameWording.substitutions.date` 字串 |
+| 🐛 修正 `tracking_code` 抓到 `grand_total_twd` | Google Apps Script 讀欄位偏移（舊 S 欄 vs 新 T 欄），需在試算表 Apps Script 端更新欄位索引（T=col 20，0-indexed=19）                                                                |
+| ✨ Success.vue 複製帳號顯示 alert              | 點擊複製後跳出含銀行資訊＋應轉帳金額的提示框                                                                                                                                        |
 
 **2026-04-29（先前批次）**
 
@@ -101,7 +105,10 @@ japan-shop-bot/
 │
 ├── server/
 │   ├── api/                   # 後端 API 路由
-│   │   ├── webhook.post.ts            # LINE Webhook 入口（處理所有 LINE 事件）
+│   │   ├── webhook.post.ts            # LINE Webhook 入口（路由分派，負責事件分流）
+│   │   │                              #   ✦ Postback 事件 → handleBuyPostback()
+│   │   │                              #   ✦ 文字路由：開始購物 / 購物須知 / 社群媒體 / 代購群組
+│   │   │                              #   ✦ 商品網址 → handleUrlMessage()
 │   │   ├── sync-cart.post.ts          # 結帳前同步驗證商品價格與庫存（最多 30 件）
 │   │   ├── submit-order.post.ts       # 提交訂單（DB + 試算表 + email）
 │   │   ├── exchange-rate.get.ts       # 取得當前 JPY 匯率
@@ -114,6 +121,9 @@ japan-shop-bot/
 │       ├── scrape/            # 各品牌爬蟲（uniqlo / gu / rstaichi / kushitani / fr2 / bape / aape）
 │       ├── line/
 │       │   ├── cards/         # 各品牌 LINE Flex Message 卡片產生器（...、bape / aape）
+│       │   ├── handlePostback.ts  # 加入購物車邏輯（圖片/URL重建、Supabase upsert、特價提醒）
+│       │   ├── handleUrlMessage.ts# 商品網址處理（品牌偵測、禁售檢查、爬蟲、卡片建構）
+│       │   ├── socialMenu.ts  # 社群媒體 / 代購群組 Flex Message 建構器
 │       │   ├── shopCarousel.ts# 開始購物品牌導覽輪播
 │       │   ├── faq.ts         # 購物須知 FAQ 內容
 │       │   └── helpers.ts     # LINE API 工具
