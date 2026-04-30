@@ -46,9 +46,10 @@ export const scrapeRstaichi = async (
     const skuMatch = url.match(/ec\.rs-taichi\.com\/([a-z0-9]+)\.html/i);
     if (!skuMatch) throw new Error('無法從網址提取 RS Taichi 商品編號');
     const sku = skuMatch[1]!.toUpperCase();
+    const cleanUrl = `https://www.ec.rs-taichi.com/${sku.toLowerCase()}.html`;
 
     console.log(`🏍️ RS Taichi: 正在抓取 ${sku}...`);
-    const res = await api.get(url);
+    const res = await api.get(cleanUrl);
     const html = res.data as string;
     const $ = cheerio.load(html);
 
