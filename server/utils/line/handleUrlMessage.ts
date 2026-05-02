@@ -32,6 +32,40 @@ import {
 
 type SendFn = (msg: Message | Message[]) => Promise<void>;
 
+const MAX_CAROUSEL_BYTES = 48 * 1024;
+
+function getCarouselBytes(bubbles: FlexBubble[]): number {
+  return Buffer.byteLength(
+    JSON.stringify({ type: 'carousel', contents: bubbles }),
+    'utf8',
+  );
+}
+
+function splitBubblesForLineLimit(
+  bubbles: FlexBubble[],
+  maxBytes = MAX_CAROUSEL_BYTES,
+): FlexBubble[][] {
+  const chunks: FlexBubble[][] = [];
+  let current: FlexBubble[] = [];
+
+  for (const bubble of bubbles) {
+    const next = [...current, bubble];
+    const nextBytes = getCarouselBytes(next);
+
+    // 第一顆 bubble 就超限時仍需保留，避免整筆失敗
+    if (current.length === 0 || nextBytes <= maxBytes) {
+      current = next;
+      continue;
+    }
+
+    chunks.push(current);
+    current = [bubble];
+  }
+
+  if (current.length > 0) chunks.push(current);
+  return chunks;
+}
+
 /** 針對各品牌回傳正確格式提示 */
 async function sendBrandHint(
   pastedUrl: string,
@@ -216,11 +250,24 @@ export async function handleUrlMessage(
 
     if (!bubbles.length) throw new Error('未取得任何商品變體');
 
-    await sendReplyOrPush({
-      type: 'flex',
-      altText: `推薦商品：${productTitle}`,
-      contents: { type: 'carousel', contents: bubbles },
-    } as FlexMessage);
+    const bubbleChunks = splitBubblesForLineLimit(bubbles);
+    const flexMessages = bubbleChunks.map((chunk, idx) => {
+      const sizeKb = (getCarouselBytes(chunk) / 1024).toFixed(1);
+      console.log(
+        `📦 LINE Flex chunk ${idx + 1}/${bubbleChunks.length}: ${chunk.length} bubbles, ${sizeKb}KB`,
+      );
+
+      return {
+        type: 'flex',
+        altText:
+          idx === 0 ? `推薦商品：${productTitle}` : `更多款式：${productTitle}`,
+        contents: { type: 'carousel', contents: chunk },
+      } as FlexMessage;
+    });
+
+    const payload: Message | Message[] =
+      flexMessages.length === 1 ? flexMessages[0]! : flexMessages;
+    await sendReplyOrPush(payload);
     console.log('✅ 訊息發送成功！');
   } catch (err: any) {
     if (err.name === 'ProhibitedItemError') {
@@ -234,6 +281,9 @@ export async function handleUrlMessage(
     }
 
     console.error('❌ 失敗:', err.message);
+    // @line/bot-sdk v10 HTTPFetchError: 錯誤細節在 err.body (string) 而非 err.response.data
+    if (err.body) console.error('📌 LINE API body:', err.body);
+    if (err.status) console.error('📌 LINE API status:', err.status);
     const d = err?.originalError?.response?.data || err?.response?.data;
     if (d) console.error('📌 LINE API 錯誤細節:', JSON.stringify(d));
 

@@ -59,8 +59,17 @@ export default defineEventHandler(async (event) => {
             replyTokenUsed = true;
             return;
           } catch (err: any) {
-            const d =
-              err?.originalError?.response?.data || err?.response?.data || {};
+            // @line/bot-sdk v10 throws HTTPFetchError with { status, statusText, body (string) }
+            // err.body 是 LINE API 回傳的 JSON 字串，需要解析才能取得 message/details
+            let parsedBody: any = {};
+            try {
+              parsedBody =
+                typeof err.body === 'string' ? JSON.parse(err.body) : (err.body ?? {});
+            } catch {}
+            // 也嘗試舊版 SDK 的 response.data 結構
+            const d = parsedBody.message
+              ? parsedBody
+              : err?.originalError?.response?.data || err?.response?.data || {};
             const msg = [
               typeof d?.message === 'string' ? d.message : '',
               ...(Array.isArray(d?.details)
