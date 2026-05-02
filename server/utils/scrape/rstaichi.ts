@@ -83,13 +83,18 @@ export const scrapeRstaichi = async (
 
     // ── 解析 Magento jsonConfig (色、尺寸、庫存、圖片) ──
     // jsonConfig 藏在 <script type="text/x-magento-init"> 裡面
-    // 需要用 regex 搜尋 raw HTML（cheerio 可能因為區塊過大而丟失 text 內容）
-    const scriptRegex =
-      /<script\s+type="text\/x-magento-init"[^>]*>([\s\S]*?)<\/script>/gi;
+    // 需要用 string 搜尋 raw HTML（cheerio 可能因為區塊過大而丟失 text 內容）
+    // 注意：不使用 ([\s\S]*?) 非貪婪 regex，因為對 697KB+ 的 script 區塊
+    // 在 Vercel 限速 CPU 上會造成嚴重效能瓶頸（逐字元回溯），可能超過 function timeout
+    // 改用 indexOf 定位 </script> 後再 substring 擷取，速度快幾十倍
+    const scriptOpenRegex = /<script\s+type="text\/x-magento-init"[^>]*>/gi;
     let jsonConfig: any = null;
-    let scriptMatch: RegExpExecArray | null;
-    while ((scriptMatch = scriptRegex.exec(html)) !== null) {
-      const text = scriptMatch[1]!;
+    let openMatch: RegExpExecArray | null;
+    while ((openMatch = scriptOpenRegex.exec(html)) !== null) {
+      const contentStart = openMatch.index + openMatch[0].length;
+      const endPos = html.indexOf('</script>', contentStart);
+      if (endPos === -1) continue;
+      const text = html.substring(contentStart, endPos);
       if (!text.includes('jsonConfig')) continue;
       try {
         const parsed = JSON.parse(text);
