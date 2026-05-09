@@ -1,4 +1,6 @@
 <script setup>
+import { countItemQuantity } from '#shared/coupons';
+
 const config = useRuntimeConfig();
 const pageLoading = ref(true);
 const orderSubmitted = ref(false);
@@ -17,7 +19,7 @@ const termsAccepted = ref(false);
 // 折扣碼
 const couponInput = ref('');
 const couponInputRef = (ref < HTMLInputElement) | (null > null);
-const appliedCoupon = ref(null); // { code: string, discountTwd: number }
+const appliedCoupon = ref(null); // { code: string, discountTwd: number, summary?: string }
 const couponLoading = ref(false);
 const couponError = ref('');
 let supabase = null;
@@ -264,6 +266,7 @@ const displayTotal = computed(() => preTaxForPayment.value + taxAmount.value);
 
 // 折扣碼優惠
 const couponDiscountTwd = computed(() => appliedCoupon.value?.discountTwd ?? 0);
+const couponItemCount = computed(() => countItemQuantity(validItems.value));
 // 扣除折扣碼後的實際應付金額
 const finalTotal = computed(() =>
   Math.max(0, displayTotal.value - couponDiscountTwd.value),
@@ -312,10 +315,18 @@ const applyCoupon = async () => {
   try {
     const res = await $fetch('/api/validate-coupon', {
       method: 'POST',
-      body: { code: couponInput.value.trim(), lineUserId: userId.value },
+      body: {
+        code: couponInput.value.trim(),
+        lineUserId: userId.value,
+        itemCount: couponItemCount.value,
+      },
     });
     if (res.valid) {
-      appliedCoupon.value = { code: res.code, discountTwd: res.discountTwd };
+      appliedCoupon.value = {
+        code: res.code,
+        discountTwd: res.discountTwd,
+        summary: res.summary || '',
+      };
     } else {
       couponError.value = res.message || '折扣碼無效';
     }
@@ -781,9 +792,11 @@ onMounted(async () => {
                   v-if="appliedCoupon"
                   class="text-xs text-red-400 font-semibold mt-2 ml-1"
                 >
-                  折扣碼已套用，省下 NT${{
-                    appliedCoupon.discountTwd.toLocaleString()
-                  }}
+                  折扣碼已套用
+                  <span v-if="appliedCoupon.summary">
+                    （{{ appliedCoupon.summary }}）</span
+                  >
+                  ，省下 NT${{ appliedCoupon.discountTwd.toLocaleString() }}
                 </p>
               </div>
 

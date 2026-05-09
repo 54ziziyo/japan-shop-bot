@@ -1,21 +1,28 @@
 // server/api/validate-coupon.post.ts
 // 驗證折扣碼是否有效（唯讀，不扣除使用次數）
 import { useSupabase } from '../utils/supabase';
+import {
+  countItemQuantity,
+  evaluateCouponDiscount,
+  normalizeCouponCode,
+} from '#shared/coupons';
 
 export default defineEventHandler(async (event) => {
-  const { code, lineUserId } = await readBody(event);
+  const { code, lineUserId, itemCount } = await readBody(event);
 
   if (!code || typeof code !== 'string' || !code.trim()) {
     throw createError({ statusCode: 400, statusMessage: '請輸入折扣碼' });
   }
 
+  const normalizedItemCount = countItemQuantity(itemCount);
+
   const supabase = useSupabase();
   const { data: coupon } = await supabase
     .from('coupon_codes')
     .select(
-      'code, discount_twd, total_quantity, used_count, is_active, expires_at, per_user_limit',
+      'code, discount_twd, discount_rules, total_quantity, used_count, is_active, expires_at, per_user_limit',
     )
-    .eq('code', code.trim().toUpperCase())
+    .eq('code', normalizeCouponCode(code))
     .maybeSingle();
 
   // 統一回傳「無效」，避免洩漏折扣碼是否存在或狀態
@@ -39,5 +46,16 @@ export default defineEventHandler(async (event) => {
     if (usage) return { valid: false, message: '您已使用過此折扣碼' };
   }
 
-  return { valid: true, discountTwd: coupon.discount_twd, code: coupon.code };
+  const result = evaluateCouponDiscount(coupon, normalizedItemCount);
+  if (!result.valid) {
+    return { valid: false, message: result.message || '折扣碼無效' };
+  }
+
+  return {
+    valid: true,
+    discountTwd: result.discountTwd,
+    code: coupon.code,
+    summary: result.summary,
+    requiredItems: result.requiredItems,
+  };
 });

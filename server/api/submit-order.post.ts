@@ -4,6 +4,11 @@ import { Client } from '@line/bot-sdk';
 import { useSupabase } from '../utils/supabase';
 import { appendOrderRow } from '../utils/googleSheets';
 import nodemailer from 'nodemailer';
+import {
+  countItemQuantity,
+  evaluateCouponDiscount,
+  normalizeCouponCode,
+} from '#shared/coupons';
 
 const BANK_NAME = '玉山銀行';
 const BANK_CODE = '808';
@@ -60,21 +65,22 @@ export default defineEventHandler(async (event) => {
     channelSecret: config.line.channelSecret,
   });
 
+  const orderItemCount = countItemQuantity(items);
+
   // 0. 驗證折扣碼並原子性扣除使用次數
   let couponDiscountTwd = 0;
   if (couponCode) {
     const { data: coupon } = await supabase
       .from('coupon_codes')
       .select(
-        'id, code, discount_twd, used_count, total_quantity, is_active, expires_at, per_user_limit',
+        'id, code, discount_twd, discount_rules, used_count, total_quantity, is_active, expires_at, per_user_limit',
       )
-      .eq('code', String(couponCode).trim().toUpperCase())
+      .eq('code', normalizeCouponCode(couponCode))
       .maybeSingle();
 
     if (!coupon || !coupon.is_active) {
       throw createError({ statusCode: 400, statusMessage: '折扣碼無效' });
     }
-    couponDiscountTwd = coupon.discount_twd ?? 0;
     if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
       throw createError({ statusCode: 400, statusMessage: '此折扣碼已過期' });
     }
@@ -96,6 +102,16 @@ export default defineEventHandler(async (event) => {
         });
       }
     }
+
+    const couponResult = evaluateCouponDiscount(coupon, orderItemCount);
+    if (!couponResult.valid) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: couponResult.message || '折扣碼無效',
+      });
+    }
+    couponDiscountTwd = couponResult.discountTwd;
+
     // 樂觀鎖定：確保 used_count 未被其他請求同步更新，防止超用
     const { data: updated } = await supabase
       .from('coupon_codes')
@@ -210,6 +226,10 @@ export default defineEventHandler(async (event) => {
     (s: number, i: any) => s + (i.quantity || 1),
     0,
   );
+  const couponSummaryText =
+    couponDiscountTwd > 0 && couponCode
+      ? `折扣碼優惠${couponCode ? `（${couponCode}）` : ''}：-NT$${couponDiscountTwd.toLocaleString()}`
+      : '';
 
   const customerMsg = [
     '✅ 訂單已成功提交！',
@@ -219,6 +239,7 @@ export default defineEventHandler(async (event) => {
     `收件地址：${address}`,
     '\n📋 訂單摘要',
     `商品 ${totalQty} 件`,
+    couponSummaryText,
     `訂單總計（含稅）：NT$${gt.toLocaleString()}`,
     `付款方式：${paymentLabel}`,
     paymentMethod === 'bank_transfer' && accountLast5
@@ -260,6 +281,7 @@ export default defineEventHandler(async (event) => {
     `  商品小計：NT$${(subtotalTwd || 0).toLocaleString()}（¥${(totalJpy || 0).toLocaleString()}）`,
     `  國際運費：NT$${(shippingTwd || 0).toLocaleString()}（${shippingMethod || 'ePacket'}）`,
     `  ─────────`,
+    couponSummaryText ? `  ${couponSummaryText}` : '',
     `  總計：NT$${gt.toLocaleString()}`,
     '',
     `🆔 訂單編號：${orderNo}`,
@@ -311,6 +333,7 @@ export default defineEventHandler(async (event) => {
         <tr><td style="padding:3px 0;color:#666">國際運費（${shippingMethod || 'ePacket'}）</td><td style="text-align:right">NT$${(shippingTwd || 0).toLocaleString()}</td></tr>
         <tr><td style="padding:3px 0;color:#666">代購服務費</td><td style="text-align:right">NT$${serviceFeeTwd || 0}</td></tr>
         ${discountTwd > 0 ? `<tr><td style="padding:3px 0;color:#c0392b">轉帳優惠折扣（-3%）</td><td style="text-align:right;color:#c0392b">-NT$${discountTwd.toLocaleString()}</td></tr>` : ''}
+        ${couponDiscountTwd > 0 ? `<tr><td style="padding:3px 0;color:#c0392b">折扣碼優惠${couponCode ? `（${couponCode}）` : ''}</td><td style="text-align:right;color:#c0392b">-NT$${couponDiscountTwd.toLocaleString()}</td></tr>` : ''}
         <tr style="font-weight:700;font-size:15px;border-top:2px solid #e8e8e8">
           <td style="padding:8px 0">總計(含稅)</td><td style="text-align:right">NT$${gt.toLocaleString()}</td>
         </tr>

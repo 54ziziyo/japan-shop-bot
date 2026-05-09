@@ -70,6 +70,39 @@
 | `rate`       | 匯率數值                           |
 | `updated_at` | 更新時間                           |
 
+### `coupon_codes`（折扣碼）
+
+| 欄位            | 類型        | 說明                                                                 |
+| --------------- | ----------- | -------------------------------------------------------------------- |
+| `id`            | uuid        | 主鍵，Supabase 自動產生                                              |
+| `code`          | text        | 折扣碼代碼（唯一）                                                   |
+| `discount_twd`  | int         | 固定折扣金額；若有 `discount_rules`，此欄會存 0 作為相容欄位           |
+| `discount_rules`| jsonb       | 件數階梯折扣規則陣列，例如 `[{"minItems":3,"discountTwd":100}]` |
+| `total_quantity`| int         | 發行數量（可使用總次數）                                              |
+| `used_count`    | int         | 已使用次數                                                            |
+| `is_active`     | bool        | 是否啟用                                                              |
+| `expires_at`    | timestamptz | 到期時間，null = 永不過期                                            |
+| `per_user_limit`| bool        | 是否每人限用一次                                                      |
+| `created_at`    | timestamptz | 建立時間                                                              |
+
+### `coupon_usages`（折扣碼使用紀錄）
+
+| 欄位           | 類型        | 說明                     |
+| -------------- | ----------- | ------------------------ |
+| `id`           | uuid        | 主鍵，Supabase 自動產生  |
+| `coupon_code`  | text        | 折扣碼代碼               |
+| `line_user_id` | text        | LINE userId              |
+| `created_at`   | timestamptz | 使用時間                 |
+
+> 若資料庫尚未加入 `discount_rules` 欄位，請先執行：
+
+```sql
+alter table coupon_codes
+add column if not exists discount_rules jsonb;
+```
+
+> 規則補充：若 `discount_rules` 有值，系統會依最高符合門檻自動套用折扣；`discount_twd` 保留作為舊固定折扣相容欄位。
+
 ---
 
 ## Google 試算表結構（訂單資訊）

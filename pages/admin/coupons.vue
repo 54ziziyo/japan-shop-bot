@@ -1,6 +1,11 @@
 <script setup>
 // 員工折扣碼管理後台
 // 需在 Vercel 環境變數設定 ADMIN_SECRET
+import {
+  formatCouponDiscountSummary,
+  parseCouponTierRules,
+} from '#shared/coupons';
+
 useHead({ title: '折扣碼管理' });
 
 const adminSecret = ref('');
@@ -17,6 +22,7 @@ const form = ref({
   totalQuantity: '1',
   expiresAt: '',
   perUserLimit: true,
+  discountRulesJson: '',
 });
 const formError = ref('');
 const formSuccess = ref('');
@@ -59,12 +65,25 @@ const createCoupon = async () => {
   formSuccess.value = '';
   const discount = Number(form.value.discountTwd);
   const qty = Number(form.value.totalQuantity);
+  const discountRulesText = form.value.discountRulesJson.trim();
+  let discountRules = [];
 
   if (!form.value.code.trim()) {
     formError.value = '請輸入折扣碼代碼';
     return;
   }
-  if (!discount || discount <= 0) {
+  if (discountRulesText) {
+    try {
+      discountRules = parseCouponTierRules(JSON.parse(discountRulesText));
+    } catch {
+      formError.value = '件數折扣規則 JSON 格式不正確';
+      return;
+    }
+    if (!discountRules.length) {
+      formError.value = '請至少輸入一組有效的件數折扣規則';
+      return;
+    }
+  } else if (!discount || discount <= 0) {
     formError.value = '折扣金額需大於 0';
     return;
   }
@@ -80,7 +99,8 @@ const createCoupon = async () => {
       headers: { 'x-admin-secret': adminSecret.value },
       body: {
         code: form.value.code.trim().toUpperCase(),
-        discountTwd: discount,
+        discountTwd: discountRules.length ? 0 : discount,
+        discountRules: discountRules.length ? discountRules : null,
         totalQuantity: qty,
         expiresAt: form.value.expiresAt || null,
         perUserLimit: form.value.perUserLimit,
@@ -93,6 +113,7 @@ const createCoupon = async () => {
       totalQuantity: '1',
       expiresAt: '',
       perUserLimit: true,
+      discountRulesJson: '',
     };
     await loadCoupons();
   } catch (err) {
@@ -232,6 +253,21 @@ const formatExpiry = (str) => {
             </div>
             <div>
               <label class="text-xs font-semibold text-[#5A746B] block mb-1"
+                >件數折扣規則 JSON（留空代表固定折扣）</label
+              >
+              <textarea
+                v-model="form.discountRulesJson"
+                rows="4"
+                placeholder='[{"minItems":3,"discountTwd":100},{"minItems":5,"discountTwd":300},{"minItems":8,"discountTwd":500}]'
+                class="w-full px-4 py-2.5 text-sm bg-[#F4F7F5] border border-[#D4E2DA] rounded-2xl focus:outline-none focus:border-[#749D8E] font-mono"
+              />
+              <p class="text-[10px] text-[#A4B8B0] mt-1 leading-relaxed">
+                格式範例：[{"minItems":3,"discountTwd":100}]。
+                只要有填入 JSON，系統就會依件數門檻套用折扣。
+              </p>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-[#5A746B] block mb-1"
                 >到期時間（不填則永不過期）</label
               >
               <input
@@ -327,7 +363,7 @@ const formatExpiry = (str) => {
                   {{ c.code }}
                 </p>
                 <p class="text-xs text-[#749D8E] mt-0.5">
-                  折扣 NT${{ c.discount_twd.toLocaleString() }} · 已用
+                  {{ formatCouponDiscountSummary(c) }} · 已用
                   {{ c.used_count }} / {{ c.total_quantity }} 張
                   <span
                     class="ml-1"

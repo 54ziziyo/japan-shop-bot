@@ -262,6 +262,15 @@ LINE 官方帳號輸入「開始購物」後，系統會先顯示分類選擇器
 - 折扣在 `checkout.vue` 計算，結帳時以 `discountTwd` 傳給 `submit-order`
 - 目前將綠界拿掉了，若未來需要串接綠界再打開 `OrderForm.vue` 隱藏的綠界支付方式。
 
+## 折扣碼規則
+
+- 折扣碼驗證在 `server/api/validate-coupon.post.ts` 與 `server/api/submit-order.post.ts` 會共用同一套計算邏輯
+- 固定折扣：沿用 `coupon_codes.discount_twd`
+- 件數階梯折扣：使用 `coupon_codes.discount_rules` JSON 陣列，例如 `[{"minItems":3,"discountTwd":100},{"minItems":5,"discountTwd":300}]`
+- 判定基準是購物車「實際件數總和」（`quantity` 加總），不是商品列數
+- checkout 送出時會帶 `itemCount` 供前端即時驗證，但送單時仍會由後端重新計算一次，避免前端被竄改
+- 階梯折扣若同時設了多個門檻，系統會套用「符合條件的最高門檻」
+
 ---
 
 ## 逾期訂單自動刪除規則
