@@ -24,6 +24,9 @@ export async function appendOrderRow(
     shippingTwd: number;
     serviceFeeTwd: number;
     couponDiscountTwd: number;
+    couponCode: string | null;
+    couponPartnerName: string | null;
+    couponCommissionTwd: number;
     grandTotalTwd: number;
     totalJpy: number;
     email: string;
@@ -67,13 +70,16 @@ export async function appendOrderRow(
     item.costTwd ?? '', // W 單件商品成本(台幣) (每列顯示)
     item.costTwd != null ? item.priceTwd - item.costTwd : '', // X 單件利潤(台幣) (每列顯示)
     item.costTwd != null
-      ? (item.priceTwd - item.costTwd) * item.quantity - (index === 0 ? order.couponDiscountTwd : 0)
-      : '', // Y 總利潤(台幣)：第一列扣除折扣優惠金額 (每列顯示)
+      ? (item.priceTwd - item.costTwd) * item.quantity - (index === 0 ? order.couponDiscountTwd + order.couponCommissionTwd : 0)
+      : '', // Y 總利潤(台幣)：第一列扣除折扣優惠與網紅分潤 (每列顯示)
+    index === 0 ? order.couponCode || '' : '', // Z 折扣碼 (僅首列顯示)
+    index === 0 ? order.couponPartnerName || '' : '', // AA 網紅名稱 (僅首列顯示)
+    index === 0 ? (order.couponCommissionTwd > 0 ? order.couponCommissionTwd : '') : '', // AB 網紅分潤(台幣) (僅首列顯示)
   ]);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: config.googleSpreadsheetId,
-    range: `${config.googleSheetName}!A:Y`, // 範圍確保包含 Y 欄
+    range: `${config.googleSheetName}!A:AB`, // 範圍確保包含 AB 欄
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: rows },
   });

@@ -13,7 +13,9 @@ export default defineEventHandler(async (event) => {
 
   const {
     code,
+    partnerName,
     discountTwd,
+    commissionTwd,
     discountRules,
     totalQuantity,
     expiresAt,
@@ -30,6 +32,7 @@ export default defineEventHandler(async (event) => {
   const tierRules = parseCouponTierRules(discountRules);
   const hasTierRulesInput = String(discountRules ?? '').trim().length > 0;
   const fixedDiscount = Math.round(Number(discountTwd));
+  const fixedCommission = Math.max(0, Math.round(Number(commissionTwd) || 0));
 
   if (!tierRules.length && (!discountTwd || fixedDiscount <= 0)) {
     throw createError({ statusCode: 400, statusMessage: '折扣金額必須大於 0' });
@@ -46,7 +49,9 @@ export default defineEventHandler(async (event) => {
     .from('coupon_codes')
     .insert({
       code: String(code).trim().toUpperCase(),
+      partner_name: String(partnerName ?? '').trim() || null,
       discount_twd: tierRules.length ? 0 : fixedDiscount,
+      commission_twd: fixedCommission,
       discount_rules: tierRules.length ? tierRules : null,
       total_quantity: Math.round(Number(totalQuantity)),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,

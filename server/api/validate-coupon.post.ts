@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   const { data: coupon } = await supabase
     .from('coupon_codes')
     .select(
-      'code, discount_twd, discount_rules, total_quantity, used_count, is_active, expires_at, per_user_limit',
+      'code, discount_twd, commission_twd, partner_name, discount_rules, total_quantity, used_count, is_active, expires_at, per_user_limit',
     )
     .eq('code', normalizeCouponCode(code))
     .maybeSingle();
@@ -54,6 +54,8 @@ export default defineEventHandler(async (event) => {
   return {
     valid: true,
     discountTwd: result.discountTwd,
+    commissionTwd: result.commissionTwd,
+    partnerName: result.partnerName,
     code: coupon.code,
     summary: result.summary,
     requiredItems: result.requiredItems,
