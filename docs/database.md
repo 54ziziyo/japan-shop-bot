@@ -31,22 +31,26 @@
 
 ### `orders`（訂單）
 
-| 欄位              | 類型        | 說明                                |
-| ----------------- | ----------- | ----------------------------------- |
-| `id`              | uuid        | 主鍵，Supabase 自動產生             |
-| `user_id`         | text        | LINE userId                         |
-| `line_name`       | text        | LINE 顯示名稱                       |
-| `customer_name`   | text        | 收件人姓名                          |
-| `phone`           | text        | 手機號碼（格式：09xxxxxxxx）        |
-| `address`         | text        | 收件地址                            |
-| `payment_method`  | text        | `bank_transfer` 或 `ecpay`          |
-| `account_last5`   | text        | 轉帳帳號末五碼（銀行轉帳才有）      |
-| `items`           | jsonb       | 商品明細陣列                        |
-| `total_jpy`       | int         | 商品小計（日幣）                    |
-| `grand_total_twd` | int         | 含稅總額（台幣）                    |
-| `status`          | text        | 訂單狀態（見上方狀態表）            |
-| `tracking_code`   | text        | 包裹追蹤碼（出貨後填入，可為 null） |
-| `created_at`      | timestamptz | 建立時間（自動）                    |
+| 欄位                  | 類型        | 說明                                |
+| --------------------- | ----------- | ----------------------------------- |
+| `id`                  | uuid        | 主鍵，Supabase 自動產生             |
+| `user_id`             | text        | LINE userId                         |
+| `line_name`           | text        | LINE 顯示名稱                       |
+| `customer_name`       | text        | 收件人姓名                          |
+| `phone`               | text        | 手機號碼（格式：09xxxxxxxx）        |
+| `address`             | text        | 收件地址                            |
+| `payment_method`      | text        | `bank_transfer` 或 `ecpay`          |
+| `account_last5`       | text        | 轉帳帳號末五碼（銀行轉帳才有）      |
+| `items`               | jsonb       | 商品明細陣列                        |
+| `total_jpy`           | int         | 商品小計（日幣）                    |
+| `grand_total_twd`     | int         | 含稅總額（台幣）                    |
+| `coupon_code`         | text        | 折扣碼代碼（可為 null）             |
+| `coupon_partner_name` | text        | 網紅名稱 / 代碼（可為 null）        |
+| `coupon_discount_twd` | int         | 折扣碼折抵金額（台幣）              |
+| `coupon_commission_twd` | int       | 網紅分潤金額（台幣）                |
+| `status`              | text        | 訂單狀態（見上方狀態表）            |
+| `tracking_code`       | text        | 包裹追蹤碼（出貨後填入，可為 null） |
+| `created_at`          | timestamptz | 建立時間（自動）                    |
 
 ### `cart_items`（購物車）
 
@@ -69,6 +73,49 @@
 | `currency`   | 快取 key（固定為 `jpy_sell_rate`） |
 | `rate`       | 匯率數值                           |
 | `updated_at` | 更新時間                           |
+
+### `coupon_codes`（折扣碼）
+
+| 欄位             | 類型        | 說明                                                                 |
+| ---------------- | ----------- | -------------------------------------------------------------------- |
+| `id`             | uuid        | 主鍵，Supabase 自動產生                                              |
+| `code`           | text        | 折扣碼代碼（唯一）                                                   |
+| `partner_name`   | text        | 網紅名稱 / 代碼（可為 null）                                         |
+| `discount_twd`   | int         | 固定折扣金額；若有 `discount_rules`，此欄會存 0 作為相容欄位           |
+| `commission_twd` | int         | 固定分潤金額；若有階梯規則可作為預設分潤                              |
+| `discount_rules` | jsonb       | 件數階梯折扣規則陣列，例如 `[{"minItems":3,"discountTwd":30,"commissionTwd":30}]` |
+| `total_quantity` | int         | 發行數量（可使用總次數）                                              |
+| `used_count`     | int         | 已使用次數                                                            |
+| `is_active`      | bool        | 是否啟用                                                              |
+| `expires_at`     | timestamptz | 到期時間，null = 永不過期                                            |
+| `per_user_limit` | bool        | 是否每人限用一次                                                      |
+| `created_at`     | timestamptz | 建立時間                                                              |
+
+### `coupon_usages`（折扣碼使用紀錄）
+
+| 欄位           | 類型        | 說明                     |
+| -------------- | ----------- | ------------------------ |
+| `id`           | uuid        | 主鍵，Supabase 自動產生  |
+| `coupon_code`  | text        | 折扣碼代碼               |
+| `line_user_id` | text        | LINE userId              |
+| `created_at`   | timestamptz | 使用時間                 |
+
+> 若資料庫尚未加入 `discount_rules`、`partner_name`、`commission_twd` 與訂單分潤欄位，請先執行：
+
+```sql
+alter table coupon_codes
+add column if not exists discount_rules jsonb,
+add column if not exists partner_name text,
+add column if not exists commission_twd int;
+
+alter table orders
+add column if not exists coupon_code text,
+add column if not exists coupon_partner_name text,
+add column if not exists coupon_discount_twd int default 0,
+add column if not exists coupon_commission_twd int default 0;
+```
+
+> 規則補充：若 `discount_rules` 有值，系統會依最高符合門檻自動套用折扣；`discount_twd` 保留作為舊固定折扣相容欄位。`discount_rules` 內也可加入 `commissionTwd`，若未填則會使用 `coupon_codes.commission_twd` 作為預設分潤金額。
 
 ---
 
@@ -102,7 +149,10 @@ H 欄「貨物狀態」為下拉選單，修改後由 Google Apps Script 觸發 
 | V   | 商品網址（每件商品一列）                                      |
 | W   | 單件商品成本（台幣，每列）                                    |
 | X   | 單件利潤（台幣，每列）= 單價 − 成本                           |
-| Y   | 總利潤（台幣，每列）= 單件利潤 × 數量；首列另扣除折扣優惠金額 |
+| Y   | 總利潤（台幣，每列）= 單件利潤 × 數量；首列另扣除折扣優惠金額與網紅分潤 |
+| Z   | 折扣碼（僅首列）                                              |
+| AA  | 網紅名稱 / 代碼（僅首列）                                     |
+| AB  | 網紅分潤（台幣，僅首列）                                      |
 
 > **重要**：若要新增狀態選項，H 欄下拉選單的「選項文字」必須是英文小寫（e.g. `cancelled`），且需同步更新 `server/api/update-order-status.post.ts` 的 `ALLOWED_STATUSES` 陣列。
 

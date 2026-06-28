@@ -4,6 +4,23 @@
 
 ---
 
+### 2026-05-09
+
+**折扣碼支援件數階梯優惠**
+
+- `coupon_codes.discount_rules` 新增 JSON 階梯規則支援，可依購物車件數套用不同折扣
+- `validate-coupon.post.ts` 與 `submit-order.post.ts` 共用同一套折扣判定邏輯，避免前後端規則不一致
+- `pages/admin/coupons.vue` 新增 JSON 規則輸入欄位；固定折扣仍可直接使用舊欄位
+- `pages/checkout.vue` 送出驗證時會帶入商品件數，讓前端可即時回傳符合門檻的折扣金額
+
+**折扣碼分潤追蹤**
+
+- `coupon_codes.partner_name` / `commission_twd` 新增網紅名稱與分潤金額欄位，訂單資料與 Google 試算表會同步保存
+- `pages/admin/coupons.vue` 預設帶入常用階梯 JSON，減少重複輸入
+- `server/api/submit-order.post.ts` 與 `server/utils/googleSheets.ts` 會同步寫入折扣碼、網紅名稱與分潤金額，並計入試算表利潤欄位
+
+---
+
 ### 2026-04-29（第二批次）
 
 **修正 BAPE jp.bape.com CDN store ID 錯誤**

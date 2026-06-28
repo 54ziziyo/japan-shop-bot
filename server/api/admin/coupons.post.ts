@@ -1,6 +1,7 @@
 // server/api/admin/coupons.post.ts
 // 管理員：建立新折扣碼
 import { useSupabase } from '../../utils/supabase';
+import { parseCouponTierRules } from '#shared/coupons';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -10,17 +11,37 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: '未授權' });
   }
 
-  const { code, discountTwd, totalQuantity, expiresAt, perUserLimit } =
-    await readBody(event);
+  const {
+    code,
+    partnerName,
+    discountTwd,
+    commissionTwd,
+    discountRules,
+    totalQuantity,
+    expiresAt,
+    perUserLimit,
+  } = await readBody(event);
 
   if (!code?.trim()) {
     throw createError({ statusCode: 400, statusMessage: '請輸入折扣碼代碼' });
   }
-  if (!discountTwd || Number(discountTwd) <= 0) {
-    throw createError({ statusCode: 400, statusMessage: '折扣金額必須大於 0' });
-  }
   if (!totalQuantity || Number(totalQuantity) <= 0) {
     throw createError({ statusCode: 400, statusMessage: '發行數量必須大於 0' });
+  }
+
+  const tierRules = parseCouponTierRules(discountRules);
+  const hasTierRulesInput = String(discountRules ?? '').trim().length > 0;
+  const fixedDiscount = Math.round(Number(discountTwd));
+  const fixedCommission = Math.max(0, Math.round(Number(commissionTwd) || 0));
+
+  if (!tierRules.length && (!discountTwd || fixedDiscount <= 0)) {
+    throw createError({ statusCode: 400, statusMessage: '折扣金額必須大於 0' });
+  }
+  if (hasTierRulesInput && !tierRules.length) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: '請輸入正確的件數折扣規則',
+    });
   }
 
   const supabase = useSupabase();
@@ -28,7 +49,10 @@ export default defineEventHandler(async (event) => {
     .from('coupon_codes')
     .insert({
       code: String(code).trim().toUpperCase(),
-      discount_twd: Math.round(Number(discountTwd)),
+      partner_name: String(partnerName ?? '').trim() || null,
+      discount_twd: tierRules.length ? 0 : fixedDiscount,
+      commission_twd: fixedCommission,
+      discount_rules: tierRules.length ? tierRules : null,
       total_quantity: Math.round(Number(totalQuantity)),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       per_user_limit: perUserLimit !== false, // 預設 true
