@@ -12,7 +12,7 @@ import * as cheerio from 'cheerio';
 const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
 const api = axios.create({
   httpsAgent: keepAliveAgent,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'User-Agent':
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -43,10 +43,11 @@ export const scrapeRstaichi = async (
   url: string,
 ): Promise<RstaichiProduct | null> => {
   try {
-    const skuMatch = url.match(/ec\.rs-taichi\.com\/([a-z0-9]+)\.html/i);
+    const skuMatch = url.match(/\/([^/]+?)(?:-\d+colors?)?\.html/i);
     if (!skuMatch) throw new Error('無法從網址提取 RS Taichi 商品編號');
     const sku = skuMatch[1]!.toUpperCase();
-    const cleanUrl = `https://www.ec.rs-taichi.com/${sku.toLowerCase()}.html`;
+    // 優先用原始 URL（避免 rst451-3colors 等特殊路徑被截斷）
+    const cleanUrl = url.startsWith('http') ? url : `https://www.ec.rs-taichi.com/${sku.toLowerCase()}.html`;
 
     console.log(`🏍️ RS Taichi: 正在抓取 ${sku}...`);
     const res = await api.get(cleanUrl);
