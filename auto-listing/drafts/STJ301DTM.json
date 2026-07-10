@@ -1,0 +1,201 @@
+{
+  "sourceUrl": "https://shop.hyod-products.com/Form/Product/ProductDetail.aspx?shop=0&pid=STJ301DTM",
+  "brand": "HYOD",
+  "scraped": {
+    "pid": "STJ301DTM",
+    "title": "ST-S UCHIMIZU VENTED D3O® COOL DRY JAC",
+    "price": "¥40590",
+    "weightGrams": 1800,
+    "description": "",
+    "variants": [
+      {
+        "color": "BLACK/WHITE",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_BLACKWHITE_LL.jpg",
+        "sizes": [
+          {
+            "name": "M"
+          },
+          {
+            "name": "L"
+          },
+          {
+            "name": "LL"
+          }
+        ]
+      },
+      {
+        "color": "BLACK",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_BLACK_LL.jpg",
+        "sizes": [
+          {
+            "name": "M"
+          },
+          {
+            "name": "LL"
+          }
+        ]
+      },
+      {
+        "color": "NAVY/WHITE",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_NAVYWHITE_LL.jpg",
+        "sizes": [
+          {
+            "name": "S"
+          },
+          {
+            "name": "M"
+          },
+          {
+            "name": "L"
+          },
+          {
+            "name": "LL"
+          }
+        ]
+      },
+      {
+        "color": "LIGHT GREY/WHITE",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_LIGHTGREYWHITE_LL.jpg",
+        "sizes": [
+          {
+            "name": "S"
+          },
+          {
+            "name": "M"
+          },
+          {
+            "name": "LL"
+          }
+        ]
+      },
+      {
+        "color": "RED/BLACK",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_REDBLACK_LL.jpg",
+        "sizes": [
+          {
+            "name": "M"
+          },
+          {
+            "name": "L"
+          }
+        ]
+      },
+      {
+        "color": "TURQUOISE/BLACK",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_TURQUOISEBLACK_LL.jpg",
+        "sizes": [
+          {
+            "name": "S"
+          }
+        ]
+      },
+      {
+        "color": "GREY/BLACK",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/STJ301DTM_GREYBLACK_LL.jpg",
+        "sizes": [
+          {
+            "name": "M"
+          },
+          {
+            "name": "LL"
+          }
+        ]
+      }
+    ]
+  },
+  "season": null,
+  "categoryOptions": [
+    "3/4 半罩",
+    "56design",
+    "AquaSeal 02 山系隨行包",
+    "AquaSeal 全境防水瞬扣包",
+    "AquaSeal 背帶及配件",
+    "AquaSeal 防水機能證件套",
+    "ARAI",
+    "Astro-GX",
+    "BeMaster",
+    "bitplay",
+    "Classic Air",
+    "DR.WILDS",
+    "EX-ZERO",
+    "Full-face 全罩",
+    "Full-Face 全罩",
+    "GLAMSTER",
+    "GT-AIR 3",
+    "HYDO",
+    "Hyod",
+    "J-Cruise 3",
+    "J-FORCE IV",
+    "J・O",
+    "Jet Helmet 3/4半罩",
+    "KUSHITANI",
+    "MotoGP 選手周邊",
+    "NEOTEC 3",
+    "Rapide-NEO",
+    "RS TAICHI",
+    "RX-7X",
+    "SHOEI",
+    "System Helmet 可掀式安全帽",
+    "TOUR-CROSS V",
+    "VZ-RAM",
+    "VZ-RAM PLUS",
+    "X-15 X-Fifteen",
+    "XD",
+    "Z-8",
+    "中層",
+    "休閒車靴",
+    "保暖紡織外套",
+    "內裏",
+    "其他",
+    "冬季",
+    "冬季款",
+    "冬季紡織褲",
+    "包袋",
+    "周邊商品",
+    "夏季",
+    "女性",
+    "安全帽",
+    "手套",
+    "日常服飾",
+    "春夏",
+    "春夏款",
+    "皮牛仔褲",
+    "皮衣",
+    "皮褲",
+    "秋冬款",
+    "競技手套",
+    "紡織外套",
+    "紡織服裝",
+    "紡織褲",
+    "背包",
+    "荒野醫生-尼龍系列",
+    "荒野醫生-穿梭系列",
+    "荒野醫生-露營系列",
+    "荒野醫生-黑系列",
+    "許願池",
+    "護具",
+    "賽車裝備",
+    "越野帽",
+    "越野裝備",
+    "車靴",
+    "連身皮衣",
+    "配件",
+    "重機部品",
+    "鋼彈聯名",
+    "防摔衣",
+    "防摔褲",
+    "限時活動",
+    "雨具"
+  ],
+  "content": {
+    "name": "HYOD STJ301DTM 防摔外套 ST-S UCHIMIZU VENTED D3O JAC 打水涼感 機車騎士外套",
+    "slug": "hyod-stj301dtm-st-s-uchimizu-vented-d3o-jac-防摔外套",
+    "focusKeyword": "HYOD STJ301DTM 防摔外套 ST-S UCHIMIZU JAC COOL DRY",
+    "seoTitle": "HYOD STJ301DTM 防摔外套 ST-S UCHIMIZU JAC COOL DRY",
+    "metaDescription": "HYOD STJ301DTM 防摔外套採用 UCHIMIZU VENTED 氣化冷卻涼感布料，D3O® CE Level 1 護具全配，七色含 S 碼，M～LL 全尺碼。騎旅生活日本代購直送台灣。",
+    "shortDescriptionHtml": "<p><strong>HYOD STJ301DTM 防摔外套</strong>（ST-S UCHIMIZU VENTED D3O® COOL DRY JAC）是 HYOD ST-S 系列搭載「打ち水（UCHIMIZU）」氣化冷卻涼感科技的無帽款騎士外套。「UCHIMIZU」源自日本傳統消暑習俗——在炎熱的夏天將水灑在地面或石板上，利用水分蒸發帶走熱能降低周遭溫度。HYOD 將這一自然冷卻原理化為布料科技，開發出 UCHIMIZU VENTED 涼感彈性布料，在騎乘時主動帶走體表熱氣，讓你即便在炎炎夏日長途騎乘也能維持涼爽感受。</p><p>ST-S 系列提供 S／M／L／LL 四種碼數，HYOD 外套少見的 S 碼讓體型較小的騎士也能找到合身的選擇。D3O® 三點護具（肩、肘、背）出廠即合規，七色豐富可選，騎旅生活日本代購直送台灣。</p>",
+    "descriptionHtml": "<h2>💡 HYOD STJ301DTM 防摔外套 核心技術與規格特色</h2>\n\n<h3>1. UCHIMIZU VENTED 氣化冷卻涼感布料</h3>\n<p><strong>HYOD STJ301DTM 防摔外套</strong>採用 HYOD 獨家開發的 <strong>UCHIMIZU VENTED</strong> 涼感彈性布料。「打ち水（UCHIMIZU）」是日本傳統夏日消暑習俗——將水灑在炙熱的地面或石板上，利用水分蒸發的氣化熱原理帶走熱能，使周遭溫度顯著下降。HYOD 將這一天然冷卻原理轉化為高性能布料科技：UCHIMIZU VENTED 布料在騎乘時能快速吸收體表汗水，並透過「VENTED」通風設計將濕氣迅速散發，以汗水蒸發的方式主動為騎士降溫，讓台灣夏季長途騎乘保持清涼乾爽。</p>\n<ul>\n  <li><strong>氣化冷卻效應：</strong>布料主動吸汗→快速蒸發→帶走體表熱能的循環機制，比被動式吸汗材質有更顯著的實際涼感體驗。</li>\n  <li><strong>COOL DRY 快乾性能：</strong>布料具備優異的快乾性能，即使汗水量大，布料也能迅速恢復乾爽，不黏膩、不悶熱。</li>\n  <li><strong>四向彈性延展：</strong>VENTED 彈性布料具備良好的四向延展性，騎乘時肩部轉動、手肘彎折自然不受拘束，長途騎行疲勞感更低。</li>\n</ul>\n\n<h3>2. D3O® 三點式合規防護系統</h3>\n<p>出廠即標配頂級防護科技，無需額外添購護具：</p>\n<ul>\n  <li><strong>肩部與肘部：</strong>搭載 D3O® 軟質護具（通過歐盟 CE Level 1 認證），輕薄柔軟且高氣孔通風，活動自由自在。</li>\n  <li><strong>背部脊椎：</strong>配備 D3O® 背脊護具（通過歐盟 CE Level 1 認證），高強度衝擊吸收同時維持背部透氣散熱效能。</li>\n</ul>\n\n<h3>3. ST-S 系列設計特色</h3>\n<p>ST-S 系列是 HYOD 在頂級 ST-X 之外所推出的運動標準系列，將 HYOD 的核心防護工藝與功能科技以更親民的設計包裝提供給更多騎士。版型經過工學設計，騎乘姿勢下貼合舒適，搭配 UCHIMIZU VENTED 布料的高彈性延展性，整體穿著體驗靈活舒適。</p>\n\n<h2>🎯 JAC 無帽款貼心細節設計</h2>\n<p><strong>S 碼難得提供：</strong>HYOD 外套通常從 M 碼起，STJ301DTM 提供 S／M／L／LL 四種碼數，讓體型較小的騎士也能找到合身的騎士外套，是難得一見的 HYOD S 碼款式。</p>\n<p><strong>七色豐富選擇：</strong>黑/白、黑、深藍/白、淺灰/白、紅/黑、青綠/黑、灰/黑七色，涵蓋清新、低調、活潑等多種配色個性。</p>\n<p><strong>精簡無帽設計：</strong>JAC 款省略連帽，版型輕巧俐落，與全罩或半罩安全帽的頸部相容性更佳，頭部活動靈活。</p>\n\n<h2>🇹🇼 HYOD STJ301DTM 防摔外套 台灣選購指南</h2>\n<p>台灣夏季的高溫高濕是所有騎士面對的最大挑戰。HYOD STJ301DTM 的 UCHIMIZU VENTED 氣化冷卻科技能主動利用汗水蒸發降溫，相較單純吸汗材質有更實際的涼感效果，是台灣夏季長途騎乘的理想防摔外套。D3O® 三點護具出廠即合規，S～LL 四碼適合不同體型騎士。</p>\n<p>七色中：深藍/白、淺灰/白、黑、灰/黑、紅/黑提供多種碼數選擇；請以實際現貨在庫為準，確認心儀配色尺寸後盡早詢問。</p>\n<p>💡 <strong>穿搭建議：</strong>下身搭配 <a href=\"https://roml-life.com/product-category/重機部品/防摔褲\" target=\"_blank\">HYOD 防摔褲</a> 整套防護更完整；內層穿著 HYOD COOL ATTACHMENT 涼感內著可進一步強化降溫效果。詳細規格請參考 <a href=\"https://www.hyod-products.com/\" target=\"_blank\" rel=\"noopener\">HYOD PRODUCTS 日本官方網站</a>。</p>",
+    "category": "Hyod/紡織服裝",
+    "imageAlt": "HYOD STJ301DTM 防摔外套"
+  }
+}

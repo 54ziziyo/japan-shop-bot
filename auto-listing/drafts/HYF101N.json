@@ -1,0 +1,151 @@
+{
+  "sourceUrl": "https://shop.hyod-products.com/Form/Product/ProductDetail.aspx?shop=0&pid=HYF101N",
+  "brand": "HYOD",
+  "scraped": {
+    "pid": "HYF101N",
+    "title": "HYOD RIDE SHOES “XIPHOS”",
+    "price": "¥24200",
+    "weightGrams": 1100,
+    "description": "抜群のフィット感と履き心地 “カルク、RIDE”コンセプトを実現したフットワークにすぐれたライディングシューズ。日本人用のラスト（木型）を使い、アッパーにはメッシュ生地を組み合わせ、軽くてほどよいフィット感に仕上げています。左足のシフトパッドは面ファスナー採用で着脱、位置調節も可能。シューレース（靴紐）の代わりにダイヤル式シューレースシステムを搭載し、フィッティングの調節やシューズの脱ぎ履きもスムーズに行えます。\n\n考え抜かれたマテリアルとそのスペック アッパーにはメッシュ生地と軽くて耐摩耗性にすぐれた防水マイクロファイバーを組み合わせて採用。水の侵入を防ぎ、内にこもった水蒸気を逃がす防水透湿フィルムをインサートしていますので、発汗による蒸れを軽減し、雨などの急な天候の変化にも対応できる防水・透湿仕様です。※縫い目部分にはシームシーリング加工を施しておりますが構造上完全防水ではありません。雨天時にはレイン専用のブーツまたはブーツカバーをご使用ください。左足のシフトパッドは過酷な使用での消耗を考慮して、面ファスナーで簡単にリプレイス（交換）できる仕様になっています\n\nHYODボトムスとのコーディネートを楽しもう HYODフットウエアは、HYODボトムスとのコーディネートを意識してお選びください。 ウォッシャブルレザーを使ったスマートレザーパンツやライディング機能満載のST-Xパンツシリーズ、最も着用頻度が高くバリエーションが豊富なHYODスポーツデニムなど。自分らしいボトムスのコーディネートで自分と愛車の雰囲気を演出することができます。フットウエアのチョイスでボトムスの印象は大きく変わります。ぜひアナタらしいコーディネートをお楽しみください。",
+    "variants": [
+      {
+        "color": "BLACK",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/HYF101N_BLACK_LL.jpg",
+        "sizes": [
+          {
+            "name": "23"
+          },
+          {
+            "name": "25"
+          },
+          {
+            "name": "25.5"
+          },
+          {
+            "name": "26"
+          },
+          {
+            "name": "26.5"
+          }
+        ]
+      },
+      {
+        "color": "BLACK/WHITE",
+        "image": "https://shop.hyod-products.com/Contents/ProductImages/0/HYF101N_BLACKWHITE_LL.jpg",
+        "sizes": [
+          {
+            "name": "23"
+          },
+          {
+            "name": "24"
+          },
+          {
+            "name": "25"
+          },
+          {
+            "name": "25.5"
+          },
+          {
+            "name": "26"
+          },
+          {
+            "name": "26.5"
+          }
+        ]
+      }
+    ]
+  },
+  "season": null,
+  "categoryOptions": [
+    "3/4 半罩",
+    "56design",
+    "AquaSeal 02 山系隨行包",
+    "AquaSeal 全境防水瞬扣包",
+    "AquaSeal 背帶及配件",
+    "AquaSeal 防水機能證件套",
+    "ARAI",
+    "Astro-GX",
+    "BeMaster",
+    "bitplay",
+    "Classic Air",
+    "DR.WILDS",
+    "EX-ZERO",
+    "Full-face 全罩",
+    "Full-Face 全罩",
+    "GLAMSTER",
+    "GT-AIR 3",
+    "HYDO",
+    "J-Cruise 3",
+    "J-FORCE IV",
+    "J・O",
+    "Jet Helmet 3/4半罩",
+    "KUSHITANI",
+    "MotoGP 選手周邊",
+    "NEOTEC 3",
+    "Rapide-NEO",
+    "RS TAICHI",
+    "RX-7X",
+    "SHOEI",
+    "System Helmet 可掀式安全帽",
+    "TOUR-CROSS V",
+    "VZ-RAM",
+    "VZ-RAM PLUS",
+    "X-15 X-Fifteen",
+    "XD",
+    "Z-8",
+    "中層",
+    "休閒車靴",
+    "保暖紡織外套",
+    "內裏",
+    "其他",
+    "冬季",
+    "冬季款",
+    "冬季紡織褲",
+    "包袋",
+    "周邊商品",
+    "夏季",
+    "女性",
+    "安全帽",
+    "手套",
+    "日常服飾",
+    "春夏",
+    "春夏款",
+    "皮牛仔褲",
+    "皮衣",
+    "皮褲",
+    "秋冬款",
+    "競技手套",
+    "紡織外套",
+    "紡織褲",
+    "背包",
+    "荒野醫生-尼龍系列",
+    "荒野醫生-穿梭系列",
+    "荒野醫生-露營系列",
+    "荒野醫生-黑系列",
+    "許願池",
+    "護具",
+    "賽車裝備",
+    "越野帽",
+    "越野裝備",
+    "車靴",
+    "連身皮衣",
+    "配件",
+    "重機部品",
+    "鋼彈聯名",
+    "防摔衣",
+    "防摔褲",
+    "限時活動",
+    "雨具"
+  ],
+  "content": {
+    "name": "",
+    "slug": "",
+    "focusKeyword": "",
+    "seoTitle": "",
+    "metaDescription": "",
+    "descriptionHtml": "",
+    "shortDescriptionHtml": "",
+    "category": "",
+    "imageAlt": ""
+  }
+}

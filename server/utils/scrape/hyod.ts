@@ -35,7 +35,7 @@ const NAME_WEIGHT_RULES: { pattern: RegExp; weight: number; label: string }[] = 
   { pattern: /グローブ|glove/i,                           weight: 400,  label: '手套' },
   { pattern: /ブーツ|boot/i,                               weight: 1500, label: '車靴（靴）' },
   { pattern: /シューズ|shoes?/i,                           weight: 800,  label: '騎乘鞋' },
-  { pattern: /ジャケット|jacket|parka|パーカ/i,            weight: 1500, label: '外套/夾克' },
+  { pattern: /ジャケット|jacket|\bjac\b|parka|パーカ/i,    weight: 1500, label: '外套/夾克' },
   { pattern: /スーツ|レーシングスーツ|suit/i,              weight: 4000, label: '連身皮衣' },
   { pattern: /パンツ|pants|trousers?/i,                    weight: 800,  label: '褲子' },
   { pattern: /インナー|inner|アンダー|under/i,             weight: 300,  label: '內層衣' },
