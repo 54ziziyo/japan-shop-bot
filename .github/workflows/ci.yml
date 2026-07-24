@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 目前專案已有約15個既有型別錯誤（跟本次改動無關的技術債，散落在
+      # kushitani.ts / buildProduct.ts / webhook.post.ts / rate-limit.ts / test-build.ts）。
+      # 先設 continue-on-error，讓 typecheck 錯誤可見但不擋 PR，待債務清完後再拿掉這行改回強制關卡。
+      - name: Typecheck
+        run: pnpm exec nuxi typecheck
+        continue-on-error: true
+
+      # 只跑純邏輯測試，不連網、不打正式 WooCommerce API。
+      # test-weight-scraper.mjs 會實際爬取外部網站，不適合放進 CI（會不穩定、也不該由 CI 觸發對外連線），故不在此執行。
+      - name: Run pure-logic tests (affiliate/coupon logic)
+        run: node test-affiliate.mjs

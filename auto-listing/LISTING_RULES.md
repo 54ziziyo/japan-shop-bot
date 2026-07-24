@@ -77,19 +77,23 @@ RS TAICHI RSJ356 輕量透氣防摔衣
 
 ## 四、seoTitle（SEO 標題）
 
-格式：`{focusKeyword} {英文型號名} | {補充說明}`
+格式：`{focusKeyword} {英文型號名} {補充說明}`
 
 範例：
 ```
-KUSHITANI K-2454 網眼防摔衣 Air Contendo Jacket | 夏季皮革騎士外套
-RS TAICHI RSJ356 輕量透氣防摔衣 LIGHT AIR JACKET | 騎旅生活
+KUSHITANI K-2454 網眼防摔衣 Air Contendo Jacket 夏季騎士外套
+RS TAICHI RSJ356 輕量透氣防摔衣 LIGHT AIR JACKET 夏季
+HYOD STJ421D 夏季網眼防摔外套 ST-X THE MESH MINERVA
 ```
 
 規則：
-- 50–60 字元（Yoast 綠燈範圍）
+- **Yoast 用像素寬度計算，中文字約為英文字 2 倍寬**
+- 目標像素寬度 400–600px（約等同 50–60 英文字元）
+- 實際規則：**英文字元 + 中文字數×2 合計不超過 55**
 - 焦點關鍵字放最前面
-- 末尾可以是店名「騎旅生活」或補充說明
+- **不要加「| 騎旅生活」** — 中文字佔寬，加了會超出上限，Yoast 會紅燈
 - 不要加 `%%` 模板變數（REST API 上架不適用）
+- 寫完後粗估：數英文字元 + 中文字數×2，確認 ≤ 55
 
 ---
 
@@ -127,35 +131,61 @@ KUSHITANI K-2454 網眼防摔衣採用高透氣網眼布料搭配 CE Level 1 護
 
 ## 七、descriptionHtml（商品說明）
 
-必須包含：
+必須包含，字數目標 **1000 字以上（可見文字）**：
 
-### 結構
+### 結構（必須照此順序展開）
+
 ```html
-<h2>{focusKeyword} 規格特色</h2>
-<p>第一段：焦點關鍵字 + <strong>粗體</strong> + 官方規格說明</p>
-<p>第二段：防護細節、材質、功能</p>
+<h2>💡 核心技術與規格特色</h2>
 
-<h2>{focusKeyword} 推薦理由與選購說明</h2>
-<p>顏色、尺寸、適用場景說明</p>
+<h3>1. {主要材質/技術名稱}</h3>
+<p>官方技術說明 + 對騎士的實際體感差異</p>
+<ul>
+  <li><strong>重點一：</strong>說明</li>
+  <li><strong>重點二：</strong>說明</li>
+</ul>
+
+<h3>2. {第二大技術點}</h3>
+<p>說明</p>
+
+<h3>3. {防護系統}</h3>
+<p>出廠護具規格：部位、型號、CE 認證等級</p>
+<ul>
+  <li><strong>肩部與肘部：</strong>護具型號 + CE Level</li>
+  <li><strong>背部脊椎：</strong>護具型號 + CE Level</li>
+</ul>
+
+<h3>4. {版型/剪裁特色}</h3>
+<p>說明</p>
+
+<h2>🎯 貼心細節設計</h2>
+<p>2–4 個小細節，用文字段落或列表說明</p>
+
+<h2>🇹🇼 台灣在地選購指南與推薦理由</h2>
+<p>為什麼台灣騎士特別適合？（氣候、騎乘習慣）</p>
+<p>顏色、尺寸說明</p>
+<p>穿搭建議（搭配防摔褲等）</p>
 <p>外連結到官方網站 + 內連結到店內相關商品</p>
 ```
 
 ### 外連結（必須有）
 連結到日本官方品牌網站，用 `target="_blank" rel="noopener"`：
 ```html
-詳細規格請參考 <a href="https://www.kushitanionline.com" target="_blank" rel="noopener">KUSHITANI 官方網站</a>。
+詳細規格請參考 <a href="https://www.hyod-products.com/" target="_blank" rel="noopener">HYOD PRODUCTS 官方網站</a>。
 ```
 
 ### 內連結（必須有）
-連結到 roml-life.com 店內相關商品，例如防摔褲分類：
+連結到 roml-life.com 店內相關商品：
 ```html
-搭配 <a href="https://roml-life.com/product-category/kushitani/防摔褲">KUSHITANI 防摔褲</a> 效果更佳。
+搭配 <a href="https://roml-life.com/product-category/重機部品/防摔褲">HYOD 防摔褲</a> 整套防護效果更佳。
 ```
 
-### 官方資料查證
+### 官方資料查證（必須做）
 - 防護等級（CE Level 1 / Level 2）必須查官方規格頁確認
-- 材質（牛皮 / 山羊皮 / 聚酯纖維比例）必須查官方確認
-- 不確定的規格不填，避免誤導消費者
+- 護具型號（D3O® Diablo™ 等）必須查官方確認
+- 材質（牛皮 / 聚酯纖維比例）必須查官方確認
+- **不確定的規格不填**，避免誤導消費者
+- 禁止在描述中填寫任何價格數字
 
 ---
 

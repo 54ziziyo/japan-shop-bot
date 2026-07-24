@@ -141,6 +141,26 @@ export class WooClient {
     return all;
   }
 
+  /** 取商品所有變體（含 imageId），用於圖片修復 */
+  async getVariationsWithImages(productId: number): Promise<{ id: number; imageId: number | null; attributes: { name: string; option: string }[] }[]> {
+    const all: { id: number; imageId: number | null; attributes: { name: string; option: string }[] }[] = [];
+    for (let page = 1; page <= 20; page++) {
+      const { data } = await this.http.get(`/products/${productId}/variations`, {
+        params: { per_page: 100, page },
+      });
+      if (!Array.isArray(data) || data.length === 0) break;
+      for (const v of data) {
+        all.push({
+          id: v.id,
+          imageId: v.image?.id ?? null,
+          attributes: v.attributes,
+        });
+      }
+      if (data.length < 100) break;
+    }
+    return all;
+  }
+
   /** 更新單一變體 */
   async updateVariation(productId: number, variationId: number, data: Record<string, unknown>): Promise<void> {
     await this.http.put(`/products/${productId}/variations/${variationId}`, data);
